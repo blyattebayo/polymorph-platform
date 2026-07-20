@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Console;
 
-use Polymorph\Platform\Domain\Extensions\Services\ExtensionManager;
 use Illuminate\Console\Command;
+use Polymorph\Platform\Domain\Extensions\Services\ExtensionManager;
 
 final class PluginsDisableCommand extends Command
 {
     protected $signature = 'plugins:disable {pluginId : Plugin identifier} {--force : Disable even if enabled plugins depend on it}';
+
     protected $description = 'Disable plugin and detach plugin routes.';
 
     public function handle(ExtensionManager $pluginManager): int

@@ -7,7 +7,7 @@ namespace Polymorph\Platform\Support\Json;
 final class PathValueResolver
 {
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public function get(array $payload, string $path): mixed
     {
@@ -20,12 +20,12 @@ final class PathValueResolver
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public function getFirstAvailable(array $payload, ?string ...$paths): mixed
     {
         foreach ($paths as $path) {
-            if (!is_string($path)) {
+            if (! is_string($path)) {
                 continue;
             }
 

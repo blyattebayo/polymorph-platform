@@ -17,11 +17,10 @@ final class AdminListPersonalAccessTokens
     public function __construct(
         private readonly PersonalAccessTokenRepository $repository,
         private readonly FindUserByIdQuery $findUserByIdQuery,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array{user_id?: int|null, status?: string|null} $filters
+     * @param  array{user_id?: int|null, status?: string|null}  $filters
      */
     public function execute(PageRequest $pagination, array $filters = []): PageResult
     {

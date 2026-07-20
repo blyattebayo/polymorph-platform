@@ -16,7 +16,7 @@ final readonly class Checksum
     private function __construct(
         private string $value
     ) {
-        if (!$this->isValid($value)) {
+        if (! $this->isValid($value)) {
             throw new InvalidArgumentException("Invalid SHA256 checksum: {$value}");
         }
     }
@@ -34,7 +34,7 @@ final readonly class Checksum
      */
     public static function fromFile(string $path): self
     {
-        if (!is_file($path) || !is_readable($path)) {
+        if (! is_file($path) || ! is_readable($path)) {
             throw new InvalidArgumentException("File not found or not readable: {$path}");
         }
 

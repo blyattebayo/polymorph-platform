@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Materialization\Services;
 
+use LogicException;
+use Polymorph\Platform\Domain\SchemaModel\ReadModel\SchemaFieldSnapshot;
+use Polymorph\Platform\Domain\SchemaModel\ReadModel\SchemaSnapshot;
 use Polymorph\Platform\TemplateEngine\Core\AST\ExpressionNode;
 use Polymorph\Platform\TemplateEngine\Core\AST\FieldNode;
 use Polymorph\Platform\TemplateEngine\Core\AST\FilterNode;
@@ -12,9 +15,6 @@ use Polymorph\Platform\TemplateEngine\Core\AST\RefNode;
 use Polymorph\Platform\TemplateEngine\Core\AST\TemplateNode;
 use Polymorph\Platform\TemplateEngine\Core\AST\TextNode;
 use Polymorph\Platform\TemplateEngine\Core\Filters\FilterRegistry;
-use Polymorph\Platform\Domain\SchemaModel\ReadModel\SchemaFieldSnapshot;
-use Polymorph\Platform\Domain\SchemaModel\ReadModel\SchemaSnapshot;
-use LogicException;
 
 final class SqlViewCompiler
 {
@@ -32,12 +32,13 @@ final class SqlViewCompiler
     {
         $parts = [];
         $hasRef = $this->templateHasRef($ast);
-        $joinContext = $hasRef ? new SqlJoinContext() : null;
+        $joinContext = $hasRef ? new SqlJoinContext : null;
         $refAliasByKey = [];
 
         foreach ($ast->children as $child) {
             if ($child instanceof TextNode) {
                 $parts[] = $this->sqlStringLiteral($child->text);
+
                 continue;
             }
 
@@ -67,7 +68,7 @@ final class SqlViewCompiler
     }
 
     /**
-     * @param array<string, string> $refAliasByKey
+     * @param  array<string, string>  $refAliasByKey
      */
     private function compileExpression(
         ExpressionNode $expression,
@@ -75,8 +76,7 @@ final class SqlViewCompiler
         string $baseAlias,
         ?SqlJoinContext $joinContext,
         array &$refAliasByKey,
-    ): string
-    {
+    ): string {
         $expr = $this->compilePath($expression->path, $schema, $baseAlias, $joinContext, $refAliasByKey);
 
         foreach ($expression->filters as $filter) {
@@ -87,7 +87,7 @@ final class SqlViewCompiler
     }
 
     /**
-     * @param array<string, string> $refAliasByKey
+     * @param  array<string, string>  $refAliasByKey
      */
     private function compilePath(
         PathNode $path,
@@ -95,22 +95,21 @@ final class SqlViewCompiler
         string $baseAlias,
         ?SqlJoinContext $joinContext,
         array &$refAliasByKey,
-    ): string
-    {
+    ): string {
         $currentAlias = $baseAlias;
         $segments = array_merge([$path->head], $path->segments);
 
         foreach ($segments as $index => $segment) {
             if ($segment instanceof RefNode) {
-                if (!$joinContext instanceof SqlJoinContext) {
+                if (! $joinContext instanceof SqlJoinContext) {
                     throw new LogicException('Join context is required when compiling ref() traversal');
                 }
 
                 $field = $this->resolveFieldMeta($schema, $segment->fieldId);
 
-                $joinKey = $currentAlias . '|' . $field->id;
+                $joinKey = $currentAlias.'|'.$field->id;
                 $nextAlias = $refAliasByKey[$joinKey] ?? null;
-                if (!is_string($nextAlias)) {
+                if (! is_string($nextAlias)) {
                     $nextAlias = $joinContext->nextAlias();
                     $joinContext->addLeftJoin(
                         $nextAlias,
@@ -120,15 +119,16 @@ final class SqlViewCompiler
                 }
 
                 $currentAlias = $nextAlias;
+
                 continue;
             }
 
-            if (!$segment instanceof FieldNode) {
+            if (! $segment instanceof FieldNode) {
                 throw new LogicException('Validated path contains unsupported segment type');
             }
 
             $isLast = $index === count($segments) - 1;
-            if (!$isLast) {
+            if (! $isLast) {
                 throw new LogicException('Validated path must terminate with field() accessor');
             }
 
@@ -143,7 +143,7 @@ final class SqlViewCompiler
     private function templateHasRef(TemplateNode $template): bool
     {
         foreach ($template->children as $child) {
-            if (!$child instanceof ExpressionNode) {
+            if (! $child instanceof ExpressionNode) {
                 continue;
             }
 
@@ -169,7 +169,7 @@ final class SqlViewCompiler
     private function resolveFieldMeta(SchemaSnapshot $schema, int $fieldId): SchemaFieldSnapshot
     {
         $field = $schema->fieldsById[$fieldId] ?? null;
-        if (!$field instanceof SchemaFieldSnapshot) {
+        if (! $field instanceof SchemaFieldSnapshot) {
             throw new LogicException("Validated template references missing field({$fieldId}) during SQL compilation");
         }
 
@@ -202,7 +202,6 @@ final class SqlViewCompiler
 
     private function sqlStringLiteral(string $value): string
     {
-        return "'" . str_replace("'", "''", $value) . "'";
+        return "'".str_replace("'", "''", $value)."'";
     }
 }
-

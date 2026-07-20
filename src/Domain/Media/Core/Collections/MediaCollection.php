@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Core\Collections;
 
+use Illuminate\Database\Eloquent\Collection;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
-use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Типизированная коллекция медиа-файлов
@@ -114,7 +114,7 @@ class MediaCollection extends Collection
      */
     public function withoutVariants(): self
     {
-        return $this->filter(fn (Media $media) => !$media->variants()->exists());
+        return $this->filter(fn (Media $media) => ! $media->variants()->exists());
     }
 
     /**
@@ -123,6 +123,7 @@ class MediaCollection extends Collection
     public function filterByExtension(string $extension): self
     {
         $extension = strtolower(trim($extension, '.'));
+
         return $this->filter(fn (Media $media) => strtolower($media->extension) === $extension);
     }
 

@@ -4,9 +4,17 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Providers;
 
+use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Route;
+use Polymorph\Platform\Domain\Routing\Access\RoutingCapabilityProvider;
+use Polymorph\Platform\Domain\Routing\Core\Contracts\PluginRouteCatalog;
 use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeActionType;
 use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeKind;
 use Polymorph\Platform\Domain\Routing\Core\Models\RouteNode;
+use Polymorph\Platform\Domain\Routing\Events\RouteNodeCreated;
+use Polymorph\Platform\Domain\Routing\Events\RouteNodeDeleted;
+use Polymorph\Platform\Domain\Routing\Events\RouteNodeUpdated;
 use Polymorph\Platform\Domain\Routing\Http\Controllers\FallbackController;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Builders\RouteGroupNodeBuilder;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Builders\RouteNodeBuilderFactory;
@@ -29,9 +37,6 @@ use Polymorph\Platform\Domain\Routing\Infrastructure\Validators\GroupNodeValidat
 use Polymorph\Platform\Domain\Routing\Infrastructure\Validators\RouteNodeValidator;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Validators\RouteValidator;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Validators\ValidatorRegistry;
-use Polymorph\Platform\Domain\Routing\Events\RouteNodeCreated;
-use Polymorph\Platform\Domain\Routing\Events\RouteNodeDeleted;
-use Polymorph\Platform\Domain\Routing\Events\RouteNodeUpdated;
 use Polymorph\Platform\Domain\Routing\Listeners\LogRouteNodeLifecycle;
 use Polymorph\Platform\Domain\Routing\Observers\RouteNodeObserver;
 use Polymorph\Platform\Domain\Routing\Services\Cache\RouteCache;
@@ -39,9 +44,6 @@ use Polymorph\Platform\Domain\Routing\Services\MergedRouteTreeService;
 use Polymorph\Platform\Domain\Routing\Services\RouteNodeService;
 use Polymorph\Platform\Domain\Routing\Services\RouteNodeServiceInterface;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Route;
 
 /**
  * Service Provider для модуля Routing.
@@ -138,7 +140,7 @@ class RoutingServiceProvider extends ServiceProvider
 
         $this->app->singleton(PluginRouteLoader::class, function ($app) {
             return new PluginRouteLoader(
-                $app->make(\Polymorph\Platform\Domain\Routing\Core\Contracts\PluginRouteCatalog::class),
+                $app->make(PluginRouteCatalog::class),
                 $app->make(RouteDefinitionLoader::class),
                 $app->make(AppLogger::class),
             );
@@ -286,7 +288,7 @@ class RoutingServiceProvider extends ServiceProvider
             ->where('any', '.*')
             ->fallback();
 
-        $this->app->tag([\Polymorph\Platform\Domain\Routing\Access\RoutingCapabilityProvider::class], 'access.capability_providers');
+        $this->app->tag([RoutingCapabilityProvider::class], 'access.capability_providers');
     }
 
     /**

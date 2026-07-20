@@ -12,13 +12,13 @@ use Closure;
 readonly class FilterDescriptor
 {
     /**
-     * @param string $name Filter name
-     * @param bool $vectorized True if filter operates on lists, false for scalar-only
-     * @param bool $supportsSql True if filter can be compiled by SQL view engine
-     * @param int $minArgs Minimum number of arguments
-     * @param int $maxArgs Maximum number of arguments
-     * @param callable $handler Filter implementation: fn(mixed $value, ...$args): mixed
-     * @param Closure(string, array<int, mixed>): string|null $sqlRenderer SQL renderer: fn(string $expr, array $args): string
+     * @param  string  $name  Filter name
+     * @param  bool  $vectorized  True if filter operates on lists, false for scalar-only
+     * @param  bool  $supportsSql  True if filter can be compiled by SQL view engine
+     * @param  int  $minArgs  Minimum number of arguments
+     * @param  int  $maxArgs  Maximum number of arguments
+     * @param  callable  $handler  Filter implementation: fn(mixed $value, ...$args): mixed
+     * @param  Closure(string, array<int, mixed>): string|null  $sqlRenderer  SQL renderer: fn(string $expr, array $args): string
      */
     public function __construct(
         public string $name,
@@ -28,7 +28,5 @@ readonly class FilterDescriptor
         public int $maxArgs,
         public mixed $handler,
         public ?Closure $sqlRenderer = null,
-    ) {
-    }
+    ) {}
 }
-

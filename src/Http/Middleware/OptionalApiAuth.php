@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Http\Middleware;
 
-use Polymorph\Platform\Domain\Auth\Core\Exceptions\JwtConfigurationException;
-use Polymorph\Platform\Domain\Auth\Infrastructure\Guard\ApiGuard;
 use Closure;
 use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Http\Request;
+use Polymorph\Platform\Domain\Auth\Core\Exceptions\JwtConfigurationException;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Guard\ApiGuard;
 
 final readonly class OptionalApiAuth
 {

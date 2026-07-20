@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Core\Models;
 
-use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Effect;
 use Illuminate\Database\Eloquent\Model;
+use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Effect;
 
 final class CompiledPolicy extends Model
 {

@@ -12,7 +12,7 @@ final class IndexAssignmentsRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'subject' => ['required', 'string', 'max:255', new ValidSubjectRule()],
+            'subject' => ['required', 'string', 'max:255', new ValidSubjectRule],
         ];
     }
 }

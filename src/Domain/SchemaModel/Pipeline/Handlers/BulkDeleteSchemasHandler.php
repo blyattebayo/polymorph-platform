@@ -14,15 +14,14 @@ final class BulkDeleteSchemasHandler
     public function __construct(
         private readonly SchemaRepository $schemas,
         private readonly DeleteSchemaHandler $deleteSchemaHandler,
-    ) {
-    }
+    ) {}
 
     /**
      * Удаляет каждую схему в собственной транзакции (см. DeleteSchemaHandler),
      * поэтому операция частично-успешна: результат разбит на deleted / blocked /
      * not_found / failed. Сбой одного элемента не прерывает батч.
      *
-     * @param list<int> $ids
+     * @param  list<int>  $ids
      */
     public function handle(array $ids): BulkDeleteSchemasResult
     {
@@ -35,6 +34,7 @@ final class BulkDeleteSchemasHandler
             $schema = $this->schemas->find($id);
             if ($schema === null) {
                 $notFound[] = $id;
+
                 continue;
             }
 
@@ -42,6 +42,7 @@ final class BulkDeleteSchemasHandler
             $usage = $this->schemas->getUsageInfo($schema);
             if ($usage->isInUse()) {
                 $blocked[] = $usage->toBlockedEntry();
+
                 continue;
             }
 

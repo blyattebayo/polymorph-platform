@@ -22,8 +22,7 @@ final class RevokeSessionsAfterUserStatusChanged
 {
     public function __construct(
         private readonly UserSessionRevoker $sessionRevoker,
-    ) {
-    }
+    ) {}
 
     public function handle(UserUpdated $event): void
     {

@@ -15,8 +15,7 @@ final readonly class CompiledPolicyData
         public int $priority,
         public ?int $policyId,
         public DateTimeInterface $compiledAt,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{subject:string,resource_pattern:string,action:string,effect:string,priority:int,policy_id:?int,compiled_at:DateTimeInterface}

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Auth\Application\Support\AuthenticatedCredentialResolver;
 use Polymorph\Platform\Domain\Auth\Application\UseCases\ListOwnAuthSessions;
 use Polymorph\Platform\Domain\Auth\Application\UseCases\RevokeOwnAuthSession;
 use Polymorph\Platform\Domain\Auth\Http\Resources\AuthSessionResource;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
 use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 final readonly class MeAuthSessionController
 {

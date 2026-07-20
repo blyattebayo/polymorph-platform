@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Services;
 
-use Polymorph\Platform\Domain\Materialization\Services\RecordDefinitionViewManager;
 use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\Materialization\Services\RecordDefinitionViewManager;
 
 final class SchemaViewRebuildScheduler
 {
@@ -16,8 +16,7 @@ final class SchemaViewRebuildScheduler
 
     public function __construct(
         private readonly RecordDefinitionViewManager $viewManager,
-    ) {
-    }
+    ) {}
 
     public function schedule(int $schemaId): void
     {

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Pipeline\Steps\Combined;
 
-use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
 use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\FieldWriteService;
+use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
+use Polymorph\Platform\Domain\SchemaModel\Pipeline\Contexts\SaveSchemaWithFieldsContext;
 use Polymorph\Platform\Domain\SchemaModel\Pipeline\Data\CreateFieldData;
 use Polymorph\Platform\Domain\SchemaModel\Pipeline\Data\UpdateFieldData;
-use Polymorph\Platform\Domain\SchemaModel\Pipeline\Contexts\SaveSchemaWithFieldsContext;
 use Polymorph\Platform\PipelineCore\Runtime\AbstractStep;
 use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\StepResult;
@@ -50,7 +50,6 @@ final class PersistFieldsUpsertStep extends AbstractStep
     public function run(PipelineContext $context): StepResult
     {
         /** @var SaveSchemaWithFieldsContext $context */
-
         $schema = $context->schema();
         if ($schema === null) {
             return StepResult::failure('Schema is not available for fields upsert');
@@ -66,7 +65,7 @@ final class PersistFieldsUpsertStep extends AbstractStep
                     $shouldSyncConstraints = $data->constraintsProvided;
                     $constraints = $data->constraints;
                 } elseif ($data instanceof UpdateFieldData) {
-                    if (!$existingField instanceof Field) {
+                    if (! $existingField instanceof Field) {
                         return StepResult::failure(sprintf('Field %d is not found in target schema', $data->fieldId));
                     }
 

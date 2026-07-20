@@ -15,8 +15,7 @@ final class EffectiveCapabilityResolver
         private readonly PolicyRuntime $runtime,
         private readonly AccessSubjectProvider $subjectProvider,
         private readonly CapabilityRegistry $capabilityRegistry,
-    ) {
-    }
+    ) {}
 
     /**
      * @return list<string>

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Password;
 use Polymorph\Platform\Domain\Auth\Http\Requests\ForgotPasswordRequest;
 use Polymorph\Platform\Domain\Auth\Http\Requests\ResetPasswordRequest;
 use Polymorph\Platform\Domain\Users\Actions\ChangePasswordAction;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Password;
 
 final readonly class PasswordResetController
 {

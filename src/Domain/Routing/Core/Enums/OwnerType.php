@@ -9,8 +9,6 @@ namespace Polymorph\Platform\Domain\Routing\Core\Enums;
  *
  * Определяет источник создания маршрута для приоритизации загрузки
  * и контроля доступа к операциям.
- *
- * @package Polymorph\Platform\Domain\Routing\Enums
  */
 enum OwnerType: string
 {
@@ -47,8 +45,8 @@ enum OwnerType: string
     /**
      * Создать композитное значение owner.
      *
-     * @param self $type Тип владельца
-     * @param string|null $id ID владельца (для PLUGIN - обязателен)
+     * @param  self  $type  Тип владельца
+     * @param  string|null  $id  ID владельца (для PLUGIN - обязателен)
      * @return string Композитное значение для поля owner
      *
      * @example OwnerType::make(OwnerType::SYSTEM) в†’ 'system'
@@ -67,7 +65,7 @@ enum OwnerType: string
     /**
      * Разобрать композитное значение owner.
      *
-     * @param string $owner Значение поля owner
+     * @param  string  $owner  Значение поля owner
      * @return array{type: self, id: string|null} Тип и ID владельца
      *
      * @example OwnerType::parse('system') в†’ ['type' => SYSTEM, 'id' => null]

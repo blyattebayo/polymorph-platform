@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Infrastructure\Repositories;
 
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\Media\Core\Collections\MediaVariantCollection;
 use Polymorph\Platform\Domain\Media\Core\Contracts\MediaVariantRepository;
 use Polymorph\Platform\Domain\Media\Core\Exceptions\MediaNotFoundException;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Domain\Media\Core\Models\MediaVariant;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaVariantStatus;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Eloquent реализация репозитория вариантов медиа
@@ -56,6 +56,7 @@ final class EloquentMediaVariantRepository implements MediaVariantRepository
     {
         /** @var MediaVariantCollection $collection */
         $collection = MediaVariant::where('media_id', $media->id)->get();
+
         return $collection;
     }
 
@@ -73,6 +74,7 @@ final class EloquentMediaVariantRepository implements MediaVariantRepository
     public function update(MediaVariant $variant, array $data): MediaVariant
     {
         $variant->update($data);
+
         return $variant->fresh();
     }
 
@@ -101,6 +103,7 @@ final class EloquentMediaVariantRepository implements MediaVariantRepository
         $collection = MediaVariant::where('status', $status)
             ->limit($limit)
             ->get();
+
         return $collection;
     }
 
@@ -116,6 +119,7 @@ final class EloquentMediaVariantRepository implements MediaVariantRepository
         ])
             ->limit($limit)
             ->get();
+
         return $collection;
     }
 
@@ -131,6 +135,7 @@ final class EloquentMediaVariantRepository implements MediaVariantRepository
         $collection = MediaVariant::where('status', MediaVariantStatus::Processing)
             ->where('started_at', '<', $threshold)
             ->get();
+
         return $collection;
     }
 
@@ -140,6 +145,7 @@ final class EloquentMediaVariantRepository implements MediaVariantRepository
     public function updateStatus(MediaVariant $variant, MediaVariantStatus $status): MediaVariant
     {
         $variant->update(['status' => $status]);
+
         return $variant->fresh();
     }
 

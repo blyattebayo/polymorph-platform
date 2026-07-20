@@ -9,6 +9,5 @@ final readonly class ResolvedArtifact
     public function __construct(
         public string $zipPath,
         public ?string $declaredChecksum = null,
-    ) {
-    }
+    ) {}
 }

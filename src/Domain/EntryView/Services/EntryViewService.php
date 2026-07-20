@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\EntryView\Services;
 
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\EntryView\Core\Contracts\EntryViewRepository;
 use Polymorph\Platform\Domain\EntryView\Core\Models\EntryView;
 use Polymorph\Platform\Domain\EntryView\Events\EntryViewCreated;
 use Polymorph\Platform\Domain\EntryView\Events\EntryViewUpdated;
-use Illuminate\Support\Facades\DB;
 
 final class EntryViewService
 {

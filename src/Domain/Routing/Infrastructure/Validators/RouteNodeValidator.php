@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Infrastructure\Validators;
 
-use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeActionType;
-use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeKind;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
+use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeActionType;
 
 /**
  * Валидатор правил для узлов типа ROUTE.
@@ -14,8 +14,6 @@ use Illuminate\Validation\Rule;
  * Строит правила валидации для узлов с kind='route'.
  * Маршруты могут иметь: uri, methods, name, domain, middleware, where, defaults, action_meta, action_type.
  * Маршруты НЕ могут иметь: prefix, namespace, children.
- *
- * @package Polymorph\Platform\Domain\Routing\Validators
  */
 final class RouteNodeValidator implements ValidatorInterface
 {
@@ -53,7 +51,7 @@ final class RouteNodeValidator implements ValidatorInterface
      *   - Для REDIRECT: action_meta.to обязателен, string; action_meta.status опционален, integer, in:301,302,307,308
      * - Запретить: prefix, namespace, children
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function buildRulesForStore(): array
     {
@@ -131,7 +129,7 @@ final class RouteNodeValidator implements ValidatorInterface
      *   - Для REDIRECT: action_meta.to обязателен, string; action_meta.status опционален, integer, in:301,302,307,308
      * - Запретить: prefix, namespace, children
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function buildRulesForUpdate(): array
     {
@@ -204,7 +202,7 @@ final class RouteNodeValidator implements ValidatorInterface
             'methods.required' => 'Поле methods обязательно для узлов типа route.',
             'methods.array' => 'Поле methods должно быть массивом.',
             'methods.min' => 'Поле methods должно содержать хотя бы один метод.',
-            'methods.*.in' => 'HTTP метод должен быть одним из: ' . implode(', ', self::VALID_HTTP_METHODS) . '.',
+            'methods.*.in' => 'HTTP метод должен быть одним из: '.implode(', ', self::VALID_HTTP_METHODS).'.',
             'name.string' => 'Поле name должно быть строкой.',
             'name.max' => 'Поле name не может быть длиннее 255 символов.',
             'domain.string' => 'Поле domain должно быть строкой.',
@@ -214,7 +212,7 @@ final class RouteNodeValidator implements ValidatorInterface
             'where.array' => 'Поле where должно быть массивом.',
             'defaults.array' => 'Поле defaults должно быть массивом.',
             'action_type.required' => 'Поле action_type обязательно для узлов типа route.',
-            'action_type.in' => 'Поле action_type должно быть одним из: ' . implode(', ', RouteNodeActionType::values()) . '.',
+            'action_type.in' => 'Поле action_type должно быть одним из: '.implode(', ', RouteNodeActionType::values()).'.',
             'action_meta.required' => 'Поле action_meta обязательно для узлов типа route.',
             'action_meta.array' => 'Поле action_meta должно быть массивом.',
             'action_meta.action.required_if' => 'Поле action_meta.action обязательно для action_type=controller.',
@@ -228,7 +226,7 @@ final class RouteNodeValidator implements ValidatorInterface
             'action_meta.to.string' => 'Поле action_meta.to должно быть строкой.',
             'action_meta.to.max' => 'Поле action_meta.to не может быть длиннее 255 символов.',
             'action_meta.status.integer' => 'Поле action_meta.status должно быть целым числом.',
-            'action_meta.status.in' => 'Поле action_meta.status должно быть одним из: ' . implode(', ', self::VALID_REDIRECT_STATUSES) . '.'
+            'action_meta.status.in' => 'Поле action_meta.status должно быть одним из: '.implode(', ', self::VALID_REDIRECT_STATUSES).'.',
         ];
     }
 }

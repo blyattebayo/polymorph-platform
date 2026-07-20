@@ -23,7 +23,7 @@ trait ExtractsJwtAccessToken
         }
 
         $cookieHeader = (string) $request->header('Cookie', '');
-        if ($cookieHeader !== '' && preg_match('/' . preg_quote($cookieName, '/') . '=([^;]+)/', $cookieHeader, $matches)) {
+        if ($cookieHeader !== '' && preg_match('/'.preg_quote($cookieName, '/').'=([^;]+)/', $cookieHeader, $matches)) {
             return urldecode((string) $matches[1]);
         }
 

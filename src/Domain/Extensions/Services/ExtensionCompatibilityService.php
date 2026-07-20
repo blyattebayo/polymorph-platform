@@ -63,7 +63,7 @@ final class ExtensionCompatibilityService
         }
 
         foreach ($constraints as $constraint) {
-            if (!$this->satisfiesConstraint($version, $constraint)) {
+            if (! $this->satisfiesConstraint($version, $constraint)) {
                 return false;
             }
         }
@@ -108,14 +108,14 @@ final class ExtensionCompatibilityService
         [$major, $minor, $patch] = $this->parseParts($version);
 
         if ($major > 0) {
-            return [$version, ($major + 1) . '.0.0'];
+            return [$version, ($major + 1).'.0.0'];
         }
 
         if ($minor > 0) {
-            return [$version, '0.' . ($minor + 1) . '.0'];
+            return [$version, '0.'.($minor + 1).'.0'];
         }
 
-        return [$version, '0.0.' . ($patch + 1)];
+        return [$version, '0.0.'.($patch + 1)];
     }
 
     /**
@@ -125,7 +125,7 @@ final class ExtensionCompatibilityService
     {
         [$major, $minor] = $this->parseParts($version);
 
-        return [$version, $major . '.' . ($minor + 1) . '.0'];
+        return [$version, $major.'.'.($minor + 1).'.0'];
     }
 
     /**

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Infrastructure\Loaders;
 
+use Illuminate\Support\Collection;
 use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeKind;
 use Polymorph\Platform\Domain\Routing\Core\ValueObjects\RouteNodeDefinition;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Builders\RouteNodeBuilderFactory;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Validators\RouteValidator;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Support\Collection;
 
 /**
  * Базовый сервис для загрузки маршрутов из конфигурационных файлов.
@@ -53,7 +53,7 @@ class RouteDefinitionLoader
     public function loadFromFile(string $file): array
     {
         $base = (string) config('routing.base_path', base_path('routes'));
-        $path = rtrim($base, '/') . '/' . ltrim($file, '/');
+        $path = rtrim($base, '/').'/'.ltrim($file, '/');
 
         if (! file_exists($path)) {
             $this->logger->warning('routing.declarative.file_not_found', ['file' => $file]);
@@ -80,7 +80,7 @@ class RouteDefinitionLoader
      * sort_order должен быть указан в файлах routes/*.php.
      *
      * @param  array<int, array<string, mixed>>  $config  Массив конфигурации
-     * @return \Illuminate\Support\Collection<int, RouteNodeDefinition> Коллекция RouteNodeDefinition
+     * @return Collection<int, RouteNodeDefinition> Коллекция RouteNodeDefinition
      */
     public function convertToRouteNodes(array $config): Collection
     {

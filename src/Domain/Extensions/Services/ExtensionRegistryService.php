@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Services;
 
-use Polymorph\Platform\Domain\Extensions\Core\Models\ExtensionRegistry;
-use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Carbon;
+use Polymorph\Platform\Domain\Extensions\Core\Models\ExtensionRegistry;
+use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
 
 final class ExtensionRegistryService
 {
     /**
-     * @param list<DiscoveredExtension> $plugins
+     * @param  list<DiscoveredExtension>  $plugins
      */
     public function syncDiscoveredPlugins(array $plugins): void
     {
@@ -36,7 +36,7 @@ final class ExtensionRegistryService
     }
 
     /**
-     * @param list<DiscoveredExtension> $plugins
+     * @param  list<DiscoveredExtension>  $plugins
      */
     public function syncDiscoveredExtensions(array $plugins): void
     {
@@ -82,7 +82,7 @@ final class ExtensionRegistryService
     public function requireById(string $pluginId): ExtensionRegistry
     {
         $entry = $this->findById($pluginId);
-        if (!$entry instanceof ExtensionRegistry) {
+        if (! $entry instanceof ExtensionRegistry) {
             throw new \InvalidArgumentException("Plugin '{$pluginId}' is not registered.");
         }
 

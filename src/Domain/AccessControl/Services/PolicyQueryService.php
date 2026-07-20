@@ -6,6 +6,7 @@ namespace Polymorph\Platform\Domain\AccessControl\Services;
 
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AssignmentRepository;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRepository;
+use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Polymorph\Platform\Infrastructure\Pagination\V2\LaravelPaginatorAdapter;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageResult;
@@ -16,11 +17,10 @@ final class PolicyQueryService
         private readonly PolicyRepository $policies,
         private readonly AssignmentRepository $assignments,
         private readonly LaravelPaginatorAdapter $paginatorAdapter,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      */
     public function listPolicies(array $filters, PageRequest $pagination): PageResult
     {
@@ -42,7 +42,7 @@ final class PolicyQueryService
     /**
      * @return list<array<string, mixed>>
      */
-    public function listSubjectAssignments(\Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject $subject): array
+    public function listSubjectAssignments(Subject $subject): array
     {
         return $this->assignments->listBySubject($subject);
     }

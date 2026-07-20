@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Domain\Media\Core\Models\MediaAvMetadata;
-use Database\Factories\MediaFactory;
-use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * Фабрика для создания записей MediaAvMetadata.
@@ -74,8 +73,7 @@ class MediaAvMetadataFactory extends Factory
     /**
      * Указать медиа-файл для метаданных.
      *
-     * @param \Polymorph\Platform\Domain\Media\Core\Models\Media $media Медиа-файл
-     * @return static
+     * @param  Media  $media  Медиа-файл
      */
     public function forMedia(Media $media): static
     {
@@ -87,8 +85,7 @@ class MediaAvMetadataFactory extends Factory
     /**
      * Установить длительность медиа.
      *
-     * @param int $ms Длительность в миллисекундах
-     * @return static
+     * @param  int  $ms  Длительность в миллисекундах
      */
     public function withDuration(int $ms): static
     {
@@ -100,9 +97,8 @@ class MediaAvMetadataFactory extends Factory
     /**
      * Установить кодеки.
      *
-     * @param string $video Видео кодек
-     * @param string $audio Аудио кодек
-     * @return static
+     * @param  string  $video  Видео кодек
+     * @param  string  $audio  Аудио кодек
      */
     public function withCodecs(string $video, string $audio): static
     {
@@ -115,8 +111,7 @@ class MediaAvMetadataFactory extends Factory
     /**
      * Установить битрейт.
      *
-     * @param int $kbps Битрейт в килобитах в секунду
-     * @return static
+     * @param  int  $kbps  Битрейт в килобитах в секунду
      */
     public function withBitrate(int $kbps): static
     {
@@ -127,8 +122,6 @@ class MediaAvMetadataFactory extends Factory
 
     /**
      * Предустановленные значения для видео.
-     *
-     * @return static
      */
     public function forVideo(): static
     {
@@ -144,8 +137,6 @@ class MediaAvMetadataFactory extends Factory
 
     /**
      * Предустановленные значения для аудио.
-     *
-     * @return static
      */
     public function forAudio(): static
     {
@@ -159,4 +150,3 @@ class MediaAvMetadataFactory extends Factory
         ]);
     }
 }
-

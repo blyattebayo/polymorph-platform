@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModelValidation\Operands;
 
+use Illuminate\Support\Str;
 use Polymorph\Platform\Domain\Records\Support\RecordPayloadPathRegistry;
 use Polymorph\Platform\Domain\SchemaModelValidation\Schema\SchemaDescriptor;
-use Illuminate\Support\Str;
 
 final class DslOperandResolver
 {
@@ -50,7 +50,7 @@ final class DslOperandResolver
         if (str_starts_with($normalized, '$root.')) {
             $fullPath = ltrim(substr($normalized, strlen('$root.')), '.');
         } else {
-            $fullPath = trim($foreignCollectionFullPath . '.' . ltrim($normalized, '.'), '.');
+            $fullPath = trim($foreignCollectionFullPath.'.'.ltrim($normalized, '.'), '.');
         }
 
         $dataPath = $schema->dataPathByFullPath($fullPath);
@@ -73,7 +73,7 @@ final class DslOperandResolver
             }
 
             return $parentPath !== $currentFieldFullPath
-                ? trim($parentPath . '.' . $local, '.')
+                ? trim($parentPath.'.'.$local, '.')
                 : $local;
         }
 

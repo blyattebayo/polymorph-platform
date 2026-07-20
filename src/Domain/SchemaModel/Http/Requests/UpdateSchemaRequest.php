@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Http\Requests;
 
-use Polymorph\Platform\Support\Validation\ValidationRules;
-use Polymorph\Platform\Support\Validation\Rules\ObjectLikeArray;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Polymorph\Platform\Support\Validation\Rules\ObjectLikeArray;
+use Polymorph\Platform\Support\Validation\ValidationRules;
 
 class UpdateSchemaRequest extends FormRequest
 {
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

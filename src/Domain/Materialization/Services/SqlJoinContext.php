@@ -8,13 +8,14 @@ final class SqlJoinContext
 {
     /** @var list<array{alias:string,condition:string}> */
     private array $joins = [];
+
     private int $counter = 0;
 
     public function nextAlias(): string
     {
         $this->counter++;
 
-        return 'e' . $this->counter;
+        return 'e'.$this->counter;
     }
 
     public function addLeftJoin(string $alias, string $condition): void

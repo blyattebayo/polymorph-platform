@@ -6,8 +6,8 @@ namespace Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefin
 
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionDependencyChecker;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Contexts\DeleteRecordDefinitionContext;
-use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\AbstractStep;
+use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\StepResult;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 
@@ -16,7 +16,8 @@ final class ValidateDeleteRecordDefinitionStep extends AbstractStep
     public function __construct(
         private readonly RecordDefinitionDependencyChecker $dependencyChecker,
     ) {
-        parent::__construct(DeleteRecordDefinitionContext::class);}
+        parent::__construct(DeleteRecordDefinitionContext::class);
+    }
 
     public function name(): string
     {
@@ -30,10 +31,6 @@ final class ValidateDeleteRecordDefinitionStep extends AbstractStep
             'input.force',
         ];
     }
-
-    
-
-    
 
     public function run(PipelineContext $context): StepResult
     {
@@ -55,18 +52,18 @@ final class ValidateDeleteRecordDefinitionStep extends AbstractStep
 
             if ($recordsCount > 0) {
                 $issues['records_count'] = $recordsCount;
-                $issues['reasons'][] = "has {$recordsCount} " . ($recordsCount === 1 ? 'record' : 'records');
-                $detailParts[] = "{$recordsCount} " . ($recordsCount === 1 ? 'record' : 'records');
+                $issues['reasons'][] = "has {$recordsCount} ".($recordsCount === 1 ? 'record' : 'records');
+                $detailParts[] = "{$recordsCount} ".($recordsCount === 1 ? 'record' : 'records');
             }
 
             if ($constraintsCount > 0) {
                 $issues['field_ref_constraints_count'] = $constraintsCount;
                 $issues['paths'] = $constraintPaths;
-                $issues['reasons'][] = "is used in {$constraintsCount} field ref " . ($constraintsCount === 1 ? 'constraint' : 'constraints');
-                $detailParts[] = "{$constraintsCount} field ref " . ($constraintsCount === 1 ? 'constraint' : 'constraints');
+                $issues['reasons'][] = "is used in {$constraintsCount} field ref ".($constraintsCount === 1 ? 'constraint' : 'constraints');
+                $detailParts[] = "{$constraintsCount} field ref ".($constraintsCount === 1 ? 'constraint' : 'constraints');
             }
 
-            $detail = 'Cannot delete record definition while ' . implode(' and ', $detailParts) . ' exist. Use force=1 to cascade delete.';
+            $detail = 'Cannot delete record definition while '.implode(' and ', $detailParts).' exist. Use force=1 to cascade delete.';
 
             return StepResult::failure(
                 error: $detail,

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Roles\Infrastructure\Repositories;
 
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\Roles\Core\Contracts\UserRoleReadModel;
 use Polymorph\Platform\Domain\Roles\Core\Models\UserRoleAssignment;
-use Illuminate\Support\Facades\DB;
 
 final class EloquentUserRoleReadModel implements UserRoleReadModel
 {

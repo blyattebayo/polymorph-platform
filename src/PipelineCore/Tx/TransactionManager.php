@@ -30,7 +30,8 @@ final class TransactionManager
      * Выполнить функцию в транзакции БД.
      *
      * @template T
-     * @param callable(): T $fn
+     *
+     * @param  callable(): T  $fn
      * @return T
      */
     public function runInTransaction(callable $fn): mixed

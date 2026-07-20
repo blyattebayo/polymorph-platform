@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Media\Core\Contracts;
 
 use Polymorph\Platform\Domain\Media\Core\Collections\MediaVariantCollection;
+use Polymorph\Platform\Domain\Media\Core\Exceptions\MediaNotFoundException;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Domain\Media\Core\Models\MediaVariant;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaVariantStatus;
@@ -22,7 +23,7 @@ interface MediaVariantRepository
     /**
      * Найти вариант по ID или выбросить исключение
      *
-     * @throws \Polymorph\Platform\Domain\Media\Core\Exceptions\MediaNotFoundException
+     * @throws MediaNotFoundException
      */
     public function findOrFail(string $id): MediaVariant;
 

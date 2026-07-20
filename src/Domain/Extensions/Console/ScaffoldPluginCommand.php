@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Console;
 
-use Polymorph\Platform\Support\Validation\ValidationConstraints;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
+use Polymorph\Platform\Support\Validation\ValidationConstraints;
 
 final class ScaffoldPluginCommand extends Command
 {
@@ -36,7 +36,7 @@ final class ScaffoldPluginCommand extends Command
 
         $pluginsRoot = rtrim((string) config('plugins.src_root'), '/\\');
         $templateRoot = rtrim((string) config('plugins.scaffold_template_path'), '/\\');
-        $targetRoot = $pluginsRoot . DIRECTORY_SEPARATOR . $pluginId;
+        $targetRoot = $pluginsRoot.DIRECTORY_SEPARATOR.$pluginId;
 
         if (! is_dir($templateRoot)) {
             $this->error("Template directory not found: {$templateRoot}");
@@ -58,16 +58,16 @@ final class ScaffoldPluginCommand extends Command
             '__PLUGIN_ID__' => $pluginId,
             '__PLUGIN_NAME__' => $title,
             '__PLUGIN_CLASS__' => $pluginClass,
-            '__PLUGIN_SCOPE__' => $pluginId . '_remote',
-            '__PLUGIN_MOUNT_PATH__' => '/plugins/' . $pluginId,
-            '__PLUGIN_TABLE_PREFIX__' => 'plg_' . $pluginId . '_',
-            '__PLUGIN_PACKAGE__' => 'polymorph/' . str_replace('_', '-', $pluginId) . '-plugin',
+            '__PLUGIN_SCOPE__' => $pluginId.'_remote',
+            '__PLUGIN_MOUNT_PATH__' => '/plugins/'.$pluginId,
+            '__PLUGIN_TABLE_PREFIX__' => 'plg_'.$pluginId.'_',
+            '__PLUGIN_PACKAGE__' => 'polymorph/'.str_replace('_', '-', $pluginId).'-plugin',
         ];
 
         $this->copyTemplate($templateRoot, $targetRoot, $tokens);
         $this->info("Plugin '{$pluginId}' scaffolded in {$targetRoot}.");
 
-        $feDir = $targetRoot . DIRECTORY_SEPARATOR . 'fe';
+        $feDir = $targetRoot.DIRECTORY_SEPARATOR.'fe';
 
         if (! $this->option('skip-install') && is_dir($feDir)) {
             if (! $this->runFeProcess($feDir, 'npm install', 'Installing FE dependencies')) {
@@ -108,7 +108,7 @@ final class ScaffoldPluginCommand extends Command
     }
 
     /**
-     * @param array<string, string> $tokens
+     * @param  array<string, string>  $tokens
      */
     private function copyTemplate(string $sourceDir, string $targetDir, array $tokens): void
     {
@@ -126,12 +126,13 @@ final class ScaffoldPluginCommand extends Command
                 continue;
             }
 
-            $sourcePath = $sourceDir . DIRECTORY_SEPARATOR . $entry;
+            $sourcePath = $sourceDir.DIRECTORY_SEPARATOR.$entry;
             $targetName = str_replace(array_keys($tokens), array_values($tokens), $entry);
-            $targetPath = $targetDir . DIRECTORY_SEPARATOR . $targetName;
+            $targetPath = $targetDir.DIRECTORY_SEPARATOR.$targetName;
 
             if (is_dir($sourcePath)) {
                 $this->copyTemplate($sourcePath, $targetPath, $tokens);
+
                 continue;
             }
 
@@ -163,7 +164,7 @@ final class ScaffoldPluginCommand extends Command
                 continue;
             }
 
-            $child = $path . DIRECTORY_SEPARATOR . $item;
+            $child = $path.DIRECTORY_SEPARATOR.$item;
             if (is_dir($child)) {
                 $this->removeDirectory($child);
             } elseif (is_file($child)) {

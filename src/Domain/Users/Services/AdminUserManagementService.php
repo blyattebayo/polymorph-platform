@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Users\Services;
 
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\Users\Actions\ChangePasswordAction;
 use Polymorph\Platform\Domain\Users\Actions\CreateUserAction;
 use Polymorph\Platform\Domain\Users\Actions\UpdateUserAction;
@@ -14,7 +15,6 @@ use Polymorph\Platform\Domain\Users\Core\Exceptions\UserNotFoundException;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Domain\Users\Queries\FindUserByIdQuery;
 use Polymorph\Platform\Domain\Users\Support\RoleIdsNormalizer;
-use Illuminate\Support\Facades\DB;
 
 final class AdminUserManagementService
 {
@@ -25,25 +25,28 @@ final class AdminUserManagementService
         private readonly UserRoleManager $userRoleManager,
         private readonly SystemAdministratorGuard $systemAdministratorGuard,
         private readonly FindUserByIdQuery $findUserByIdQuery,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string, mixed> $validated
+     * @param  array<string, mixed>  $validated
+     *
      * @throws UserAlreadyExistsException
      */
     public function create(array $validated): User
     {
         $roleIds = RoleIdsNormalizer::normalize($validated['role_ids'] ?? []);
+
         return DB::transaction(function () use ($validated, $roleIds): User {
             $user = $this->createUserAction->execute($validated);
             $this->userRoleManager->syncForUser((int) $user->id, $roleIds);
+
             return $user;
         });
     }
 
     /**
-     * @param array<string, mixed> $validated
+     * @param  array<string, mixed>  $validated
+     *
      * @throws UserAlreadyExistsException
      * @throws UserNotFoundException
      */

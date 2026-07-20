@@ -10,12 +10,11 @@ namespace Polymorph\Platform\TemplateEngine\Core\AST;
 readonly class TemplateNode implements ASTNode
 {
     /**
-     * @param array<TextNode|ExpressionNode> $children
+     * @param  array<TextNode|ExpressionNode>  $children
      */
     public function __construct(
         public array $children
-    ) {
-    }
+    ) {}
 
     public function getSpan(): array
     {
@@ -25,8 +24,7 @@ readonly class TemplateNode implements ASTNode
 
         return [
             $this->children[0]->getSpan()[0],
-            $this->children[array_key_last($this->children)]->getSpan()[1]
+            $this->children[array_key_last($this->children)]->getSpan()[1],
         ];
     }
 }
-

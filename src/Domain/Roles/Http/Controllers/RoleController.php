@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Roles\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Polymorph\Platform\Domain\Roles\Core\Contracts\RoleRepository;
 use Polymorph\Platform\Domain\Roles\Core\Models\Role;
 use Polymorph\Platform\Domain\Roles\Http\Requests\BulkDeleteRolesRequest;
@@ -14,7 +15,6 @@ use Polymorph\Platform\Http\Controllers\Controller;
 use Polymorph\Platform\Http\Pagination\V2\PaginatedJsonResponse;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
 use Polymorph\Platform\Infrastructure\Pagination\V2\LaravelPaginatorAdapter;
-use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 final class RoleController extends Controller
@@ -22,9 +22,7 @@ final class RoleController extends Controller
     public function __construct(
         private readonly RoleRepository $roles,
         private readonly LaravelPaginatorAdapter $paginatorAdapter,
-    )
-    {
-    }
+    ) {}
 
     public function index(IndexRolesRequest $request): JsonResponse
     {

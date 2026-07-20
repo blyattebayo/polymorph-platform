@@ -15,13 +15,12 @@ final readonly class ChangePasswordAction
 {
     public function __construct(
         private UserRepository $userRepository
-    ) {
-    }
+    ) {}
 
     /**
      * Сменить пароль пользователя.
      *
-     * @param string $newPassword Новый пароль в открытом виде
+     * @param  string  $newPassword  Новый пароль в открытом виде
      */
     public function execute(User $user, string $newPassword): User
     {

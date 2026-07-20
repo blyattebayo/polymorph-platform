@@ -31,15 +31,15 @@ final class PluginsDeployCommand extends Command
             return self::FAILURE;
         }
 
-        $srcDir = rtrim((string) config('plugins.src_root'), '/\\') . DIRECTORY_SEPARATOR . $id;
-        $manifestPath = $srcDir . DIRECTORY_SEPARATOR . 'extension.json';
+        $srcDir = rtrim((string) config('plugins.src_root'), '/\\').DIRECTORY_SEPARATOR.$id;
+        $manifestPath = $srcDir.DIRECTORY_SEPARATOR.'extension.json';
         $manifest = is_file($manifestPath)
             ? json_decode((string) file_get_contents($manifestPath), true)
             : null;
         $version = is_array($manifest) ? (string) ($manifest['version'] ?? '') : '';
 
         $zipPath = rtrim((string) config('plugins.build_output'), '/\\')
-            . DIRECTORY_SEPARATOR . "{$id}-{$version}.zip";
+            .DIRECTORY_SEPARATOR."{$id}-{$version}.zip";
 
         return $this->call('plugins:install', ['source' => $zipPath]) === self::SUCCESS
             ? self::SUCCESS

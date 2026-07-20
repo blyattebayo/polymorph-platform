@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Materialization\Services;
 
+use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use Polymorph\Platform\Domain\SchemaModel\ReadModel\Contracts\SchemaSnapshotServiceInterface;
 use Polymorph\Platform\TemplateEngine\Core\Pipeline\TemplateParsePipeline;
-use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
-use Illuminate\Support\Facades\DB;
 
 final class RecordDefinitionViewManager
 {
@@ -19,8 +19,7 @@ final class RecordDefinitionViewManager
         private readonly TemplateParsePipeline $templateParsePipeline,
         private readonly SqlViewValidator $sqlViewValidator,
         private readonly SqlViewCompiler $sqlViewCompiler,
-    ) {
-    }
+    ) {}
 
     public function ensureViewForRecordDefinition(RecordDefinition $recordDefinition): string
     {
@@ -34,7 +33,7 @@ final class RecordDefinitionViewManager
             : $templateSource;
         $templateHash = hash('sha256', $templateForHash);
 
-        $definitionHash = hash('sha256', $templateHash . '|' . $schema->fullSchemaHash);
+        $definitionHash = hash('sha256', $templateHash.'|'.$schema->fullSchemaHash);
         if (($this->builtDefinitionHashByRecordDefinitionId[$recordDefinitionId] ?? null) === $definitionHash) {
             return $viewName;
         }
@@ -77,7 +76,7 @@ final class RecordDefinitionViewManager
             ->orderBy('id')
             ->chunk(200, function ($recordDefinitions) use (&$count): void {
                 foreach ($recordDefinitions as $recordDefinition) {
-                    if (!$recordDefinition instanceof RecordDefinition) {
+                    if (! $recordDefinition instanceof RecordDefinition) {
                         continue;
                     }
 
@@ -105,7 +104,7 @@ final class RecordDefinitionViewManager
             ->orderBy('id')
             ->chunk(200, function ($recordDefinitions) use (&$count): void {
                 foreach ($recordDefinitions as $recordDefinition) {
-                    if (!$recordDefinition instanceof RecordDefinition) {
+                    if (! $recordDefinition instanceof RecordDefinition) {
                         continue;
                     }
 
@@ -125,7 +124,7 @@ final class RecordDefinitionViewManager
             throw new \InvalidArgumentException('Record definition id must be positive for view naming');
         }
 
-        return 'display_rd_' . $recordDefinitionId . '_v';
+        return 'display_rd_'.$recordDefinitionId.'_v';
     }
 
     public function dropViewForRecordDefinitionId(int $recordDefinitionId): void
@@ -154,7 +153,7 @@ final class RecordDefinitionViewManager
             ->orderBy('id')
             ->chunkById(200, function ($recordDefinitions) use (&$count): void {
                 foreach ($recordDefinitions as $recordDefinition) {
-                    if (!$recordDefinition instanceof RecordDefinition) {
+                    if (! $recordDefinition instanceof RecordDefinition) {
                         continue;
                     }
 
@@ -168,13 +167,11 @@ final class RecordDefinitionViewManager
 
     private function quoteIdentifier(string $identifier): string
     {
-        return '"' . str_replace('"', '""', $identifier) . '"';
+        return '"'.str_replace('"', '""', $identifier).'"';
     }
 
     private function quoteLiteral(string $value): string
     {
-        return "'" . str_replace("'", "''", $value) . "'";
+        return "'".str_replace("'", "''", $value)."'";
     }
-
 }
-

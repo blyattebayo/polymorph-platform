@@ -13,8 +13,6 @@ use Polymorph\Platform\Domain\Routing\Services\MergedRouteTreeService;
  *
  * Отвечает за создание и настройку всех компонентов динамической маршрутизации
  * и регистрацию маршрутов в Laravel Router.
- *
- * @package Polymorph\Platform\Domain\Routing
  */
 final class RouteRegistrar
 {
@@ -25,8 +23,6 @@ final class RouteRegistrar
 
     /**
      * Зарегистрировать все маршруты (системные и клиентские).
-     *
-     * @return void
      */
     public function registerAllRoutes(): void
     {
@@ -36,7 +32,7 @@ final class RouteRegistrar
     /**
      * Зарегистрировать набор корневых узлов.
      *
-     * @param iterable<RouteNodeDefinition> $nodes
+     * @param  iterable<RouteNodeDefinition>  $nodes
      */
     public function registerNodes(iterable $nodes): void
     {

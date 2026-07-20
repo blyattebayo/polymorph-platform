@@ -17,7 +17,9 @@ use Throwable;
 class MediaStorageException extends RuntimeException implements ErrorConvertible
 {
     private ?string $disk = null;
+
     private ?string $path = null;
+
     private ?string $operation = null;
 
     /**
@@ -33,6 +35,7 @@ class MediaStorageException extends RuntimeException implements ErrorConvertible
         $exception->disk = $disk;
         $exception->path = $path;
         $exception->operation = 'write';
+
         return $exception;
     }
 
@@ -49,6 +52,7 @@ class MediaStorageException extends RuntimeException implements ErrorConvertible
         $exception->disk = $disk;
         $exception->path = $path;
         $exception->operation = 'read';
+
         return $exception;
     }
 
@@ -65,6 +69,7 @@ class MediaStorageException extends RuntimeException implements ErrorConvertible
         $exception->disk = $disk;
         $exception->path = $path;
         $exception->operation = 'delete';
+
         return $exception;
     }
 
@@ -86,6 +91,7 @@ class MediaStorageException extends RuntimeException implements ErrorConvertible
         $exception->disk = $fromDisk;
         $exception->path = $fromPath;
         $exception->operation = 'move';
+
         return $exception;
     }
 
@@ -96,6 +102,7 @@ class MediaStorageException extends RuntimeException implements ErrorConvertible
     {
         $exception = new self("Storage disk '{$disk}' not found or not configured");
         $exception->disk = $disk;
+
         return $exception;
     }
 
@@ -108,6 +115,7 @@ class MediaStorageException extends RuntimeException implements ErrorConvertible
             "Storage quota exceeded on disk '{$disk}'. Available: {$availableBytes} bytes, Required: {$requiredBytes} bytes"
         );
         $exception->disk = $disk;
+
         return $exception;
     }
 
@@ -124,6 +132,7 @@ class MediaStorageException extends RuntimeException implements ErrorConvertible
         $exception->disk = $disk;
         $exception->path = $path;
         $exception->operation = 'url_generation';
+
         return $exception;
     }
 

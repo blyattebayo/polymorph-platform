@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Polymorph\Platform\Domain\Records\Pipeline\Commands;
 
 final class RestoreRecordCommand

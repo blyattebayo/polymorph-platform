@@ -52,14 +52,13 @@ final class DataPlatform
         private readonly RecordRepository $records,
         private readonly CurrentActorResolver $actors,
         private readonly RecordQueryCriteriaFactory $queryCriteriaFactory,
-    ) {
-    }
+    ) {}
 
     /**
      * Скоупнутый на (расширение, сущность) репозиторий записей — flexible-бэкенд.
      * Единственная точка получения CRUD/query: host-адаптеры/DI берут отсюда.
      *
-     * @param class-string<Entity> $entityClass опциональный сгенерированный подкласс (codegen)
+     * @param  class-string<Entity>  $entityClass  опциональный сгенерированный подкласс (codegen)
      * @return Repository<Entity>
      */
     public function repository(string $extensionId, string $entity, string $entityClass = Entity::class): Repository
@@ -89,7 +88,7 @@ final class DataPlatform
 
         $schema = SchemaModel::query()->where('code', $schemaCode)->first();
 
-        if (!$schema instanceof SchemaModel) {
+        if (! $schema instanceof SchemaModel) {
             $schema = $this->schemaHandler->handle(new SaveSchemaWithFieldsCommand(
                 schemaPayload: [
                     'name' => $name,
@@ -115,7 +114,7 @@ final class DataPlatform
         $this->ownership->set(ResourceType::SCHEMA, (int) $schema->id, $owner);
 
         $definition = RecordDefinition::query()->where('schema_id', (int) $schema->id)->first();
-        if (!$definition instanceof RecordDefinition) {
+        if (! $definition instanceof RecordDefinition) {
             $definition = $this->definitionHandler->handle(new CreateRecordDefinitionCommand([
                 'name' => $name,
                 'schema_id' => (int) $schema->id,
@@ -131,7 +130,7 @@ final class DataPlatform
     }
 
     /**
-     * @param list<FieldDefinition> $fields
+     * @param  list<FieldDefinition>  $fields
      * @return list<array<string, mixed>>
      */
     private function toFieldsUpsert(array $fields): array
@@ -156,7 +155,7 @@ final class DataPlatform
     }
 
     /**
-     * @param list<FieldDefinition> $fields
+     * @param  list<FieldDefinition>  $fields
      * @return list<FieldDefinition>
      */
     private function missingFields(SchemaModel $schema, array $fields): array
@@ -168,7 +167,7 @@ final class DataPlatform
 
         return array_values(array_filter(
             $fields,
-            static fn (FieldDefinition $field): bool => !isset($existing[$field->name]),
+            static fn (FieldDefinition $field): bool => ! isset($existing[$field->name]),
         ));
     }
 
@@ -176,9 +175,9 @@ final class DataPlatform
     {
         $entity = trim($entity);
 
-        if (!ValidationConstraints::slug()->matches($entity)) {
+        if (! ValidationConstraints::slug()->matches($entity)) {
             throw new \InvalidArgumentException(
-                "Extension definition entity must be a slug (" . ValidationConstraints::slug()->pattern() . "), got '{$entity}'.",
+                'Extension definition entity must be a slug ('.ValidationConstraints::slug()->pattern()."), got '{$entity}'.",
             );
         }
 

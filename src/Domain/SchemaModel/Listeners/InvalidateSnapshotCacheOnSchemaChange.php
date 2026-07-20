@@ -19,8 +19,7 @@ final class InvalidateSnapshotCacheOnSchemaChange
 {
     public function __construct(
         private readonly SchemaSnapshotServiceInterface $schemaService,
-    ) {
-    }
+    ) {}
 
     public function handle(SchemaChangeEvent $event): void
     {

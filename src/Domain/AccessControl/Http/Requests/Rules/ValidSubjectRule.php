@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Http\Requests\Rules;
 
-use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use InvalidArgumentException;
+use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 
 final class ValidSubjectRule implements ValidationRule
 {

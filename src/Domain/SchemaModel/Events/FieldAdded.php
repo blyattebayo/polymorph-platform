@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Events;
 
-use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
-use Polymorph\Platform\Domain\SchemaModel\Events\Contracts\SchemaChangeEvent;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
+use Polymorph\Platform\Domain\SchemaModel\Events\Contracts\SchemaChangeEvent;
 
 /**
  * Событие добавления поля.
@@ -18,8 +18,7 @@ class FieldAdded implements SchemaChangeEvent
 
     public function __construct(
         public readonly Field $field
-    ) {
-    }
+    ) {}
 
     public function schemaId(): int
     {

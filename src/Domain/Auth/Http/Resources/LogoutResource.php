@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Http\Resources;
 
+use Illuminate\Http\Request;
 use Polymorph\Platform\Http\Resources\Admin\AdminJsonResource;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -29,7 +30,7 @@ final class LogoutResource extends AdminJsonResource
     /**
      * Преобразовать ресурс в массив.
      *
-     * @param  \Illuminate\Http\Request  $request  HTTP запрос
+     * @param  Request  $request  HTTP запрос
      * @return array<string, mixed> Пустой массив (тело ответа будет null)
      */
     public function toArray($request): array
@@ -42,8 +43,8 @@ final class LogoutResource extends AdminJsonResource
      *
      * Устанавливает статус 204 (No Content).
      *
-     * @param  \Illuminate\Http\Request  $request  HTTP запрос
-     * @param  \Symfony\Component\HttpFoundation\Response  $response  HTTP ответ
+     * @param  Request  $request  HTTP запрос
+     * @param  Response  $response  HTTP ответ
      */
     protected function prepareAdminResponse($request, Response $response): void
     {

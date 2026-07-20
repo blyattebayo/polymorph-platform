@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\RecordDefinitions\Observers;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionCreated;
 use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionDeleted;
 use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionSchemaChanged;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
 
 /**
  * Observer для модели RecordDefinition.

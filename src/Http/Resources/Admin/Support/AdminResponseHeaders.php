@@ -9,12 +9,12 @@ use Symfony\Component\HttpFoundation\Response;
 final class AdminResponseHeaders
 {
     public const CACHE_CONTROL_VALUE = 'no-store, private';
+
     public const VARY_HEADER = 'Vary';
+
     public const VARY_COOKIE = 'Cookie';
 
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     public static function apply(Response $response, bool $force = true): Response
     {
@@ -25,7 +25,7 @@ final class AdminResponseHeaders
         $existing = $response->headers->get(self::VARY_HEADER, '');
         $parts = array_values(array_filter(array_map('trim', explode(',', $existing))));
 
-        if (!in_array(self::VARY_COOKIE, $parts, true)) {
+        if (! in_array(self::VARY_COOKIE, $parts, true)) {
             $parts[] = self::VARY_COOKIE;
         }
 
@@ -34,4 +34,3 @@ final class AdminResponseHeaders
         return $response;
     }
 }
-

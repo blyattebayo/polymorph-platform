@@ -2,14 +2,13 @@
 
 namespace Database\Factories;
 
-use Polymorph\Platform\Domain\Records\Core\Models\Record;
-use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
-use Polymorph\Platform\Domain\Users\Core\Models\User;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
+use Polymorph\Platform\Domain\Records\Core\Models\Record;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Polymorph\Platform\Domain\Records\Core\Models\Record>
+ * @extends Factory<Record>
  */
 class RecordFactory extends Factory
 {
@@ -30,7 +29,7 @@ class RecordFactory extends Factory
     }
 
     /**
-    * Indicate that the record is for a specific record definition.
+     * Indicate that the record is for a specific record definition.
      */
     public function forRecordDefinition(RecordDefinition $recordDefinition): static
     {
@@ -40,7 +39,7 @@ class RecordFactory extends Factory
     }
 
     /**
-    * Indicate that the record has a specific author.
+     * Indicate that the record has a specific author.
      */
     public function byAuthor(User $user): static
     {

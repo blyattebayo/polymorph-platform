@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Http\Requests;
 
-use Polymorph\Platform\Support\Validation\ValidationRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Polymorph\Platform\Support\Validation\ValidationRules;
 
 /**
  * Request для публичной самостоятельной регистрации.

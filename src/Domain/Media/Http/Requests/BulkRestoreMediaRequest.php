@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Http\Requests;
 
-use Polymorph\Platform\Domain\Media\Core\Models\Media;
-use Polymorph\Platform\Http\Requests\ApiFormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Polymorph\Platform\Http\Requests\ApiFormRequest;
 
 /**
  * Request для массового восстановления медиа-файлов.
  *
  * Валидирует массив идентификаторов удалённых медиа-файлов для массового восстановления.
- *
- * @package Polymorph\Platform\Http\Requests\Admin\Media
  */
 class BulkRestoreMediaRequest extends ApiFormRequest
 {
@@ -60,8 +57,7 @@ class BulkRestoreMediaRequest extends ApiFormRequest
     /**
      * Выполнить кастомную валидацию.
      *
-     * @param \Illuminate\Contracts\Validation\Validator $validator Валидатор
-     * @return void
+     * @param  Validator  $validator  Валидатор
      */
     protected function withValidator(Validator $validator): void
     {
@@ -86,4 +82,3 @@ class BulkRestoreMediaRequest extends ApiFormRequest
         });
     }
 }
-

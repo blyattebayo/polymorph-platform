@@ -7,8 +7,8 @@ namespace Polymorph\Platform\Domain\SchemaModel\Services;
 final class PathTreeFilter
 {
     /**
-     * @param array<string,mixed> $dataJson
-     * @param array<int,string> $allowedPaths
+     * @param  array<string,mixed>  $dataJson
+     * @param  array<int,string>  $allowedPaths
      * @return array<string,mixed>
      */
     public function filterVisibleData(array $dataJson, array $allowedPaths): array
@@ -32,8 +32,8 @@ final class PathTreeFilter
     }
 
     /**
-     * @param array<string,mixed> $dataJson
-     * @param array<int,string> $allowedPaths
+     * @param  array<string,mixed>  $dataJson
+     * @param  array<int,string>  $allowedPaths
      * @return array<int,string>
      */
     public function forbiddenWritePaths(array $dataJson, array $allowedPaths): array
@@ -55,9 +55,9 @@ final class PathTreeFilter
     }
 
     /**
-     * @param array<string,mixed> $data
-     * @param array<int,string|int> $actualPath
-     * @param array<int,string> $logicalPath
+     * @param  array<string,mixed>  $data
+     * @param  array<int,string|int>  $actualPath
+     * @param  array<int,string>  $logicalPath
      * @return array<int,array{actual:array<int,string|int>,normalized:string}>
      */
     private function collectLeafItems(array $data, array $actualPath = [], array $logicalPath = []): array
@@ -71,6 +71,7 @@ final class PathTreeFilter
 
             if (is_array($value)) {
                 $items = [...$items, ...$this->collectLeafItems($value, $actual, $nextLogical)];
+
                 continue;
             }
 
@@ -98,7 +99,7 @@ final class PathTreeFilter
     }
 
     /**
-     * @param string[] $segments
+     * @param  string[]  $segments
      */
     private function normalizeLogicalPath(array $segments): string
     {
@@ -111,8 +112,8 @@ final class PathTreeFilter
     }
 
     /**
-     * @param array<string,mixed> $data
-     * @param array<int,string|int> $actualPath
+     * @param  array<string,mixed>  $data
+     * @param  array<int,string|int>  $actualPath
      */
     private function unsetByActualPath(array &$data, array $actualPath): void
     {
@@ -141,7 +142,7 @@ final class PathTreeFilter
     }
 
     /**
-     * @param array<string,mixed> $value
+     * @param  array<string,mixed>  $value
      * @return array<string,mixed>
      */
     private function pruneEmptyArrays(array $value): array
@@ -161,7 +162,7 @@ final class PathTreeFilter
     }
 
     /**
-     * @param array<string,true> $allowedPathSet
+     * @param  array<string,true>  $allowedPathSet
      */
     private function isPathAllowed(string $normalizedPath, array $allowedPathSet): bool
     {
@@ -170,7 +171,7 @@ final class PathTreeFilter
         }
 
         foreach ($allowedPathSet as $allowedPath => $_) {
-            if ($allowedPath !== '' && str_starts_with($normalizedPath, $allowedPath . '.')) {
+            if ($allowedPath !== '' && str_starts_with($normalizedPath, $allowedPath.'.')) {
                 return true;
             }
         }

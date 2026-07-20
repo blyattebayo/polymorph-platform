@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Http\Resources;
 
+use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Domain\Users\Http\Resources\UserResource;
 use Polymorph\Platform\Http\Resources\Admin\AdminJsonResource;
@@ -35,7 +36,7 @@ class LoginResource extends AdminJsonResource
     /**
      * Преобразовать ресурс в массив.
      *
-     * @param  \Illuminate\Http\Request  $request  HTTP запрос
+     * @param  Request  $request  HTTP запрос
      * @return array<string, array<string, mixed>> Массив с данными пользователя
      */
     public function toArray($request): array

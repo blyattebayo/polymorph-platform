@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Console;
 
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyCompilationService;
-use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Illuminate\Console\Command;
 use InvalidArgumentException;
+use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyCompilationService;
+use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 
 final class RebuildAccessControlCommand extends Command
 {
@@ -22,7 +22,7 @@ final class RebuildAccessControlCommand extends Command
         try {
             if (is_string($subject) && trim($subject) !== '') {
                 $compiler->recompileSubject(Subject::fromString($subject));
-                $this->info('Rebuilt compiled policies for ' . $subject . '.');
+                $this->info('Rebuilt compiled policies for '.$subject.'.');
 
                 return self::SUCCESS;
             }

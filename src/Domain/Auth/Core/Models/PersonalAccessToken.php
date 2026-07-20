@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Auth\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -12,9 +13,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $name
  * @property string $token_hash
  * @property string $token_prefix
- * @property \Illuminate\Support\Carbon|null $expires_at
- * @property \Illuminate\Support\Carbon|null $revoked_at
- * @property \Illuminate\Support\Carbon|null $last_used_at
+ * @property Carbon|null $expires_at
+ * @property Carbon|null $revoked_at
+ * @property Carbon|null $last_used_at
  * @property int|null $created_by_user_id
  */
 final class PersonalAccessToken extends Model

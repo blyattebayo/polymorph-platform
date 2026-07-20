@@ -16,12 +16,12 @@ interface TableConfigRepository
     public function findUserOverride(string $tableKey, int $userId): ?TableConfig;
 
     /**
-     * @param array<string, mixed> $configJson
+     * @param  array<string, mixed>  $configJson
      */
     public function upsertBase(string $tableKey, int $schemaVersion, array $configJson): TableConfig;
 
     /**
-     * @param array<string, mixed> $configJson
+     * @param  array<string, mixed>  $configJson
      */
     public function upsertUserOverride(string $tableKey, int $userId, int $schemaVersion, array $configJson): TableConfig;
 

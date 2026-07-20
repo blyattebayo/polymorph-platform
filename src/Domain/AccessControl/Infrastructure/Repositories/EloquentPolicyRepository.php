@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Infrastructure\Repositories;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRepository;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Policy;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\PolicyData;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 final class EloquentPolicyRepository implements PolicyRepository
 {
@@ -20,7 +20,7 @@ final class EloquentPolicyRepository implements PolicyRepository
         if (is_string($resourcePattern) && $resourcePattern !== '') {
             if ($this->toBool($filters['resource_prefix'] ?? false)) {
                 $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $resourcePattern);
-                $query->where('resource_pattern', 'like', $escaped . '%');
+                $query->where('resource_pattern', 'like', $escaped.'%');
             } else {
                 $query->where('resource_pattern', $resourcePattern);
             }

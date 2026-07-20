@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Http\Requests;
 
-use Polymorph\Platform\Http\Requests\ApiFormRequest;
 use Polymorph\Platform\Http\Pagination\V2\Concerns\HasPageRules;
 use Polymorph\Platform\Http\Pagination\V2\Concerns\ResolvesPageRequest;
+use Polymorph\Platform\Http\Requests\ApiFormRequest;
 use Polymorph\Platform\Support\Validation\ValidationRules;
 
-final class IndexPolicyRequest extends ApiFormRequest
+final class IndexPoliciesRequest extends ApiFormRequest
 {
     use HasPageRules;
     use ResolvesPageRequest;

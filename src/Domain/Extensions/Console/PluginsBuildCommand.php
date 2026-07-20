@@ -7,6 +7,7 @@ namespace Polymorph\Platform\Domain\Extensions\Console;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
+use Polymorph\Platform\Domain\Extensions\Manifest\ManifestV2Validator;
 use ZipArchive;
 
 final class PluginsBuildCommand extends Command
@@ -20,11 +21,11 @@ final class PluginsBuildCommand extends Command
 
     protected $description = 'Build a drop-in .zip artifact from plugin sources (FE bundle + BE deps), ready for plugins:install.';
 
-    public function handle(\Polymorph\Platform\Domain\Extensions\Manifest\ManifestV2Validator $v2Validator): int
+    public function handle(ManifestV2Validator $v2Validator): int
     {
         $id = trim((string) $this->argument('id'));
         $srcRoot = rtrim((string) config('plugins.src_root'), '/\\');
-        $srcDir = $srcRoot . DIRECTORY_SEPARATOR . $id;
+        $srcDir = $srcRoot.DIRECTORY_SEPARATOR.$id;
 
         if (! is_dir($srcDir)) {
             $this->error("Plugin source directory not found: {$srcDir}");
@@ -33,7 +34,7 @@ final class PluginsBuildCommand extends Command
         }
 
         $manifestFile = 'extension.json';
-        $manifestPath = $srcDir . DIRECTORY_SEPARATOR . $manifestFile;
+        $manifestPath = $srcDir.DIRECTORY_SEPARATOR.$manifestFile;
 
         if (! is_file($manifestPath)) {
             $this->error("No manifest found in source (extension.json): {$srcDir}");
@@ -51,13 +52,13 @@ final class PluginsBuildCommand extends Command
         try {
             $v2Validator->validate($manifest, $manifestPath);
         } catch (\Throwable $exception) {
-            $this->error('Manifest validation failed: ' . $exception->getMessage());
+            $this->error('Manifest validation failed: '.$exception->getMessage());
 
             return self::FAILURE;
         }
 
         $version = (string) $manifest['version'];
-        $feDir = $srcDir . DIRECTORY_SEPARATOR . 'fe';
+        $feDir = $srcDir.DIRECTORY_SEPARATOR.'fe';
 
         if (is_dir($feDir) && ! (bool) $this->option('skip-fe')) {
             if (! (bool) $this->option('skip-install') && ! $this->runProcess($feDir, 'npm install', 'Installing FE dependencies')) {
@@ -68,7 +69,7 @@ final class PluginsBuildCommand extends Command
             }
         }
 
-        if (is_file($srcDir . DIRECTORY_SEPARATOR . 'composer.json') && ! (bool) $this->option('skip-composer')) {
+        if (is_file($srcDir.DIRECTORY_SEPARATOR.'composer.json') && ! (bool) $this->option('skip-composer')) {
             if (! $this->runProcess(
                 $srcDir,
                 'composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs',
@@ -94,7 +95,7 @@ final class PluginsBuildCommand extends Command
         }
 
         $checksum = hash_file('sha256', $zipPath);
-        file_put_contents($zipPath . '.sha256', $checksum . "  {$id}-{$version}.zip\n");
+        file_put_contents($zipPath.'.sha256', $checksum."  {$id}-{$version}.zip\n");
 
         $this->info("Built artifact: {$zipPath}");
         $this->line("sha256: {$checksum}");
@@ -117,31 +118,31 @@ final class PluginsBuildCommand extends Command
             return null;
         }
 
-        $distDir = $srcDir . DIRECTORY_SEPARATOR . 'fe' . DIRECTORY_SEPARATOR . 'dist';
-        if (is_dir($srcDir . DIRECTORY_SEPARATOR . 'fe') && ! is_dir($distDir)) {
+        $distDir = $srcDir.DIRECTORY_SEPARATOR.'fe'.DIRECTORY_SEPARATOR.'dist';
+        if (is_dir($srcDir.DIRECTORY_SEPARATOR.'fe') && ! is_dir($distDir)) {
             $this->error('FE present but fe/dist is missing — build the FE bundle first (omit --skip-fe).');
 
             return null;
         }
 
-        $zipPath = $outputRoot . DIRECTORY_SEPARATOR . "{$id}-{$version}.zip";
+        $zipPath = $outputRoot.DIRECTORY_SEPARATOR."{$id}-{$version}.zip";
         @unlink($zipPath);
 
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             $this->error("Unable to create zip: {$zipPath}");
 
             return null;
         }
 
-        $zip->addFile($srcDir . DIRECTORY_SEPARATOR . $manifestFile, $manifestFile);
+        $zip->addFile($srcDir.DIRECTORY_SEPARATOR.$manifestFile, $manifestFile);
         foreach (['composer.json', 'composer.lock'] as $rootFile) {
-            if (is_file($srcDir . DIRECTORY_SEPARATOR . $rootFile)) {
-                $zip->addFile($srcDir . DIRECTORY_SEPARATOR . $rootFile, $rootFile);
+            if (is_file($srcDir.DIRECTORY_SEPARATOR.$rootFile)) {
+                $zip->addFile($srcDir.DIRECTORY_SEPARATOR.$rootFile, $rootFile);
             }
         }
-        $this->addTree($zip, $beVendorRoot . DIRECTORY_SEPARATOR . 'be', 'be');
-        $this->addTree($zip, $beVendorRoot . DIRECTORY_SEPARATOR . 'vendor', 'vendor');
+        $this->addTree($zip, $beVendorRoot.DIRECTORY_SEPARATOR.'be', 'be');
+        $this->addTree($zip, $beVendorRoot.DIRECTORY_SEPARATOR.'vendor', 'vendor');
         $this->addTree($zip, $distDir, 'fe/dist');
 
         $zip->close();
@@ -151,7 +152,7 @@ final class PluginsBuildCommand extends Command
 
     private function scopePluginVendor(string $id, string $srcDir): ?string
     {
-        $vendorDir = $srcDir . DIRECTORY_SEPARATOR . 'vendor';
+        $vendorDir = $srcDir.DIRECTORY_SEPARATOR.'vendor';
         if ((bool) $this->option('skip-scope') || ! is_dir($vendorDir)) {
             return $srcDir;
         }
@@ -164,7 +165,7 @@ final class PluginsBuildCommand extends Command
             return null;
         }
 
-        $prefix = rtrim((string) config('plugins.php_scoper_prefix_base'), '\\') . '\\' . Str::studly($id);
+        $prefix = rtrim((string) config('plugins.php_scoper_prefix_base'), '\\').'\\'.Str::studly($id);
 
         $outputRoot = rtrim((string) config('plugins.build_output'), '/\\');
         if (! is_dir($outputRoot) && ! mkdir($outputRoot, 0755, true) && ! is_dir($outputRoot)) {
@@ -172,7 +173,7 @@ final class PluginsBuildCommand extends Command
 
             return null;
         }
-        $scopeOut = $outputRoot . DIRECTORY_SEPARATOR . '.scope-' . $id . '-' . uniqid();
+        $scopeOut = $outputRoot.DIRECTORY_SEPARATOR.'.scope-'.$id.'-'.uniqid();
         $this->deleteDir($scopeOut);
 
         $scoped = $this->runProcess(
@@ -194,8 +195,8 @@ final class PluginsBuildCommand extends Command
         }
 
         foreach (['composer.json', 'composer.lock'] as $f) {
-            if (is_file($srcDir . DIRECTORY_SEPARATOR . $f)) {
-                @copy($srcDir . DIRECTORY_SEPARATOR . $f, $scopeOut . DIRECTORY_SEPARATOR . $f);
+            if (is_file($srcDir.DIRECTORY_SEPARATOR.$f)) {
+                @copy($srcDir.DIRECTORY_SEPARATOR.$f, $scopeOut.DIRECTORY_SEPARATOR.$f);
             }
         }
         if (! $this->runProcess(
@@ -226,7 +227,7 @@ final class PluginsBuildCommand extends Command
             if ($name === '.' || $name === '..') {
                 continue;
             }
-            $child = $path . DIRECTORY_SEPARATOR . $name;
+            $child = $path.DIRECTORY_SEPARATOR.$name;
             if (is_link($child)) {
                 @unlink($child) || @rmdir($child);
             } elseif (is_dir($child)) {
@@ -256,11 +257,12 @@ final class PluginsBuildCommand extends Command
                 continue;
             }
 
-            $path = $dir . DIRECTORY_SEPARATOR . $name;
-            $entry = $prefix . '/' . $name;
+            $path = $dir.DIRECTORY_SEPARATOR.$name;
+            $entry = $prefix.'/'.$name;
 
             if (is_link($path)) {
                 $this->warn("Skipping symlink in artifact: {$path}");
+
                 continue;
             }
 
@@ -275,7 +277,7 @@ final class PluginsBuildCommand extends Command
     }
 
     /**
-     * @param array<string, string> $env
+     * @param  array<string, string>  $env
      */
     private function runProcess(string $dir, string $command, string $label, array $env = []): bool
     {

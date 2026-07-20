@@ -37,8 +37,8 @@ return [
     // Изоляция vendor плагина (php-scoper): путь к phar и статичному конфигу.
     // plugins:build префиксует namespace сторонних зависимостей плагина, чтобы
     // их версии не конфликтовали с ядром/другими плагинами (общий автолоадер).
-    'php_scoper_path' => env('PLUGINS_PHP_SCOPER_PATH', dirname(__DIR__) . '/tools/php-scoper.phar'),
-    'php_scoper_config' => env('PLUGINS_PHP_SCOPER_CONFIG', dirname(__DIR__) . '/tools/scoper/plugin-scoper.inc.php'),
+    'php_scoper_path' => env('PLUGINS_PHP_SCOPER_PATH', dirname(__DIR__).'/tools/php-scoper.phar'),
+    'php_scoper_config' => env('PLUGINS_PHP_SCOPER_CONFIG', dirname(__DIR__).'/tools/scoper/plugin-scoper.inc.php'),
     'php_scoper_prefix_base' => env('PLUGINS_PHP_SCOPER_PREFIX_BASE', 'PolymorphScoped'),
 
     // Каталог распаковки артефакта ПЕРЕД атомарной заменой. Держим его ВНЕ
@@ -47,7 +47,7 @@ return [
     // том же томе, что и runtime_root (иначе install сделает copy-fallback).
     'staging_path' => env('PLUGINS_STAGING_PATH', storage_path('app/plugin-staging')),
 
-    'scaffold_template_path' => env('PLUGINS_SCAFFOLD_TEMPLATE_PATH', dirname(__DIR__) . '/resources/plugin-template'),
+    'scaffold_template_path' => env('PLUGINS_SCAFFOLD_TEMPLATE_PATH', dirname(__DIR__).'/resources/plugin-template'),
 
     'manifest_file' => 'plugin.json',
 
@@ -78,4 +78,3 @@ return [
         'strict' => env('PLUGINS_STRICT_COMPATIBILITY', true),
     ],
 ];
-

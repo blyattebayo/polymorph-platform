@@ -26,7 +26,7 @@ enum MediaKind: string
      * - audio/* в†’ Audio
      * - остальное → Document
      *
-     * @param string $mime MIME-тип файла
+     * @param  string  $mime  MIME-тип файла
      * @return self Тип медиа-файла
      */
     public static function fromMime(string $mime): self
@@ -44,7 +44,7 @@ enum MediaKind: string
      */
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Image => 'Изображение',
             self::Video => 'Видео',
             self::Audio => 'Аудио',

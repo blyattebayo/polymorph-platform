@@ -27,7 +27,7 @@ final class MenuService
     /**
      * Полностью заменить дерево меню.
      *
-     * @param list<array<string, mixed>> $tree
+     * @param  list<array<string, mixed>>  $tree
      * @return list<array<string, mixed>>
      */
     public function save(string $key, array $tree): array

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Auth\Application\DTO\CreatePersonalAccessTokenCommand;
 use Polymorph\Platform\Domain\Auth\Application\Support\AuthenticatedCredentialResolver;
 use Polymorph\Platform\Domain\Auth\Application\UseCases\CreateOwnPersonalAccessToken;
@@ -14,8 +16,6 @@ use Polymorph\Platform\Domain\Auth\Http\Resources\CreatedPersonalAccessTokenReso
 use Polymorph\Platform\Domain\Auth\Http\Resources\PersonalAccessTokenResource;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
 use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 final class MePersonalAccessTokenController
 {
@@ -25,8 +25,7 @@ final class MePersonalAccessTokenController
         private readonly RevokeOwnPersonalAccessToken $revokeOwn,
         private readonly CurrentActorResolver $currentActor,
         private readonly AuthenticatedCredentialResolver $credentialResolver,
-    ) {
-    }
+    ) {}
 
     public function index(): JsonResponse
     {

@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Services;
 
-use Polymorph\Platform\Domain\Materialization\Contracts\RecordDisplayValueProvider;
-use Polymorph\Platform\Domain\Records\Core\Models\Record;
-use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use LogicException;
+use Polymorph\Platform\Domain\Materialization\Contracts\RecordDisplayValueProvider;
+use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
+use Polymorph\Platform\Domain\Records\Core\Models\Record;
 
 final class RecordDisplayValueService
 {
     public function __construct(
         private readonly RecordDisplayValueProvider $displayValueProvider,
-    ) {
-    }
+    ) {}
 
     /**
      * Compute display value for a single record.
@@ -31,7 +30,7 @@ final class RecordDisplayValueService
      * Batch-compute display values.
      * Expects recordDefinition relation already loaded on all records.
      *
-     * @param Record[] $records
+     * @param  Record[]  $records
      * @return array<int, string>
      */
     public function computeForRecords(array $records): array
@@ -52,9 +51,9 @@ final class RecordDisplayValueService
     /**
      * Split records into per-definition buckets, initialising defaults in $displayByRecordId.
      *
-     * @param Record[] $records
-     * @param array<int, string> $displayByRecordId Populated as a side-effect.
-     * @return array<int, array{definition: \Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition, ids: int[]}>
+     * @param  Record[]  $records
+     * @param  array<int, string>  $displayByRecordId  Populated as a side-effect.
+     * @return array<int, array{definition: RecordDefinition, ids: int[]}>
      */
     private function groupByDefinition(array $records, array &$displayByRecordId): array
     {

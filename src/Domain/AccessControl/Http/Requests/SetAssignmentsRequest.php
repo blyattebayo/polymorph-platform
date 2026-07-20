@@ -12,7 +12,7 @@ final class SetAssignmentsRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'subject' => ['required', 'string', 'max:255', new ValidSubjectRule()],
+            'subject' => ['required', 'string', 'max:255', new ValidSubjectRule],
             'policy_ids' => ['present', 'array'],
             'policy_ids.*' => ['integer', 'min:1'],
         ];

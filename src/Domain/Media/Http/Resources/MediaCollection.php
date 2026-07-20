@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Http\Resources;
 
-use Polymorph\Platform\Domain\Media\Http\Resources\MediaResourceFactory;
+use Illuminate\Http\Request;
 use Polymorph\Platform\Http\Resources\Admin\AdminResourceCollection;
 
 /**
@@ -12,8 +12,6 @@ use Polymorph\Platform\Http\Resources\Admin\AdminResourceCollection;
  *
  * Форматирует коллекцию медиа-файлов с поддержкой пагинации.
  * Использует фабричный метод MediaResourceFactory::make() для каждого элемента.
- *
- * @package Polymorph\Platform\Http\Resources\Admin
  */
 class MediaCollection extends AdminResourceCollection
 {
@@ -26,11 +24,9 @@ class MediaCollection extends AdminResourceCollection
 
     /**
      * Получить класс ресурса для элементов коллекции.
-     * 
+     *
      * Переопределяем чтобы разрешить коллекции содержать модели,
      * а не инстансы JsonResource (преобразование происходит в toArray).
-     *
-     * @return string|null
      */
     protected function collects(): ?string
     {
@@ -43,7 +39,7 @@ class MediaCollection extends AdminResourceCollection
      * Использует фабричный метод MediaResourceFactory::make() для каждого элемента,
      * чтобы автоматически выбрать нужный специализированный ресурс.
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
+     * @param  Request  $request  HTTP запрос
      * @return array<string, mixed> Массив с ключом 'data'
      */
     public function toArray($request): array
@@ -55,5 +51,3 @@ class MediaCollection extends AdminResourceCollection
         ];
     }
 }
-
-

@@ -7,8 +7,8 @@ namespace Polymorph\Platform\PipelineCore\Runtime;
 final class PipelineSuccess extends PipelineResult
 {
     /**
-     * @param array<string, StageResult> $stageResults
-     * @param array<string, StageResult> $warnings
+     * @param  array<string, StageResult>  $stageResults
+     * @param  array<string, StageResult>  $warnings
      */
     public function __construct(
         array $stageResults,
@@ -19,5 +19,4 @@ final class PipelineSuccess extends PipelineResult
             warnings: $warnings,
         );
     }
-
 }

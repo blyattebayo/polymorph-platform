@@ -9,8 +9,6 @@ namespace Polymorph\Platform\Domain\Routing\Infrastructure\Validators;
  *
  * Хранит и управляет валидаторами для различных типов узлов маршрутов.
  * Каждый валидатор связан с конкретным kind (например, 'group', 'route').
- *
- * @package Polymorph\Platform\Domain\Routing\Validators
  */
 final class ValidatorRegistry
 {
@@ -27,9 +25,8 @@ final class ValidatorRegistry
      * Если валидатор для данного kind уже зарегистрирован,
      * он будет перезаписан новым валидатором.
      *
-     * @param string $kind Тип узла (например, 'group', 'route')
-     * @param \Polymorph\Platform\Domain\Routing\Validators\ValidatorInterface $validator Валидатор правил
-     * @return void
+     * @param  string  $kind  Тип узла (например, 'group', 'route')
+     * @param  \Polymorph\Platform\Domain\Routing\Validators\ValidatorInterface  $validator  Валидатор правил
      */
     public function register(string $kind, ValidatorInterface $validator): void
     {
@@ -39,7 +36,7 @@ final class ValidatorRegistry
     /**
      * Получить валидатор для определённого kind.
      *
-     * @param string $kind Тип узла (например, 'group', 'route')
+     * @param  string  $kind  Тип узла (например, 'group', 'route')
      * @return \Polymorph\Platform\Domain\Routing\Validators\ValidatorInterface|null Валидатор или null, если не найден
      */
     public function getValidator(string $kind): ?ValidatorInterface
@@ -50,7 +47,7 @@ final class ValidatorRegistry
     /**
      * Проверить, зарегистрирован ли валидатор для kind.
      *
-     * @param string $kind Тип узла (например, 'group', 'route')
+     * @param  string  $kind  Тип узла (например, 'group', 'route')
      * @return bool true, если валидатор зарегистрирован
      */
     public function hasValidator(string $kind): bool

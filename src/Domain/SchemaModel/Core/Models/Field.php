@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Core\Models;
 
+use Database\Factories\FieldFactory;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 use Polymorph\Platform\Domain\SchemaModel\Core\Casts\AsValidationRules;
 use Polymorph\Platform\Domain\SchemaModel\Core\Collections\FieldCollection;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\Cardinality;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldPath;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\ValidationRules;
-use Database\Factories\FieldFactory;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Поле внутри Schema с материализованным full_path.
@@ -35,15 +37,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property ValidationRules|null $validation_rules Правила валидации
  * @property int $sort_order Порядок сортировки
  * @property array|null $metadata Дополнительные метаданные
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read SchemaModel $schema
  * @property-read Field|null $parent
  * @property-read FieldCollection|Field[] $children
  * @property-read FieldRefConstraint|null $refConstraint
- * @property-read \Illuminate\Database\Eloquent\Collection|FieldMediaConstraint[] $mediaConstraints
+ * @property-read Collection|FieldMediaConstraint[] $mediaConstraints
  */
-class  Field extends Model
+class Field extends Model
 {
     use HasFactory;
 
@@ -173,8 +175,6 @@ class  Field extends Model
 
     /**
      * Получить ID допустимого RecordDefinition для ref-поля.
-     *
-     * @return int|null
      */
     public function getAllowedRecordDefinitionId(): ?int
     {
@@ -209,16 +209,16 @@ class  Field extends Model
 
     /**
      * Получить все ограничения поля в виде массива.
-     * 
+     *
      * @return array{constraint_id?: int, allowed_record_definition_id?: int, allowed_mimes?: string[]}|null
      */
     public function getAllConstraints(): ?array
     {
         if ($this->type === FieldType::REF) {
-            if (!$this->refConstraint) {
+            if (! $this->refConstraint) {
                 return null;
             }
-            
+
             return [
                 'constraint_id' => $this->refConstraint->id,
                 'allowed_record_definition_id' => $this->refConstraint->allowed_record_definition_id,
@@ -229,7 +229,7 @@ class  Field extends Model
             return [
                 'allowed_mimes' => $this->mediaConstraints
                     ->pluck('allowed_mime')
-                    ->toArray()
+                    ->toArray(),
             ];
         }
 

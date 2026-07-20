@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Core\Contracts;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Polymorph\Platform\Domain\Records\Core\Models\Record;
 use Polymorph\Platform\Domain\Records\Core\Query\RecordQueryCriteria;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 
 interface RecordRepository
 {
@@ -64,7 +64,7 @@ interface RecordRepository
     public function findWithDefinitionForUpdate(int $id): ?Record;
 
     /**
-        * Find by ID including soft-deleted rows, with recordDefinition eager-loaded.
+     * Find by ID including soft-deleted rows, with recordDefinition eager-loaded.
      */
     public function findTrashed(int $id): ?Record;
 
@@ -77,7 +77,7 @@ interface RecordRepository
     /**
      * Load active records by IDs with recordDefinition eager-loaded.
      *
-     * @param int[] $ids
+     * @param  int[]  $ids
      * @return Record[]
      */
     public function findByIdsWithDefinition(array $ids): array;
@@ -95,7 +95,7 @@ interface RecordRepository
     /**
      * Load active records for hydrate endpoint with recordDefinition eager-loaded.
      *
-     * @param int[] $ids
+     * @param  int[]  $ids
      * @return Record[]
      */
     public function findHydratableByIds(array $ids): array;

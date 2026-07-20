@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\DataPlatform\SdkBridge;
 
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\DataPlatform\StorageKey;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use Polymorph\Platform\Domain\Records\Core\Contracts\RecordRepository;
@@ -22,8 +24,6 @@ use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
-use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Support\Facades\DB;
 use Polymorph\Sdk\Data\Entity;
 use Polymorph\Sdk\Data\EntityPage;
 use Polymorph\Sdk\Data\Query;
@@ -43,14 +43,14 @@ use Polymorph\Sdk\Http\Pagination;
  *
  * @implements Repository<Entity>
  */
-final class FlexibleRecordRepository implements Repository, QueryExecutor
+final class FlexibleRecordRepository implements QueryExecutor, Repository
 {
     private const PAGE_SIZE = 500;
 
     private ?RecordDefinition $definition = null;
 
     /**
-     * @param class-string<Entity> $entityClass
+     * @param  class-string<Entity>  $entityClass
      */
     public function __construct(
         private readonly CreateRecordHandler $createHandler,
@@ -62,8 +62,7 @@ final class FlexibleRecordRepository implements Repository, QueryExecutor
         private readonly string $extensionId,
         private readonly string $entity,
         private readonly string $entityClass = Entity::class,
-    ) {
-    }
+    ) {}
 
     public function create(array $data): Entity
     {
@@ -251,7 +250,7 @@ final class FlexibleRecordRepository implements Repository, QueryExecutor
     }
 
     /**
-     * @param array<string, mixed> $match
+     * @param  array<string, mixed>  $match
      */
     private function matchQuery(array $match): Query
     {
@@ -279,7 +278,7 @@ final class FlexibleRecordRepository implements Repository, QueryExecutor
             ->whereHas('schema', fn ($q) => $q->where('code', $schemaCode))
             ->first();
 
-        if (!$definition instanceof RecordDefinition) {
+        if (! $definition instanceof RecordDefinition) {
             throw new \InvalidArgumentException(
                 "Extension definition '{$this->extensionId}.{$this->entity}' is not seeded (use DefinitionRegistry::ensure).",
             );
@@ -291,7 +290,7 @@ final class FlexibleRecordRepository implements Repository, QueryExecutor
     private function require(int $id): Record
     {
         $record = $this->records->findWithDefinition($id);
-        if (!$record instanceof Record || !$this->belongsHere($record)) {
+        if (! $record instanceof Record || ! $this->belongsHere($record)) {
             throw new \InvalidArgumentException("Record {$id} does not belong to '{$this->extensionId}.{$this->entity}'.");
         }
 
@@ -301,7 +300,7 @@ final class FlexibleRecordRepository implements Repository, QueryExecutor
     private function requireForUpdate(int $id): Record
     {
         $record = $this->records->findWithDefinitionForUpdate($id);
-        if (!$record instanceof Record || !$this->belongsHere($record)) {
+        if (! $record instanceof Record || ! $this->belongsHere($record)) {
             throw new \InvalidArgumentException("Record {$id} does not belong to '{$this->extensionId}.{$this->entity}'.");
         }
 
@@ -351,7 +350,7 @@ final class FlexibleRecordRepository implements Repository, QueryExecutor
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     private function publicData(array $data): array
@@ -387,7 +386,7 @@ final class FlexibleRecordRepository implements Repository, QueryExecutor
             throw new \InvalidArgumentException("Field '{$field}' does not exist on '{$this->extensionId}.{$this->entity}'.");
         }
 
-        if (!in_array($model->type, [FieldType::INT, FieldType::FLOAT], true)) {
+        if (! in_array($model->type, [FieldType::INT, FieldType::FLOAT], true)) {
             throw new \InvalidArgumentException("Field '{$field}' is not numeric and cannot be aggregated/incremented.");
         }
     }

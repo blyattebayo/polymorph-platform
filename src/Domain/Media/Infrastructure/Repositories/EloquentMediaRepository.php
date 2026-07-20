@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Infrastructure\Repositories;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Polymorph\Platform\Domain\Media\Core\Collections\MediaCollection;
 use Polymorph\Platform\Domain\Media\Core\Contracts\MediaRepository;
 use Polymorph\Platform\Domain\Media\Core\Exceptions\MediaNotFoundException;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
+use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaDeletedFilter;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaQuery;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Eloquent реализация репозитория медиа-файлов
@@ -75,6 +76,7 @@ final class EloquentMediaRepository implements MediaRepository
     {
         /** @var MediaCollection $collection */
         $collection = Media::all();
+
         return $collection;
     }
 
@@ -92,6 +94,7 @@ final class EloquentMediaRepository implements MediaRepository
     public function update(Media $media, array $data): Media
     {
         $media->update($data);
+
         return $media->fresh();
     }
 
@@ -141,7 +144,7 @@ final class EloquentMediaRepository implements MediaRepository
     public function search(MediaQuery $query): LengthAwarePaginator
     {
         $builder = $this->buildQuery($query)->with(['image', 'avMetadata']);
-        
+
         return $builder->paginate(
             perPage: $query->perPage(),
             page: $query->page()
@@ -163,6 +166,7 @@ final class EloquentMediaRepository implements MediaRepository
     {
         /** @var MediaCollection $collection */
         $collection = Media::whereIn('id', $ids)->get();
+
         return $collection;
     }
 
@@ -170,6 +174,7 @@ final class EloquentMediaRepository implements MediaRepository
     {
         /** @var MediaCollection $collection */
         $collection = Media::onlyTrashed()->whereIn('id', $ids)->get();
+
         return $collection;
     }
 
@@ -177,6 +182,7 @@ final class EloquentMediaRepository implements MediaRepository
     {
         /** @var MediaCollection $collection */
         $collection = Media::withTrashed()->whereIn('id', $ids)->get();
+
         return $collection;
     }
 
@@ -184,6 +190,7 @@ final class EloquentMediaRepository implements MediaRepository
     {
         /** @var MediaCollection $collection */
         $collection = Media::onlyTrashed()->get();
+
         return $collection;
     }
 
@@ -220,9 +227,9 @@ final class EloquentMediaRepository implements MediaRepository
 
         // Фильтр по удаленным
         match ($query->deletedFilter()) {
-            \Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaDeletedFilter::WithDeleted => $builder->withTrashed(),
-            \Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaDeletedFilter::OnlyDeleted => $builder->onlyTrashed(),
-            \Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaDeletedFilter::DefaultOnlyNotDeleted => null,
+            MediaDeletedFilter::WithDeleted => $builder->withTrashed(),
+            MediaDeletedFilter::OnlyDeleted => $builder->onlyTrashed(),
+            MediaDeletedFilter::DefaultOnlyNotDeleted => null,
         };
 
         // Поиск по тексту
@@ -236,11 +243,11 @@ final class EloquentMediaRepository implements MediaRepository
 
         // Фильтр по MIME префиксу
         if ($query->mimePrefix() !== null && $query->mimePrefix() !== '') {
-            $builder->where('mime', 'like', $query->mimePrefix() . '%');
+            $builder->where('mime', 'like', $query->mimePrefix().'%');
         }
 
         if ($query->kind() !== null && $query->kind() !== '') {
-            $builder->where('mime', 'like', $query->kind() . '/%');
+            $builder->where('mime', 'like', $query->kind().'/%');
         }
 
         // Сортировка

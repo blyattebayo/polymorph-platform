@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\SharedKernel\Identity;
 
-use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 
 final class CurrentActorResolver
 {

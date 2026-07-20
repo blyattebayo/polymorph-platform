@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Support;
 
-use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 use Illuminate\Support\Carbon;
+use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 
 /**
  * Каноническая нормализация скалярных schema-значений (write + query).
@@ -39,7 +39,7 @@ final class RecordSchemaScalarValueNormalizer
 
     public function normalizeDateTime(mixed $value): string
     {
-        if (!is_string($value) && !is_int($value) && !is_float($value)) {
+        if (! is_string($value) && ! is_int($value) && ! is_float($value)) {
             throw new \InvalidArgumentException('Datetime value must be a parseable scalar.');
         }
 

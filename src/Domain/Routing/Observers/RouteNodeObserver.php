@@ -12,13 +12,11 @@ use Polymorph\Platform\Domain\Routing\Services\Cache\RouteCache;
  *
  * Обрабатывает события жизненного цикла RouteNode:
  * - Автоматическая инвалидация кэша дерева маршрутов при изменениях
- *
- * @package Polymorph\Platform\Domain\Routing\Observers
  */
 class RouteNodeObserver
 {
     /**
-     * @param \Polymorph\Platform\Domain\Routing\Services\Cache\RouteCache $cache Сервис кэширования маршрутов
+     * @param  RouteCache  $cache  Сервис кэширования маршрутов
      */
     public function __construct(
         private RouteCache $cache,
@@ -31,8 +29,7 @@ class RouteNodeObserver
      * Использует forgetClientTree() для очистки только клиентского кэша,
      * сохраняя кэш системных роутов (которые статичны и не меняются).
      *
-     * @param \Polymorph\Platform\Domain\Routing\Core\Models\RouteNode $node Сохранённый узел
-     * @return void
+     * @param  RouteNode  $node  Сохранённый узел
      */
     public function saved(RouteNode $node): void
     {
@@ -46,8 +43,7 @@ class RouteNodeObserver
      * Использует forgetClientTree() для очистки только клиентского кэша,
      * сохраняя кэш системных роутов.
      *
-     * @param \Polymorph\Platform\Domain\Routing\Core\Models\RouteNode $node Удалённый узел
-     * @return void
+     * @param  RouteNode  $node  Удалённый узел
      */
     public function deleted(RouteNode $node): void
     {
@@ -61,8 +57,7 @@ class RouteNodeObserver
      * Использует forgetClientTree() для очистки только клиентского кэша,
      * сохраняя кэш системных роутов.
      *
-     * @param \Polymorph\Platform\Domain\Routing\Core\Models\RouteNode $node Восстановленный узел
-     * @return void
+     * @param  RouteNode  $node  Восстановленный узел
      */
     public function restored(RouteNode $node): void
     {

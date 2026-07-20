@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Http\Resources\Admin;
 
+use Illuminate\Http\Request;
+
 /**
  * API Resource для тестового эндпоинта /admin/ping.
  *
  * Возвращает простой payload для проверки работы роутинга.
- *
- * @package Polymorph\Platform\Http\Resources\Admin
  */
 class AdminPingResource extends AdminJsonResource
 {
@@ -21,7 +21,7 @@ class AdminPingResource extends AdminJsonResource
     public static $wrap = null;
 
     /**
-     * @param array<string, string> $payload Payload ответа (status, message, route)
+     * @param  array<string, string>  $payload  Payload ответа (status, message, route)
      */
     public function __construct(private readonly array $payload)
     {
@@ -31,7 +31,7 @@ class AdminPingResource extends AdminJsonResource
     /**
      * Преобразовать ресурс в массив.
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
+     * @param  Request  $request  HTTP запрос
      * @return array<string, string> Payload ответа
      */
     public function toArray($request): array
@@ -39,5 +39,3 @@ class AdminPingResource extends AdminJsonResource
         return $this->payload;
     }
 }
-
-

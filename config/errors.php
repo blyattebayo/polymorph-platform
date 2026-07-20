@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-use Polymorph\Platform\Support\Errors\ErrorCode;
-use Polymorph\Platform\Support\Errors\ErrorFactory;
-use Polymorph\Platform\Support\Errors\ErrorPayload;
-use Polymorph\Platform\Support\Errors\HttpErrorException;
-use Polymorph\Platform\Domain\Auth\Application\Exceptions\TokenManagementDeniedException;
-use Polymorph\Platform\Domain\Auth\Core\Exceptions\JwtConfigurationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Validation\ValidationException;
+use Polymorph\Platform\Domain\Auth\Application\Exceptions\TokenManagementDeniedException;
+use Polymorph\Platform\Domain\Auth\Core\Exceptions\JwtConfigurationException;
+use Polymorph\Platform\Support\Errors\ErrorCode;
+use Polymorph\Platform\Support\Errors\ErrorFactory;
+use Polymorph\Platform\Support\Errors\ErrorPayload;
+use Polymorph\Platform\Support\Errors\HttpErrorException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
@@ -205,7 +205,7 @@ return [
                     $detail = 'Admin privileges are required.';
                 }
 
-               return $factory->for(ErrorCode::FORBIDDEN)
+                return $factory->for(ErrorCode::FORBIDDEN)
                     ->detail($detail)
                     ->build();
             },
@@ -354,7 +354,7 @@ return [
     ],
 
     'fallback' => [
-        'builder' => static function (\Throwable $throwable, ErrorFactory $factory): ErrorPayload {
+        'builder' => static function (Throwable $throwable, ErrorFactory $factory): ErrorPayload {
             return $factory->for(ErrorCode::INTERNAL_SERVER_ERROR)->build();
         },
         'report' => [
@@ -363,4 +363,3 @@ return [
         ],
     ],
 ];
-

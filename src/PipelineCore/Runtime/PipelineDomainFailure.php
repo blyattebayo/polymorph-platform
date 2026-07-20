@@ -7,8 +7,8 @@ namespace Polymorph\Platform\PipelineCore\Runtime;
 final class PipelineDomainFailure extends PipelineResult
 {
     /**
-     * @param array<string, StageResult> $stageResults
-     * @param array<string, StageResult> $warnings
+     * @param  array<string, StageResult>  $stageResults
+     * @param  array<string, StageResult>  $warnings
      */
     public function __construct(
         array $stageResults,

@@ -15,8 +15,6 @@ use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\Cardinality;
  * - Валидации (с префиксом {@see RecordPayloadPathRegistry::dottedPrefix()})
  * - Извлечения данных через data_get() (без префикса)
  * - Построения путей для GraphBuilder
- *
- * @package Polymorph\Platform\Domain\SchemaModelValidation
  */
 final class FieldPathBuilder
 {
@@ -28,9 +26,9 @@ final class FieldPathBuilder
      * Преобразует full_path из Path в путь для data_json.
      * Если родительский путь имеет cardinality: 'many', заменяет соответствующий сегмент на '*'.
      *
-     * @param string $fullPath Полный путь из Path (например, 'author.contacts.phone')
-     * @param array<string, string> $pathCardinalities Маппинг full_path → cardinality для всех путей
-     * @param string $prefix Префикс для пути (по умолчанию {@see RecordPayloadPathRegistry::dottedPrefix()})
+     * @param  string  $fullPath  Полный путь из Path (например, 'author.contacts.phone')
+     * @param  array<string, string>  $pathCardinalities  Маппинг full_path → cardinality для всех путей
+     * @param  string  $prefix  Префикс для пути (по умолчанию {@see RecordPayloadPathRegistry::dottedPrefix()})
      * @return string Путь в точечной нотации для валидации
      */
     public function buildFieldPath(
@@ -62,20 +60,20 @@ final class FieldPathBuilder
 
         return $prefix.implode('.', $resultSegments);
     }
-    
+
     /**
      * Построить путь для доступа к данным через data_get().
-     * 
+     *
      * Аналогичен buildFieldPath(), но без префикса.
-    * Используется для извлечения значений из Record.data_json с учётом вложенных массивов.
-     * 
+     * Используется для извлечения значений из Record.data_json с учётом вложенных массивов.
+     *
      * Примеры:
      * - 'author' в†’ 'author'
      * - 'meta.author' (meta cardinality=one) в†’ 'meta.author'
      * - 'items.product' (items cardinality=many) в†’ 'items.*.product'
-     * 
-     * @param string $fullPath Полный путь из Field (например, 'items.product')
-     * @param array<string, string> $pathCardinalities Маппинг full_path → cardinality для всех путей
+     *
+     * @param  string  $fullPath  Полный путь из Field (например, 'items.product')
+     * @param  array<string, string>  $pathCardinalities  Маппинг full_path → cardinality для всех путей
      * @return string Путь для data_get() с wildcard'ами
      */
     public function buildDataJsonPath(string $fullPath, array $pathCardinalities): string
@@ -89,7 +87,7 @@ final class FieldPathBuilder
      * The trailing wildcard is required for scalar many fields but must be omitted
      * for JSON containers because their children already contribute wildcard segments.
      *
-     * @param array<string, string> $pathCardinalities
+     * @param  array<string, string>  $pathCardinalities
      */
     public function computeDataPath(
         string $fullPath,
@@ -99,11 +97,10 @@ final class FieldPathBuilder
     ): string {
         $dataPath = $this->buildDataJsonPath($fullPath, $pathCardinalities);
 
-        if ($cardinality === Cardinality::MANY->value && !$isJsonType && !str_ends_with($dataPath, self::ARRAY_ELEMENT_WILDCARD)) {
+        if ($cardinality === Cardinality::MANY->value && ! $isJsonType && ! str_ends_with($dataPath, self::ARRAY_ELEMENT_WILDCARD)) {
             $dataPath .= self::ARRAY_ELEMENT_WILDCARD;
         }
 
         return $dataPath;
     }
 }
-

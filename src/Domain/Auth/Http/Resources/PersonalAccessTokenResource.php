@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Http\Resources;
 
-use Polymorph\Platform\Domain\Auth\Application\DTO\CreatedPersonalAccessTokenResult;
 use Polymorph\Platform\Domain\Auth\Application\DTO\PersonalAccessTokenView;
 
 final class PersonalAccessTokenResource
@@ -18,7 +17,7 @@ final class PersonalAccessTokenResource
     }
 
     /**
-     * @param list<PersonalAccessTokenView> $views
+     * @param  list<PersonalAccessTokenView>  $views
      * @return list<array<string, mixed>>
      */
     public static function collection(array $views): array

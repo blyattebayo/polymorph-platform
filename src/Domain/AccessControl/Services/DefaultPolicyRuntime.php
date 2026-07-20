@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\AccessControl\Services;
 
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\CompiledPolicyRepository;
-use Polymorph\Platform\Domain\AccessControl\Core\Models\CompiledPolicy;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRuntime;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\ResourceMatcher;
+use Polymorph\Platform\Domain\AccessControl\Core\Models\CompiledPolicy;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Decision;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Effect;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
@@ -17,8 +17,7 @@ final class DefaultPolicyRuntime implements PolicyRuntime
     public function __construct(
         private readonly CompiledPolicyRepository $compiledPolicies,
         private readonly ResourceMatcher $resourceMatcher,
-    ) {
-    }
+    ) {}
 
     public function allows(array $subjects, string $resource, string $action): bool
     {
@@ -71,6 +70,7 @@ final class DefaultPolicyRuntime implements PolicyRuntime
 
             if ($resource === '' || $action === '') {
                 $decisions[] = Decision::deny('no_matching_policy');
+
                 continue;
             }
 
@@ -82,8 +82,8 @@ final class DefaultPolicyRuntime implements PolicyRuntime
     }
 
     /**
-    * @param iterable<CompiledPolicy> $policies
-    * @return list<CompiledPolicy>
+     * @param  iterable<CompiledPolicy>  $policies
+     * @return list<CompiledPolicy>
      */
     private function matchPolicies(iterable $policies, string $resource, string $action): array
     {
@@ -111,7 +111,7 @@ final class DefaultPolicyRuntime implements PolicyRuntime
     }
 
     /**
-     * @param list<Subject> $subjects
+     * @param  list<Subject>  $subjects
      * @return list<string>
      */
     private function normalizeSubjectKeys(array $subjects): array
@@ -120,7 +120,7 @@ final class DefaultPolicyRuntime implements PolicyRuntime
     }
 
     /**
-    * @param iterable<CompiledPolicy> $matchedPolicies
+     * @param  iterable<CompiledPolicy>  $matchedPolicies
      */
     private function evaluateMatchedPolicies(iterable $matchedPolicies): Decision
     {
@@ -194,12 +194,11 @@ final class DefaultPolicyRuntime implements PolicyRuntime
     }
 
     /**
-     * @param list<int> $ids
+     * @param  list<int>  $ids
      * @return list<int>
      */
     private function uniqueIds(array $ids): array
     {
         return array_values(array_unique($ids));
     }
-
 }

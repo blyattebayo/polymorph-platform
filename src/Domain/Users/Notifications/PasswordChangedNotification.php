@@ -23,7 +23,7 @@ final class PasswordChangedNotification extends Notification implements ShouldQu
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage())
+        return (new MailMessage)
             ->subject('Пароль аккаунта изменён')
             ->greeting('Здравствуйте!')
             ->line('Мы зафиксировали изменение пароля вашего аккаунта.')

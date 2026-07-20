@@ -20,7 +20,7 @@ final class StoreUserRequest extends ApiFormRequest
             'name' => ['nullable', 'string', 'max:255'],
             'email' => ValidationRules::email(),
             'password' => ValidationRules::password(),
-            'status' => ['nullable', new ValidUserStatusRule()],
+            'status' => ['nullable', new ValidUserStatusRule],
             'role_ids' => ['nullable', 'array', app(AssignableRoleIdsRule::class)],
             'role_ids.*' => ['integer', 'min:1'],
         ];

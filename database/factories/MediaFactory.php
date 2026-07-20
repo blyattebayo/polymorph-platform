@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use Polymorph\Platform\Domain\Media\Core\Models\Media;
-use Database\Factories\MediaImageFactory;
-use Database\Factories\MediaAvMetadataFactory;
-use Database\Factories\MediaVariantFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Polymorph\Platform\Domain\Media\Core\Models\Media;
+use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
 
 /**
  * Фабрика для создания записей Media.
@@ -74,8 +72,6 @@ class MediaFactory extends Factory
 
     /**
      * Указать, что медиа является изображением.
-     *
-     * @return static
      */
     public function image(): static
     {
@@ -87,8 +83,6 @@ class MediaFactory extends Factory
 
     /**
      * Указать, что медиа является видео.
-     *
-     * @return static
      */
     public function video(): static
     {
@@ -100,8 +94,6 @@ class MediaFactory extends Factory
 
     /**
      * Указать, что медиа является аудио.
-     *
-     * @return static
      */
     public function audio(): static
     {
@@ -113,8 +105,6 @@ class MediaFactory extends Factory
 
     /**
      * Указать, что медиа является документом.
-     *
-     * @return static
      */
     public function document(): static
     {
@@ -127,8 +117,7 @@ class MediaFactory extends Factory
     /**
      * Создать медиа с связанной записью MediaImage.
      *
-     * @param array<string, mixed> $imageAttributes Атрибуты для MediaImage
-     * @return static
+     * @param  array<string, mixed>  $imageAttributes  Атрибуты для MediaImage
      */
     public function withImage(array $imageAttributes = []): static
     {
@@ -140,8 +129,7 @@ class MediaFactory extends Factory
     /**
      * Создать медиа с связанной записью MediaAvMetadata.
      *
-     * @param array<string, mixed> $avAttributes Атрибуты для MediaAvMetadata
-     * @return static
+     * @param  array<string, mixed>  $avAttributes  Атрибуты для MediaAvMetadata
      */
     public function withAvMetadata(array $avAttributes = []): static
     {
@@ -153,8 +141,7 @@ class MediaFactory extends Factory
     /**
      * Создать медиа с несколькими вариантами.
      *
-     * @param array<string> $variants Названия вариантов (например, ['thumbnail', 'medium', 'large'])
-     * @return static
+     * @param  array<string>  $variants  Названия вариантов (например, ['thumbnail', 'medium', 'large'])
      */
     public function withVariants(array $variants = ['thumbnail', 'medium', 'large']): static
     {
@@ -171,9 +158,8 @@ class MediaFactory extends Factory
     /**
      * Создать медиа с одним вариантом.
      *
-     * @param string $name Название варианта
-     * @param array<string, mixed> $attributes Дополнительные атрибуты
-     * @return static
+     * @param  string  $name  Название варианта
+     * @param  array<string, mixed>  $attributes  Дополнительные атрибуты
      */
     public function withVariant(string $name, array $attributes = []): static
     {
@@ -192,8 +178,6 @@ class MediaFactory extends Factory
      * - MediaImage для изображений (с размерами)
      * - MediaAvMetadata для видео/аудио (с метаданными)
      * - MediaVariant для всех типов (thumbnail, medium, large)
-     *
-     * @return static
      */
     public function complete(): static
     {
@@ -201,7 +185,7 @@ class MediaFactory extends Factory
             $kind = $media->kind();
 
             // Для изображений: создаем MediaImage и варианты
-            if ($kind === \Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind::Image) {
+            if ($kind === MediaKind::Image) {
                 MediaImageFactory::new()
                     ->for($media)
                     ->create([
@@ -219,7 +203,7 @@ class MediaFactory extends Factory
             }
 
             // Для видео: создаем MediaAvMetadata
-            if ($kind === \Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind::Video) {
+            if ($kind === MediaKind::Video) {
                 MediaAvMetadataFactory::new()
                     ->for($media)
                     ->forVideo()
@@ -227,7 +211,7 @@ class MediaFactory extends Factory
             }
 
             // Для аудио: создаем MediaAvMetadata
-            if ($kind === \Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind::Audio) {
+            if ($kind === MediaKind::Audio) {
                 MediaAvMetadataFactory::new()
                     ->for($media)
                     ->forAudio()
@@ -236,4 +220,3 @@ class MediaFactory extends Factory
         });
     }
 }
-

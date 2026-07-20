@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Http\Resources\Media;
 
-use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
-use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Illuminate\Http\Request;
+use Polymorph\Platform\Domain\Media\Core\Models\Media;
 
 /**
  * API Resource для изображений (Media).
@@ -15,8 +14,6 @@ use Illuminate\Http\Request;
  * width, height, preview_urls (обязательные).
  *
  * Требует загруженную связь `image` для получения размеров.
- *
- * @package Polymorph\Platform\Http\Resources\Media
  */
 class MediaImageResource extends BaseMediaResource
 {
@@ -26,7 +23,7 @@ class MediaImageResource extends BaseMediaResource
      * Включает базовые поля и специфичные для изображений:
      * width, height, preview_urls.
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
+     * @param  Request  $request  HTTP запрос
      * @return array<string, mixed> Массив с полями изображения
      */
     public function toArray($request): array
@@ -77,4 +74,3 @@ class MediaImageResource extends BaseMediaResource
         return $urls;
     }
 }
-

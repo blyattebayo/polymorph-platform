@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Core\Contracts;
 
-use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
-use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
-use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldPath;
 use Polymorph\Platform\Domain\SchemaModel\Core\Collections\FieldCollection;
+use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
+use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
+use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldPath;
 
 /**
  * Репозиторий для работы с полями.
@@ -26,7 +26,7 @@ interface FieldRepository
 
     /**
      * Создать новое поле.
-     * 
+     *
      * @param array{
      *   schema_id: int,
      *   parent_id?: int|null,
@@ -35,7 +35,7 @@ interface FieldRepository
      *   type: string,
      *   cardinality?: string,
      *   is_indexed?: bool,
-    *   is_system?: bool,
+     *   is_system?: bool,
      *   validation_rules?: array|null,
      *   sort_order?: int,
      *   metadata?: array|null
@@ -62,5 +62,4 @@ interface FieldRepository
      * Получить все дочерние поля рекурсивно.
      */
     public function getAllDescendants(Field $field): FieldCollection;
-
 }

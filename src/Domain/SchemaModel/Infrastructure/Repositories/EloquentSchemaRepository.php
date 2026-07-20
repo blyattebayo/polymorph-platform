@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Infrastructure\Repositories;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionRepository;
 use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\SchemaRepository;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\SchemaUsageInfo;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 /**
  * Eloquent реализация SchemaRepository.
@@ -18,8 +18,7 @@ class EloquentSchemaRepository implements SchemaRepository
 {
     public function __construct(
         private readonly RecordDefinitionRepository $recordDefinitions,
-    ) {
-    }
+    ) {}
 
     public function find(int $id): ?SchemaModel
     {
@@ -36,6 +35,7 @@ class EloquentSchemaRepository implements SchemaRepository
     public function update(SchemaModel $schema, array $data): SchemaModel
     {
         $schema->update($data);
+
         return $schema->fresh('ownership');
     }
 
@@ -72,12 +72,12 @@ class EloquentSchemaRepository implements SchemaRepository
             ->withCount(['fields', 'recordDefinitions']);
 
         // Поиск
-        if (!empty($criteria['search'])) {
+        if (! empty($criteria['search'])) {
             $search = $criteria['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 

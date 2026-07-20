@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Http\Resources;
 
-use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
 
 /**
  * @mixin SchemaModel

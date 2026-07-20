@@ -9,18 +9,13 @@ namespace Polymorph\Platform\Domain\Media\Services\Metadata\Plugins;
  *
  * Использует ffprobe для извлечения длительности, битрейта и фреймов
  * для аудио/видео файлов и возвращает нормализованный набор полей.
- *
- * @package Polymorph\Platform\Domain\Media\Services
  */
 class FfprobeMediaMetadataPlugin implements MediaMetadataPlugin
 {
-    /**
-     * @var string
-     */
     private string $binary;
 
     /**
-     * @param string|null $binary Путь к бинарнику ffprobe (по умолчанию 'ffprobe')
+     * @param  string|null  $binary  Путь к бинарнику ffprobe (по умолчанию 'ffprobe')
      */
     public function __construct(?string $binary = null)
     {
@@ -64,8 +59,7 @@ class FfprobeMediaMetadataPlugin implements MediaMetadataPlugin
      *
      * Вынесено в отдельный метод для удобства мокирования в тестах.
      *
-     * @param string $command Команда для выполнения
-     * @return string|null
+     * @param  string  $command  Команда для выполнения
      */
     protected function runCommand(string $command): ?string
     {
@@ -102,7 +96,7 @@ class FfprobeMediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Нормализовать структуру ffprobe JSON в плоский массив значений.
      *
-     * @param array<string, mixed> $data Данные ffprobe (format + streams)
+     * @param  array<string, mixed>  $data  Данные ffprobe (format + streams)
      * @return array{
      *     duration_ms?: int|null,
      *     bitrate_kbps?: int|null,
@@ -174,9 +168,8 @@ class FfprobeMediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Распарсить строку частоты кадров вида "30000/1001" или "25".
      *
-     * @param mixed $value Значение avg_frame_rate
-     * @param float|null $fallback Текущее значение (для выбора первого валидного)
-     * @return float|null
+     * @param  mixed  $value  Значение avg_frame_rate
+     * @param  float|null  $fallback  Текущее значение (для выбора первого валидного)
      */
     private function parseFrameRate(mixed $value, ?float $fallback): ?float
     {
@@ -201,5 +194,3 @@ class FfprobeMediaMetadataPlugin implements MediaMetadataPlugin
         return $fallback;
     }
 }
-
-

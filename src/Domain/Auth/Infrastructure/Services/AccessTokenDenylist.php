@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Cache;
 final class AccessTokenDenylist
 {
     /**
-     * @param list<int> $sessionIds
+     * @param  list<int>  $sessionIds
      */
     public function revoke(array $sessionIds): void
     {

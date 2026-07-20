@@ -9,7 +9,7 @@ use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 final readonly class FieldDescriptor
 {
     /**
-     * @param array<string, mixed> $validationRules
+     * @param  array<string, mixed>  $validationRules
      */
     public function __construct(
         public string $fullPath,

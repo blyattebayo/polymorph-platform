@@ -11,8 +11,7 @@ final class RevokeSessionsAfterPasswordChanged
 {
     public function __construct(
         private readonly UserSessionRevoker $sessionRevoker,
-    ) {
-    }
+    ) {}
 
     public function handle(PasswordChanged $event): void
     {

@@ -15,12 +15,11 @@ final readonly class RecordQueryFieldMeta
         public ?string $cast,
         public bool $isIndexed,
         public bool $isUnique,
-    ) {
-    }
+    ) {}
 
     public function supportsGinEquality(): bool
     {
-        return !$this->type->isContainer();
+        return ! $this->type->isContainer();
     }
 
     public function supportsExpressionIndex(): bool

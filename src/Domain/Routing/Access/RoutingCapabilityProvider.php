@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Access;
 
+use Polymorph\Platform\Domain\AccessControl\Access\BuiltInRoleCatalog;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\CapabilityDefinitionProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\CapabilityDefinition;
-use Polymorph\Platform\Domain\AccessControl\Access\BuiltInRoleCatalog;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 
 final class RoutingCapabilityProvider implements CapabilityDefinitionProvider

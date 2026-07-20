@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModelValidation\Rules;
 
-use Polymorph\Platform\Domain\Records\Support\RecordSchemaScalarValueNormalizer;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Carbon;
+use Polymorph\Platform\Domain\Records\Support\RecordSchemaScalarValueNormalizer;
 
 /**
  * Принимает только ISO-8601 datetime с обязательным timezone (нормализуется в UTC на write).
@@ -16,7 +16,7 @@ final class Iso8601DateTime implements ValidationRule
 {
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if (!is_string($value) && !is_int($value) && !is_float($value)) {
+        if (! is_string($value) && ! is_int($value) && ! is_float($value)) {
             $fail('The :attribute must be a valid ISO-8601 datetime with timezone.');
 
             return;

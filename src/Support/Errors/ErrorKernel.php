@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Support\Errors;
 
-use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
 use Closure;
 use Illuminate\Contracts\Container\Container;
+use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
+
 use function is_string;
 
 final class ErrorKernel
@@ -17,7 +18,7 @@ final class ErrorKernel
     private readonly array $mappings;
 
     /**
-     * @param Closure(\Throwable, ErrorFactory): ErrorPayload $fallback
+     * @param  Closure(\Throwable, ErrorFactory): ErrorPayload  $fallback
      */
     public function __construct(
         private readonly ErrorFactory $factory,
@@ -29,7 +30,7 @@ final class ErrorKernel
     }
 
     /**
-     * @param array<string, mixed> $config
+     * @param  array<string, mixed>  $config
      */
     public static function fromConfig(array $config, ?Container $container = null): self
     {
@@ -119,16 +120,13 @@ final class ErrorKernel
     }
 
     /**
-     * @param Closure(\Throwable, ErrorFactory): ErrorPayload $fallback
+     * @param  Closure(\Throwable, ErrorFactory): ErrorPayload  $fallback
      */
     public function withFallback(Closure $fallback): self
     {
         return new self($this->factory, $fallback, $this->fallbackReport, ...$this->mappings);
     }
 
-    /**
-     * @param Closure $closure
-     */
     private static function bindClosure(Closure $closure, ?Container $container): Closure
     {
         if ($container === null) {
@@ -145,7 +143,7 @@ final class ErrorKernel
     }
 
     /**
-     * @param array<string, mixed>|null $definition
+     * @param  array<string, mixed>|null  $definition
      */
     private static function buildReportDefinition(?string $throwableClass, ?array $definition, ?Container $container): ?ErrorReportDefinition
     {
@@ -181,4 +179,3 @@ final class ErrorKernel
         return $definition->bind($container);
     }
 }
-

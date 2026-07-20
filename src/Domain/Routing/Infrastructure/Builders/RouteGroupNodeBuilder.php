@@ -13,17 +13,14 @@ use Polymorph\Platform\Domain\Routing\Core\ValueObjects\RouteNodeDefinition;
  * Отвечает за создание и настройку групп маршрутов:
  * - Установка полей группы (prefix, domain, namespace, middleware, where)
  * - Рекурсивная обработка дочерних узлов
- *
- * @package Polymorph\Platform\Domain\Routing\Builders
  */
 class RouteGroupNodeBuilder implements RouteNodeBuilderInterface
 {
-
     /**
      * Построить RouteNodeDefinition типа GROUP из массива конфигурации.
      *
-     * @param array<string, mixed> $data Данные конфигурации
-     * @param list<RouteNodeDefinition> $children Дочерние узлы группы
+     * @param  array<string, mixed>  $data  Данные конфигурации
+     * @param  list<RouteNodeDefinition>  $children  Дочерние узлы группы
      * @return RouteNodeDefinition Созданный RouteNodeDefinition
      */
     public function build(array $data, array $children): ?RouteNodeDefinition

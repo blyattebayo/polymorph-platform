@@ -11,8 +11,6 @@ use Illuminate\Http\Request;
  *
  * Возвращает только базовые поля медиа-файла.
  * Документы не имеют специфичных метаданных.
- *
- * @package Polymorph\Platform\Http\Resources\Media
  */
 class MediaDocumentResource extends BaseMediaResource
 {
@@ -21,7 +19,7 @@ class MediaDocumentResource extends BaseMediaResource
      *
      * Возвращает только базовые поля медиа-файла.
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
+     * @param  Request  $request  HTTP запрос
      * @return array<string, mixed> Массив с базовыми полями документа
      */
     public function toArray($request): array
@@ -29,4 +27,3 @@ class MediaDocumentResource extends BaseMediaResource
         return parent::toArray($request);
     }
 }
-

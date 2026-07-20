@@ -11,8 +11,7 @@ final readonly class FindUserByEmailQuery
 {
     public function __construct(
         private UserRepository $repository,
-    ) {
-    }
+    ) {}
 
     public function execute(string $email): ?User
     {

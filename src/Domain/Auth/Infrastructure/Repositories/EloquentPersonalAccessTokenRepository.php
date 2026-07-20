@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Polymorph\Platform\Domain\Auth\Infrastructure\Persistence;
+namespace Polymorph\Platform\Domain\Auth\Infrastructure\Repositories;
 
-use Polymorph\Platform\Domain\Auth\Core\Contracts\PersonalAccessTokenRepository;
-use Polymorph\Platform\Domain\Auth\Core\Models\PersonalAccessToken;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\Auth\Core\Contracts\PersonalAccessTokenRepository;
+use Polymorph\Platform\Domain\Auth\Core\Models\PersonalAccessToken;
 
 final class EloquentPersonalAccessTokenRepository implements PersonalAccessTokenRepository
 {

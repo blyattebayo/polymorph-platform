@@ -15,15 +15,14 @@ namespace Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects;
 final readonly class SchemaUsageInfo
 {
     /**
-     * @param list<array{id:int,name:string}> $recordDefinitions
+     * @param  list<array{id:int,name:string}>  $recordDefinitions
      */
     public function __construct(
         public int $schemaId,
         public string $schemaCode,
         public string $schemaName,
         public array $recordDefinitions,
-    ) {
-    }
+    ) {}
 
     public function usageCount(): int
     {
@@ -43,7 +42,7 @@ final readonly class SchemaUsageInfo
         $count = $this->usageCount();
 
         return [
-            'is used in ' . $count . ' record ' . ($count === 1 ? 'definition' : 'definitions'),
+            'is used in '.$count.' record '.($count === 1 ? 'definition' : 'definitions'),
         ];
     }
 

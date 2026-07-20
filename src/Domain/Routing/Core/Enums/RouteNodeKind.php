@@ -10,8 +10,6 @@ namespace Polymorph\Platform\Domain\Routing\Core\Enums;
  * Определяет два типа узлов:
  * - GROUP: группа маршрутов (для организации иерархии, применения middleware, prefix и т.д.)
  * - ROUTE: конкретный маршрут (HTTP endpoint)
- *
- * @package Polymorph\Platform\Domain\Routing\Enums
  */
 enum RouteNodeKind: string
 {

@@ -20,8 +20,7 @@ final class SdkDefinitionRegistry implements DefinitionRegistry
     public function __construct(
         private readonly DataPlatform $platform,
         private readonly ExtensionContext $context,
-    ) {
-    }
+    ) {}
 
     public function ensure(string $entity, SchemaSpec $spec): DefinitionRef
     {

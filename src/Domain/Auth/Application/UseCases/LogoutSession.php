@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Application\UseCases;
 
+use Illuminate\Support\Facades\Event;
 use Polymorph\Platform\Domain\Auth\Application\DTO\LogoutSessionCommand;
 use Polymorph\Platform\Domain\Auth\Core\Contracts\RefreshSessionRepository;
 use Polymorph\Platform\Domain\Auth\Events\UserLoggedOut;
-use Illuminate\Support\Facades\Event;
 
 final readonly class LogoutSession
 {

@@ -25,8 +25,7 @@ final class FieldAccessService
         private readonly PolicyRuntime $runtime,
         private readonly AccessSubjectProvider $subjectProvider,
         private readonly PathTreeFilter $pathTreeFilter,
-    ) {
-    }
+    ) {}
 
     public function canAccessField(?UserIdentity $user, int $schemaId, string $action, ?string $fullPath = null): bool
     {
@@ -52,7 +51,7 @@ final class FieldAccessService
             return [];
         }
 
-        $cacheKey = $user->userId() . ':' . $schemaId . ':' . $normalizedAction;
+        $cacheKey = $user->userId().':'.$schemaId.':'.$normalizedAction;
 
         return $this->visibleFieldPathsCache[$cacheKey] ??= $this->computeVisibleFieldPaths($user, $schemaId, $normalizedAction);
     }
@@ -96,7 +95,7 @@ final class FieldAccessService
     }
 
     /**
-     * @param array<string, mixed> $dataJson
+     * @param  array<string, mixed>  $dataJson
      * @return array<string, mixed>
      */
     public function filterReadableDataJson(?UserIdentity $user, int $schemaId, array $dataJson): array
@@ -105,7 +104,7 @@ final class FieldAccessService
     }
 
     /**
-     * @param array<string, mixed> $dataJson
+     * @param  array<string, mixed>  $dataJson
      * @return string[]
      */
     public function forbiddenWritePaths(?UserIdentity $user, int $schemaId, array $dataJson): array
@@ -115,21 +114,20 @@ final class FieldAccessService
 
     private function resourcePath(int $schemaId, string $fieldPath): string
     {
-        return 'schema.' . $schemaId . '.fields.' . ltrim($fieldPath, '.');
+        return 'schema.'.$schemaId.'.fields.'.ltrim($fieldPath, '.');
     }
 
     /**
-     * @param list<string> $visiblePaths
+     * @param  list<string>  $visiblePaths
      */
     private static function hasVisibleDescendant(string $path, array $visiblePaths): bool
     {
         foreach ($visiblePaths as $candidate) {
-            if ($candidate !== $path && str_starts_with($candidate, $path . '.')) {
+            if ($candidate !== $path && str_starts_with($candidate, $path.'.')) {
                 return true;
             }
         }
 
         return false;
     }
-
 }

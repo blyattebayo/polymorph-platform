@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\SdkBridge;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Polymorph\Sdk\Identity\Actor;
 use Polymorph\Sdk\Identity\RequestAuthenticator;
 
@@ -21,9 +21,7 @@ final class SdkRequestAuthenticator implements RequestAuthenticator
 {
     public const EXTENSION_ID_ATTRIBUTE = 'extension.id';
 
-    public function __construct(private readonly AppLogger $logger)
-    {
-    }
+    public function __construct(private readonly AppLogger $logger) {}
 
     public function authenticateAs(int $userId): ?Actor
     {

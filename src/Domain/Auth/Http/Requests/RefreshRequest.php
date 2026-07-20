@@ -10,8 +10,6 @@ use Illuminate\Foundation\Http\FormRequest;
  * Request для ротации refresh токена.
  *
  * Не требует параметров, refresh токен извлекается из HttpOnly cookie.
- *
- * @package Polymorph\Platform\Domain\Auth\Http\Requests
  */
 final class RefreshRequest extends FormRequest
 {
@@ -19,8 +17,6 @@ final class RefreshRequest extends FormRequest
      * Определить, авторизован ли пользователь для выполнения запроса.
      *
      * Требует валидного refresh токена в cookie.
-     *
-     * @return bool
      */
     public function authorize(): bool
     {

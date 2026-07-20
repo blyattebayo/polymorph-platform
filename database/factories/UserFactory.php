@@ -2,22 +2,22 @@
 
 namespace Database\Factories;
 
-use Polymorph\Platform\Domain\AccessControl\Access\BuiltInRoleCatalog;
-use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Polymorph\Platform\Domain\AccessControl\Access\BuiltInRoleCatalog;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Polymorph\Platform\Domain\Users\Core\Models\User>
+ * @extends Factory<User>
  */
 class UserFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-    * @var class-string<\Polymorph\Platform\Domain\Users\Core\Models\User>
+     * @var class-string<User>
      */
     protected $model = User::class;
 

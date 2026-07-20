@@ -9,7 +9,7 @@ use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as P
 final class ExtensionRouteConstraints
 {
     /**
-     * @param array<string, mixed> $routeNode
+     * @param  array<string, mixed>  $routeNode
      */
     public function assertAllowedRouteSurface(string $pluginId, array $routeNode): void
     {
@@ -31,7 +31,7 @@ final class ExtensionRouteConstraints
 
         foreach ($allowed as $prefixTemplate) {
             $candidate = trim($prefixTemplate, '/');
-            if ($normalized === $candidate || str_starts_with($normalized . '/', $candidate . '/')) {
+            if ($normalized === $candidate || str_starts_with($normalized.'/', $candidate.'/')) {
                 return;
             }
         }
@@ -40,7 +40,7 @@ final class ExtensionRouteConstraints
     }
 
     /**
-     * @param array<string, mixed> $routeNode
+     * @param  array<string, mixed>  $routeNode
      */
     private function extractNodePrefix(array $routeNode): ?string
     {

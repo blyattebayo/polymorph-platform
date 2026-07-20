@@ -2,8 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Polymorph\Platform\Domain\Auth\Infrastructure\Persistence;
+namespace Polymorph\Platform\Domain\Auth\Infrastructure\Repositories;
 
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Polymorph\Platform\Domain\Auth\Application\DTO\RefreshSessionRotation;
 use Polymorph\Platform\Domain\Auth\Application\Exceptions\AuthSessionUnauthorizedException;
 use Polymorph\Platform\Domain\Auth\Application\Policies\SessionRotationDecision;
@@ -11,10 +15,6 @@ use Polymorph\Platform\Domain\Auth\Application\Policies\SessionRotationPolicy;
 use Polymorph\Platform\Domain\Auth\Core\Contracts\RefreshSessionRepository;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\AccessTokenDenylist;
 use Polymorph\Platform\Domain\Users\Core\Contracts\UserSessionRevoker;
-use Carbon\CarbonImmutable;
-use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 final class EloquentRefreshSessionRepository implements RefreshSessionRepository, UserSessionRevoker
 {

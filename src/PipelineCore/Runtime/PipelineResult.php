@@ -7,8 +7,8 @@ namespace Polymorph\Platform\PipelineCore\Runtime;
 abstract class PipelineResult
 {
     /**
-     * @param array<string, StageResult> $stageResults
-     * @param array<string, StageResult> $warnings
+     * @param  array<string, StageResult>  $stageResults
+     * @param  array<string, StageResult>  $warnings
      */
     public function __construct(
         public readonly array $stageResults,
@@ -16,7 +16,7 @@ abstract class PipelineResult
     ) {}
 
     /**
-     * @param array<string, StageResult> $stageResults
+     * @param  array<string, StageResult>  $stageResults
      */
     public static function success(array $stageResults, array $warnings = []): self
     {
@@ -27,7 +27,7 @@ abstract class PipelineResult
     }
 
     /**
-     * @param array<string, StageResult> $priorStageResults
+     * @param  array<string, StageResult>  $priorStageResults
      */
     public static function domainFailure(
         Stage $failedStage,
@@ -46,5 +46,4 @@ abstract class PipelineResult
             failureMessage: $message ?? $failedStageResult->errorMessage(),
         );
     }
-
 }

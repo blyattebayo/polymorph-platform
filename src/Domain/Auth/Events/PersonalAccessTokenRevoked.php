@@ -9,6 +9,5 @@ final readonly class PersonalAccessTokenRevoked
     public function __construct(
         public int $tokenId,
         public ?int $userId,
-    ) {
-    }
+    ) {}
 }

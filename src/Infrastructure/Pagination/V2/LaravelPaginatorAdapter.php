@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Infrastructure\Pagination\V2;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageMeta;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageResult;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 final class LaravelPaginatorAdapter
 {
@@ -23,4 +23,3 @@ final class LaravelPaginatorAdapter
         );
     }
 }
-

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Http\Requests;
 
-use Polymorph\Platform\Domain\Auth\Infrastructure\Services\PersonalAccessTokenService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Services\PersonalAccessTokenService;
 
 final class StorePersonalAccessTokenRequest extends FormRequest
 {

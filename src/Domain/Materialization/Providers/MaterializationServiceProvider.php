@@ -4,12 +4,22 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Materialization\Providers;
 
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\ServiceProvider;
+use Polymorph\Platform\Domain\Materialization\Console\Commands\RebuildRecordDefinitionDisplayViewsCommand;
+use Polymorph\Platform\Domain\Materialization\Console\Commands\RecordIndexesDoctorCommand;
 use Polymorph\Platform\Domain\Materialization\Contracts\RecordDisplayValueProvider;
 use Polymorph\Platform\Domain\Materialization\Listeners\ScheduleViewRebuildOnSchemaChange;
 use Polymorph\Platform\Domain\Materialization\Listeners\SyncRecordDefinitionDisplayView;
 use Polymorph\Platform\Domain\Materialization\Listeners\SyncRecordIndexes;
 use Polymorph\Platform\Domain\Materialization\Services\MaterializedRecordDisplayValueProvider;
+use Polymorph\Platform\Domain\Materialization\Services\RecordDefinitionViewManager;
 use Polymorph\Platform\Domain\Materialization\Services\RecordIndexSyncScheduler;
+use Polymorph\Platform\Domain\Materialization\Services\SqlViewCompiler;
+use Polymorph\Platform\Domain\Materialization\Services\SqlViewValidator;
+use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionCreated;
+use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionDeleted;
+use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionSchemaChanged;
 use Polymorph\Platform\Domain\SchemaModel\Events\FieldAdded;
 use Polymorph\Platform\Domain\SchemaModel\Events\FieldDeleted;
 use Polymorph\Platform\Domain\SchemaModel\Events\FieldUpdated;
@@ -17,15 +27,8 @@ use Polymorph\Platform\Domain\SchemaModel\Events\SchemaCreated;
 use Polymorph\Platform\Domain\SchemaModel\Events\SchemaDeleted;
 use Polymorph\Platform\Domain\SchemaModel\Events\SchemaUpdated;
 use Polymorph\Platform\Domain\SchemaModel\ReadModel\Contracts\SchemaSnapshotServiceInterface;
-use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionCreated;
-use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionDeleted;
-use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionSchemaChanged;
+use Polymorph\Platform\TemplateEngine\Core\Filters\FilterRegistry;
 use Polymorph\Platform\TemplateEngine\Core\Pipeline\TemplateParsePipeline;
-use Polymorph\Platform\Domain\Materialization\Services\RecordDefinitionViewManager;
-use Polymorph\Platform\Domain\Materialization\Services\SqlViewCompiler;
-use Polymorph\Platform\Domain\Materialization\Services\SqlViewValidator;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\ServiceProvider;
 
 class MaterializationServiceProvider extends ServiceProvider
 {
@@ -34,10 +37,10 @@ class MaterializationServiceProvider extends ServiceProvider
         // materialization.php now ships inside the package (dirname(__DIR__, 4) = platform/).
         // PlatformServiceProvider also merges it; mergeConfigFrom is idempotent, and keeping
         // this provider self-sufficient matches its previous behaviour.
-        $this->mergeConfigFrom(dirname(__DIR__, 4) . '/config/materialization.php', 'materialization');
+        $this->mergeConfigFrom(dirname(__DIR__, 4).'/config/materialization.php', 'materialization');
 
         $this->app->singleton(SqlViewCompiler::class, function ($app) {
-            return new SqlViewCompiler($app->make(\Polymorph\Platform\TemplateEngine\Core\Filters\FilterRegistry::class));
+            return new SqlViewCompiler($app->make(FilterRegistry::class));
         });
 
         $this->app->singleton(RecordDefinitionViewManager::class, function ($app) {
@@ -79,10 +82,9 @@ class MaterializationServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
-                \Polymorph\Platform\Domain\Materialization\Console\Commands\RebuildRecordDefinitionDisplayViewsCommand::class,
-                \Polymorph\Platform\Domain\Materialization\Console\Commands\RecordIndexesDoctorCommand::class,
+                RebuildRecordDefinitionDisplayViewsCommand::class,
+                RecordIndexesDoctorCommand::class,
             ]);
         }
     }
 }
-

@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Domain\Media\Core\Models\MediaImage;
-use Database\Factories\MediaFactory;
-use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * Фабрика для создания записей MediaImage.
@@ -57,8 +56,7 @@ class MediaImageFactory extends Factory
     /**
      * Указать медиа-файл для изображения.
      *
-     * @param \Polymorph\Platform\Domain\Media\Core\Models\Media $media Медиа-файл
-     * @return static
+     * @param  Media  $media  Медиа-файл
      */
     public function forMedia(Media $media): static
     {
@@ -70,9 +68,8 @@ class MediaImageFactory extends Factory
     /**
      * Указать размеры изображения.
      *
-     * @param int $width Ширина
-     * @param int $height Высота
-     * @return static
+     * @param  int  $width  Ширина
+     * @param  int  $height  Высота
      */
     public function withDimensions(int $width, int $height): static
     {
@@ -82,4 +79,3 @@ class MediaImageFactory extends Factory
         ]);
     }
 }
-

@@ -4,23 +4,21 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Infrastructure\Loaders;
 
+use Illuminate\Support\Collection;
 use Polymorph\Platform\Domain\Routing\Core\Enums\OwnerType;
 use Polymorph\Platform\Domain\Routing\Core\ValueObjects\RouteNodeDefinition;
-use Illuminate\Support\Collection;
 
 /**
  * Сервис для загрузки системных декларативных маршрутов из файлов.
  *
  * Использует RouteDefinitionLoader для загрузки из routes/*.php в виде VO.
- *
- * @package Polymorph\Platform\Domain\Routing\Loaders
  */
 class SystemRouteLoader
 {
     /**
      * Конструктор.
      *
-     * @param \Polymorph\Platform\Domain\Routing\Loaders\RouteDefinitionLoader $loader Базовый загрузчик маршрутов
+     * @param  \Polymorph\Platform\Domain\Routing\Loaders\RouteDefinitionLoader  $loader  Базовый загрузчик маршрутов
      */
     public function __construct(
         private RouteDefinitionLoader $loader
@@ -29,7 +27,7 @@ class SystemRouteLoader
     /**
      * Создать RouteNodeDefinition из массива конфигурации.
      *
-     * @param array<string, mixed> $data Данные конфигурации
+     * @param  array<string, mixed>  $data  Данные конфигурации
      * @return RouteNodeDefinition|null Созданный RouteNodeDefinition или null при ошибке
      */
     public function createFromArray(array $data): ?RouteNodeDefinition
@@ -39,7 +37,7 @@ class SystemRouteLoader
 
         return $this->loader->createFromArray($data);
     }
-    
+
     /**
      * Загрузить все системные декларативные маршруты.
      *
@@ -49,7 +47,7 @@ class SystemRouteLoader
      * - api.php: sort_order = -999
      * - api_admin.php: sort_order = -998
      *
-     * @return \Illuminate\Support\Collection<int, RouteNodeDefinition> Коллекция всех RouteNodeDefinition
+     * @return Collection<int, RouteNodeDefinition> Коллекция всех RouteNodeDefinition
      */
     public function loadAll(): Collection
     {

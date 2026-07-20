@@ -12,8 +12,7 @@ final class LocalZipSource implements ExtensionArtifactSource
     public function __construct(
         private readonly string $zipPath,
         private readonly ?string $checksum = null,
-    ) {
-    }
+    ) {}
 
     public function resolve(): ResolvedArtifact
     {
@@ -31,7 +30,7 @@ final class LocalZipSource implements ExtensionArtifactSource
 
     private function readSidecarChecksum(string $zipPath): ?string
     {
-        $sidecar = $zipPath . '.sha256';
+        $sidecar = $zipPath.'.sha256';
         if (! is_file($sidecar)) {
             return null;
         }

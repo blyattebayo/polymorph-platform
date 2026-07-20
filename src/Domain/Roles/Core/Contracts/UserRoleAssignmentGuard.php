@@ -9,7 +9,7 @@ use Polymorph\Platform\Domain\Roles\Core\Exceptions\RoleNotAssignableException;
 interface UserRoleAssignmentGuard
 {
     /**
-     * @param list<int> $roleIds
+     * @param  list<int>  $roleIds
      *
      * @throws RoleNotAssignableException
      */

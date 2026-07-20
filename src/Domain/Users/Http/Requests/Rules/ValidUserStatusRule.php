@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Users\Http\Requests\Rules;
 
-use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 
 final class ValidUserStatusRule implements ValidationRule
 {

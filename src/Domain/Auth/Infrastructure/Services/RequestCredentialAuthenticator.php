@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Services;
 
+use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
 use Polymorph\Platform\Http\Middleware\Concerns\ExtractsJwtAccessToken;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ThrowsErrors;
-use Illuminate\Http\Request;
 
 final class RequestCredentialAuthenticator
 {

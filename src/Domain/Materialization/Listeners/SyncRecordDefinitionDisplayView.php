@@ -13,8 +13,7 @@ final class SyncRecordDefinitionDisplayView
 {
     public function __construct(
         private readonly RecordDefinitionViewManager $viewManager,
-    ) {
-    }
+    ) {}
 
     public function handleRecordDefinitionCreated(RecordDefinitionCreated $event): void
     {

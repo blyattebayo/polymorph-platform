@@ -11,8 +11,7 @@ final class ListOwnPersonalAccessTokens
 {
     public function __construct(
         private readonly PersonalAccessTokenRepository $repository,
-    ) {
-    }
+    ) {}
 
     /**
      * @return list<PersonalAccessTokenView>

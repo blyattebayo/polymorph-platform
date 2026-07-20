@@ -11,7 +11,7 @@ interface RoleAssignmentRepository
     public function unassign(int $userId, int $roleId): void;
 
     /**
-     * @param list<int> $roleIds
+     * @param  list<int>  $roleIds
      */
     public function syncForUser(int $userId, array $roleIds): void;
 

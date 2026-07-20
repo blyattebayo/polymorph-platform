@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Auth\Application\DTO\ResendEmailVerificationNotificationCommand;
 use Polymorph\Platform\Domain\Auth\Application\DTO\VerifyEmailViaSignedLinkCommand;
 use Polymorph\Platform\Domain\Auth\Application\UseCases\ResendEmailVerificationNotification;
 use Polymorph\Platform\Domain\Auth\Application\UseCases\VerifyEmailViaSignedLink;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\EmailVerificationRedirectFactory;
 use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 /**
  * Подтверждение email по подписанной ссылке из письма + повторная отправка.

@@ -13,17 +13,16 @@ trait HasPageRules
      */
     protected function pageRules(?PageLimits $limits = null): array
     {
-        $limits ??= new PageLimits();
+        $limits ??= new PageLimits;
 
         return [
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => [
                 'nullable',
                 'integer',
-                'min:' . $limits->minPerPage,
-                'max:' . $limits->maxPerPage,
+                'min:'.$limits->minPerPage,
+                'max:'.$limits->maxPerPage,
             ],
         ];
     }
 }
-

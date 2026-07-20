@@ -12,8 +12,7 @@ final class DefaultUserRoleAssignmentGuard implements UserRoleAssignmentGuard
 {
     public function __construct(
         private readonly RoleRepository $roles,
-    ) {
-    }
+    ) {}
 
     public function assertAssignable(array $roleIds): void
     {

@@ -9,15 +9,14 @@ final readonly class PageRequest
     public function __construct(
         public int $page,
         public int $perPage,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string, mixed> $validated
+     * @param  array<string, mixed>  $validated
      */
     public static function fromValidated(array $validated, ?PageLimits $limits = null): self
     {
-        $limits ??= new PageLimits();
+        $limits ??= new PageLimits;
 
         $page = (int) ($validated['page'] ?? $limits->defaultPage);
         if ($page < $limits->defaultPage) {
@@ -45,4 +44,3 @@ final readonly class PageRequest
         ];
     }
 }
-

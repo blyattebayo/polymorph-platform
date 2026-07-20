@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Support;
 
-use Polymorph\Platform\Domain\Records\Core\Models\Record;
-use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use LogicException;
+use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
+use Polymorph\Platform\Domain\Records\Core\Models\Record;
 
 final class RecordSchemaResolver
 {

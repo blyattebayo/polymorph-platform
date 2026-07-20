@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\TableConfig\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\TableConfig\Core\Contracts\TableConfigRepository;
 use Polymorph\Platform\Domain\TableConfig\Core\Models\TableConfig;
 use Polymorph\Platform\Domain\TableConfig\Http\Resources\TableConfigResource;
 use Polymorph\Platform\Domain\TableConfig\Services\TableConfigMergeService;
 use Polymorph\Platform\Domain\TableConfig\Services\TableConfigSchemaValidator;
 use Polymorph\Platform\Http\Controllers\Controller;
+use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ThrowsErrors;
-use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class TableConfigController extends Controller
+final class TableConfigController extends Controller
 {
     use ThrowsErrors;
 
@@ -26,8 +26,7 @@ class TableConfigController extends Controller
         private readonly TableConfigSchemaValidator $schemaValidator,
         private readonly TableConfigMergeService $mergeService,
         private readonly TableConfigRepository $repository,
-    ) {
-    }
+    ) {}
 
     public function showBase(string $tableKey): JsonResponse
     {
@@ -49,7 +48,7 @@ class TableConfigController extends Controller
     {
         $config = $this->repository->findUserOverride($tableKey, $actor->userId());
 
-        if (!$config) {
+        if (! $config) {
             return AdminResponse::json([
                 'data' => [
                     'id' => null,
@@ -89,7 +88,7 @@ class TableConfigController extends Controller
         $base = $this->repository->findBase($tableKey);
         $override = $this->repository->findUserOverride($tableKey, $actor->userId());
 
-        if (!$base && !$override) {
+        if (! $base && ! $override) {
             $this->throwError(
                 ErrorCode::NOT_FOUND,
                 sprintf('Table config not found for table_key=%s', $tableKey),
@@ -131,7 +130,7 @@ class TableConfigController extends Controller
             );
         }
 
-        if (!is_array($configJson)) {
+        if (! is_array($configJson)) {
             $this->throwError(
                 ErrorCode::VALIDATION_ERROR,
                 'config_json must be an object.',
@@ -158,7 +157,7 @@ class TableConfigController extends Controller
     {
         $config = $this->repository->findBase($tableKey);
 
-        if (!$config) {
+        if (! $config) {
             $this->throwError(
                 ErrorCode::NOT_FOUND,
                 sprintf('Base table config not found for table_key=%s', $tableKey),
@@ -173,7 +172,7 @@ class TableConfigController extends Controller
     {
         $config = $this->repository->findUserOverride($tableKey, $userId);
 
-        if (!$config) {
+        if (! $config) {
             $this->throwError(
                 ErrorCode::NOT_FOUND,
                 sprintf('User table config not found for table_key=%s', $tableKey),
@@ -183,5 +182,4 @@ class TableConfigController extends Controller
 
         return $config;
     }
-
 }

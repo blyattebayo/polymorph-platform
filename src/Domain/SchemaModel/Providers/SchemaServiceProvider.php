@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Providers;
 
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\ServiceProvider;
+use Polymorph\Platform\Domain\SchemaModel\Access\SchemaCapabilityProvider;
 use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\FieldRepository;
 use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\FieldWriteService;
 use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\SchemaFieldPathReadModel;
@@ -31,12 +34,10 @@ use Polymorph\Platform\Domain\SchemaModel\Services\ConstraintManager;
 use Polymorph\Platform\Domain\SchemaModel\Services\FieldMutationService;
 use Polymorph\Platform\Domain\SchemaModel\Services\FieldPathCalculator;
 use Polymorph\Platform\Domain\SchemaModel\Services\SchemaViewRebuildScheduler;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\ServiceProvider;
 
 /**
  * Service Provider для Schema Domain.
- * 
+ *
  * Регистрирует все bindings, repositories и services.
  */
 class SchemaServiceProvider extends ServiceProvider
@@ -77,6 +78,6 @@ class SchemaServiceProvider extends ServiceProvider
             Event::listen($event, InvalidateSnapshotCacheOnSchemaChange::class);
         }
 
-        $this->app->tag([\Polymorph\Platform\Domain\SchemaModel\Access\SchemaCapabilityProvider::class], 'access.capability_providers');
+        $this->app->tag([SchemaCapabilityProvider::class], 'access.capability_providers');
     }
 }

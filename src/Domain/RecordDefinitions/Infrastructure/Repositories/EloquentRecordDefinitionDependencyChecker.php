@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\RecordDefinitions\Infrastructure\Repositories;
 
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionDependencyChecker;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
-use Illuminate\Support\Facades\DB;
 
 final class EloquentRecordDefinitionDependencyChecker implements RecordDefinitionDependencyChecker
 {

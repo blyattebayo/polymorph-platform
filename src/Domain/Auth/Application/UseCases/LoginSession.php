@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Application\UseCases;
 
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Hash;
 use Polymorph\Platform\Domain\Auth\Application\DTO\LoginSessionCommand;
 use Polymorph\Platform\Domain\Auth\Application\DTO\LoginSessionResult;
 use Polymorph\Platform\Domain\Auth\Application\Exceptions\AuthSessionUnauthorizedException;
@@ -13,8 +15,6 @@ use Polymorph\Platform\Domain\Auth\Events\UserLoggedIn;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\JwtService;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Domain\Users\Queries\FindUserByEmailQuery;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Hash;
 
 final class LoginSession
 {

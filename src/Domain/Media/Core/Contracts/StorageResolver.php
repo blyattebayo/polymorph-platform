@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Core\Contracts;
 
-use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Polymorph\Platform\Domain\Media\Core\Exceptions\MediaStorageException;
+use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
 
 /**
  * Определение диска хранения для медиа-файлов
@@ -15,7 +16,7 @@ interface StorageResolver
     /**
      * Получить диск для типа медиа
      *
-     * @param MediaKind $kind Тип медиа (image/video/audio/document)
+     * @param  MediaKind  $kind  Тип медиа (image/video/audio/document)
      * @return Filesystem Экземпляр диска хранения
      */
     public function resolveDisk(MediaKind $kind): Filesystem;
@@ -23,7 +24,7 @@ interface StorageResolver
     /**
      * Получить имя диска для типа медиа
      *
-     * @param MediaKind $kind Тип медиа
+     * @param  MediaKind  $kind  Тип медиа
      * @return string Имя диска (например, 'media_images')
      */
     public function resolveDiskName(MediaKind $kind): string;
@@ -31,7 +32,7 @@ interface StorageResolver
     /**
      * Определить тип медиа по MIME-типу
      *
-     * @param string $mimeType MIME-тип файла
+     * @param  string  $mimeType  MIME-тип файла
      * @return MediaKind Тип медиа
      */
     public function resolveKind(string $mimeType): MediaKind;
@@ -39,9 +40,10 @@ interface StorageResolver
     /**
      * Получить диск по его имени
      *
-     * @param string $diskName Имя диска
+     * @param  string  $diskName  Имя диска
      * @return Filesystem Экземпляр диска хранения
-     * @throws \Polymorph\Platform\Domain\Media\Core\Exceptions\MediaStorageException Если диск не найден
+     *
+     * @throws MediaStorageException Если диск не найден
      */
     public function getDisk(string $diskName): Filesystem;
 }

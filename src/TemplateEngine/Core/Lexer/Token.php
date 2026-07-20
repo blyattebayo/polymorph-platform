@@ -15,10 +15,9 @@ final readonly class Token
         public int $position,
         public int $length,
     ) {}
-    
+
     public function is(TokenType $type): bool
     {
         return $this->type === $type;
     }
 }
-

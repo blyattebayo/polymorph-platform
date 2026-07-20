@@ -17,8 +17,7 @@ final class ForgetRuleSetCacheOnSchemaChange
 {
     public function __construct(
         private readonly RuleSetCache $ruleSetCache,
-    ) {
-    }
+    ) {}
 
     public function handle(SchemaChangeEvent $event): void
     {

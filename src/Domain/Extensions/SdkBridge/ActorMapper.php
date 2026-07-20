@@ -12,9 +12,7 @@ use Polymorph\Sdk\Identity\Actor;
  */
 final class ActorMapper
 {
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     public static function fromUser(User $user): Actor
     {

@@ -2,11 +2,11 @@
 
 namespace Database\Factories;
 
-use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel>
+ * @extends Factory<SchemaModel>
  */
 class SchemaModelFactory extends Factory
 {

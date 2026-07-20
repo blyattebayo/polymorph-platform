@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Console;
 
-use Polymorph\Platform\Domain\Extensions\Services\ExtensionManager;
 use Illuminate\Console\Command;
+use Polymorph\Platform\Domain\Extensions\Services\ExtensionManager;
 
 /**
  * Deploy-time provisioning for trusted (withPlugins) plugins shipped as Composer packages: runs
@@ -32,7 +32,7 @@ final class SyncTrustedExtensionsCommand extends Command
         foreach ($provisioned as $id) {
             $this->line("  provisioned trusted plugin: {$id}");
         }
-        $this->info(count($provisioned) . ' trusted plugin(s) provisioned.');
+        $this->info(count($provisioned).' trusted plugin(s) provisioned.');
 
         return self::SUCCESS;
     }

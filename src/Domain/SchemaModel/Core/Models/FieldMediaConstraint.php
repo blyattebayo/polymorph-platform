@@ -6,6 +6,7 @@ namespace Polymorph\Platform\Domain\SchemaModel\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Ограничение на допустимые MIME-типы для media-полей.
@@ -13,8 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $field_id
  * @property string $allowed_mime MIME-тип (image/jpeg, video/mp4, etc.)
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read Field $field
  */
 class FieldMediaConstraint extends Model

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Infrastructure\Registrars;
 
+use Illuminate\Support\Facades\Route;
+use Polymorph\Platform\Domain\Routing\Core\Models\RouteNode;
 use Polymorph\Platform\Domain\Routing\Core\ValueObjects\RouteNodeDefinition;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Resolvers\ActionResolverFactory;
+use Polymorph\Platform\Http\Middleware\VerifyApiCsrf;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Support\Facades\Route;
 
 /**
  * Регистратор для ROUTE узлов маршрутов.
@@ -27,7 +29,7 @@ class RouteRouteRegistrar implements RouteNodeRegistrarInterface
      * @var array<string, class-string>
      */
     private const EXCLUDABLE_MIDDLEWARE_SYMBOLS = [
-        'csrf' => \Polymorph\Platform\Http\Middleware\VerifyApiCsrf::class,
+        'csrf' => VerifyApiCsrf::class,
     ];
 
     /**
@@ -41,7 +43,7 @@ class RouteRouteRegistrar implements RouteNodeRegistrarInterface
     /**
      * Зарегистрировать узел маршрута.
      *
-     * @param  \Polymorph\Platform\Domain\Routing\Core\Models\RouteNode  $node  Узел маршрута
+     * @param  RouteNode  $node  Узел маршрута
      */
     public function register(RouteNodeDefinition $node): void
     {
@@ -81,7 +83,7 @@ class RouteRouteRegistrar implements RouteNodeRegistrarInterface
     /**
      * Проверить валидность узла маршрута.
      *
-     * @param  \Polymorph\Platform\Domain\Routing\Core\Models\RouteNode  $node  Узел маршрута
+     * @param  RouteNode  $node  Узел маршрута
      * @return bool true если узел валиден, false иначе
      */
     private function validateRouteNode(RouteNodeDefinition $node): bool

@@ -24,7 +24,7 @@ final class RuleSetCache
     }
 
     /**
-     * @param array<string, array<int, string|object>> $ruleSet
+     * @param  array<string, array<int, string|object>>  $ruleSet
      */
     public function put(int $schemaId, array $ruleSet): void
     {

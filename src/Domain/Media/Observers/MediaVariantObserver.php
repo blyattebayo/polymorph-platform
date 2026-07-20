@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Observers;
 
+use Illuminate\Support\Facades\Event;
 use Polymorph\Platform\Domain\Media\Core\Models\MediaVariant;
 use Polymorph\Platform\Domain\Media\Events\VariantGenerated;
 use Polymorph\Platform\Domain\Media\Events\VariantGenerationFailed;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Support\Facades\Event;
 
 /**
  * Observer для модели MediaVariant

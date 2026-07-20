@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Infrastructure\Images;
 
-use Polymorph\Platform\Domain\Media\Core\Contracts\ImageProcessor;
-use Polymorph\Platform\Domain\Media\Core\ValueObjects\ImageRef;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Interfaces\ImageInterface;
+use Polymorph\Platform\Domain\Media\Core\Contracts\ImageProcessor;
+use Polymorph\Platform\Domain\Media\Core\ValueObjects\ImageRef;
 use RuntimeException;
 
 /**
@@ -20,8 +20,7 @@ final class GlideImageProcessor implements ImageProcessor
 {
     public function __construct(
         private readonly ImageManager $manager
-    ) {
-    }
+    ) {}
 
     /**
      * Открыть изображение из бинарных данных
@@ -32,7 +31,7 @@ final class GlideImageProcessor implements ImageProcessor
             $img = $this->manager->read($contents);
         } catch (\Throwable $e) {
             throw new RuntimeException(
-                'Intervention Image: Failed to decode image data. ' . $e->getMessage(),
+                'Intervention Image: Failed to decode image data. '.$e->getMessage(),
                 previous: $e
             );
         }
@@ -102,16 +101,7 @@ final class GlideImageProcessor implements ImageProcessor
             // Определяем реальное расширение после fallback
             $actualExtension = $this->detectExtensionFromData($data) ?? $extension;
 
-            // MIME типы
-            $mimeType = match ($actualExtension) {
-                'jpg' => 'image/jpeg',
-                'png' => 'image/png',
-                'gif' => 'image/gif',
-                'webp' => 'image/webp',
-                'avif' => 'image/avif',
-                'heic' => 'image/heic',
-                default => 'application/octet-stream',
-            };
+            $mimeType = ImageMimeTypes::fromExtension($actualExtension) ?? 'application/octet-stream';
 
             return [
                 'data' => $data,
@@ -122,7 +112,7 @@ final class GlideImageProcessor implements ImageProcessor
             throw $e;
         } catch (\Throwable $e) {
             throw new RuntimeException(
-                "Intervention Image: Failed to encode image to {$format} format. " . $e->getMessage(),
+                "Intervention Image: Failed to encode image to {$format} format. ".$e->getMessage(),
                 previous: $e
             );
         }
@@ -134,20 +124,20 @@ final class GlideImageProcessor implements ImageProcessor
     private function detectExtensionFromData(string $data): ?string
     {
         $header = substr($data, 0, 12);
-        
+
         if (str_starts_with($header, "\xFF\xD8\xFF")) {
             return 'jpg';
         }
         if (str_starts_with($header, "\x89PNG\r\n\x1a\n")) {
             return 'png';
         }
-        if (str_starts_with($header, "GIF87a") || str_starts_with($header, "GIF89a")) {
+        if (str_starts_with($header, 'GIF87a') || str_starts_with($header, 'GIF89a')) {
             return 'gif';
         }
-        if (str_starts_with($header, "RIFF") && str_contains(substr($header, 0, 16), "WEBP")) {
+        if (str_starts_with($header, 'RIFF') && str_contains(substr($header, 0, 16), 'WEBP')) {
             return 'webp';
         }
-        
+
         return null;
     }
 
@@ -158,6 +148,7 @@ final class GlideImageProcessor implements ImageProcessor
     {
         /** @var ImageInterface $im */
         $im = $image->native;
+
         return $im->width();
     }
 
@@ -168,6 +159,7 @@ final class GlideImageProcessor implements ImageProcessor
     {
         /** @var ImageInterface $im */
         $im = $image->native;
+
         return $im->height();
     }
 
@@ -186,6 +178,7 @@ final class GlideImageProcessor implements ImageProcessor
     public function supports(string $format): bool
     {
         $format = strtolower($format);
+
         return in_array($format, $this->supportedFormats(), true);
     }
 

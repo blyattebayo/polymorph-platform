@@ -12,8 +12,7 @@ final class RecordPayloadProjector
 {
     public function __construct(
         private readonly PathTreeFilter $pathTreeFilter,
-    ) {
-    }
+    ) {}
 
     public function project(mixed $dataJson, RecordReadProfile $profile): object
     {

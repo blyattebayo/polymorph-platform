@@ -10,13 +10,12 @@ namespace Polymorph\Platform\Domain\Extensions\Core\ValueObjects;
 final readonly class ExtensionRoleDefinition
 {
     /**
-     * @param list<string> $capabilities resource-паттерны прав расширения (ext.{id}.*)
+     * @param  list<string>  $capabilities  resource-паттерны прав расширения (ext.{id}.*)
      */
     public function __construct(
         public string $code,
         public string $name,
         public string $description,
         public array $capabilities,
-    ) {
-    }
+    ) {}
 }

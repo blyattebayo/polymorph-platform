@@ -23,6 +23,7 @@ final class LintRoutesCommand extends Command
 
         if ($duplicateNames === [] && $duplicateSignatures === []) {
             $this->line('Routing lint passed.');
+
             return self::SUCCESS;
         }
 
@@ -55,7 +56,7 @@ final class LintRoutesCommand extends Command
     }
 
     /**
-     * @param array<int, Route> $routes
+     * @param  array<int, Route>  $routes
      * @return array<int, array{name:string, uris:array<int, string>}>
      */
     private function findDuplicateNames(array $routes): array
@@ -69,10 +70,10 @@ final class LintRoutesCommand extends Command
             }
 
             $domain = (string) ($route->domain() ?? '');
-            $uri = '/' . ltrim($route->uri(), '/');
-            $label = ($domain !== '' ? $domain : '<any-domain>') . $uri;
+            $uri = '/'.ltrim($route->uri(), '/');
+            $label = ($domain !== '' ? $domain : '<any-domain>').$uri;
 
-            if (!isset($byName[$name])) {
+            if (! isset($byName[$name])) {
                 $byName[$name] = [];
             }
             $byName[$name][] = $label;
@@ -93,7 +94,7 @@ final class LintRoutesCommand extends Command
     }
 
     /**
-     * @param array<int, Route> $routes
+     * @param  array<int, Route>  $routes
      * @return array<int, array{domain:string, method:string, uri:string, names:array<int, string>}>
      */
     private function findDuplicateSignatures(array $routes): array
@@ -102,7 +103,7 @@ final class LintRoutesCommand extends Command
 
         foreach ($routes as $route) {
             $domain = (string) ($route->domain() ?? '');
-            $uri = '/' . ltrim($route->uri(), '/');
+            $uri = '/'.ltrim($route->uri(), '/');
             $name = (string) ($route->getName() ?? '<unnamed>');
 
             foreach ($route->methods() as $method) {
@@ -110,8 +111,8 @@ final class LintRoutesCommand extends Command
                     continue;
                 }
 
-                $key = $domain . '|' . $method . '|' . $uri;
-                if (!isset($bySignature[$key])) {
+                $key = $domain.'|'.$method.'|'.$uri;
+                if (! isset($bySignature[$key])) {
                     $bySignature[$key] = [
                         'domain' => $domain,
                         'method' => $method,

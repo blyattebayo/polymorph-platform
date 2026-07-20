@@ -4,17 +4,19 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Support;
 
-use Polymorph\Platform\SharedKernel\SystemFields\SystemFieldNames;
 use Carbon\CarbonInterface;
+use Polymorph\Platform\SharedKernel\SystemFields\SystemFieldNames;
 
 final class RecordSystemFields
 {
     private const CREATED_AT = 'created_at';
+
     private const UPDATED_AT = 'updated_at';
+
     private const DELETED_AT = 'deleted_at';
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
     public static function applyForCreate(array $payload, ?CarbonInterface $now = null): array
@@ -29,8 +31,8 @@ final class RecordSystemFields
     }
 
     /**
-     * @param array<string, mixed> $payload
-     * @param array<string, mixed> $existing
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $existing
      * @return array<string, mixed>
      */
     public static function applyForUpdate(array $payload, array $existing, ?CarbonInterface $now = null): array
@@ -51,7 +53,7 @@ final class RecordSystemFields
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
     public static function applyForDelete(array $payload, ?CarbonInterface $now = null): array
@@ -64,7 +66,7 @@ final class RecordSystemFields
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
     public static function applyForRestore(array $payload, ?CarbonInterface $now = null): array
@@ -76,7 +78,7 @@ final class RecordSystemFields
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
     public static function normalizeForRead(array $payload): array
@@ -99,7 +101,7 @@ final class RecordSystemFields
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public static function timestamp(array $payload, string $field): ?string
     {
@@ -115,7 +117,7 @@ final class RecordSystemFields
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public static function isDeleted(array $payload): bool
     {
@@ -123,7 +125,7 @@ final class RecordSystemFields
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return string[]
      */
     public static function forbiddenPayloadSystemKeys(array $payload): array
@@ -144,13 +146,12 @@ final class RecordSystemFields
         return $dateTime->copy()->utc()->toIso8601String();
     }
 
+    /**
+     * Инвариант: '__'.<bare-имя> обязан совпадать с SystemFieldNames::CREATED_AT /
+     * UPDATED_AT / DELETED_AT ('__created_at', ...) — резервные пути системных полей.
+     */
     private static function fieldKey(string $field): string
     {
-        return match ($field) {
-            self::CREATED_AT => SystemFieldNames::CREATED_AT,
-            self::UPDATED_AT => SystemFieldNames::UPDATED_AT,
-            self::DELETED_AT => SystemFieldNames::DELETED_AT,
-            default => '__' . ltrim($field, '_'),
-        };
+        return '__'.ltrim($field, '_');
     }
 }

@@ -13,6 +13,5 @@ final class RouteNodeUpdated
 {
     public function __construct(
         public readonly RouteNode $node,
-    ) {
-    }
+    ) {}
 }

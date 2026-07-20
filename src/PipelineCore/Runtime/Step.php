@@ -17,7 +17,7 @@ interface Step
      * @return class-string<PipelineContext>
      */
     public function contextClass(): string;
-    
+
     /**
      * Should this step run given current context state?
      */
@@ -36,7 +36,7 @@ interface Step
      * @return string[]
      */
     public function produces(): array;
-    
+
     /**
      * Execute the step logic
      */

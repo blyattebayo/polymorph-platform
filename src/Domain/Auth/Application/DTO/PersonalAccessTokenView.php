@@ -18,8 +18,7 @@ final readonly class PersonalAccessTokenView
         public ?string $createdAt,
         public ?int $userId = null,
         public ?array $user = null,
-    ) {
-    }
+    ) {}
 
     public static function fromModel(PersonalAccessToken $token, ?array $user = null): self
     {

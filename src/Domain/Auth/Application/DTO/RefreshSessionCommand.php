@@ -10,6 +10,5 @@ final readonly class RefreshSessionCommand
         public string $refreshToken,
         public ?string $ip = null,
         public ?string $userAgent = null,
-    ) {
-    }
+    ) {}
 }

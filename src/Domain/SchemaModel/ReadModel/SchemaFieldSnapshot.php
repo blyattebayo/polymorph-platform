@@ -16,8 +16,7 @@ readonly class SchemaFieldSnapshot
         public ?int $parentId,
         public ?int $recordDefinitionId = null,
         public ?int $allowedRecordDefinitionId = null,
-    ) {
-    }
+    ) {}
 
     public function isRef(): bool
     {

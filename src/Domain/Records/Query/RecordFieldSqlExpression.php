@@ -13,7 +13,7 @@ final class RecordFieldSqlExpression
 {
     public static function safeJsonKey(string $key): string
     {
-        if (!ValidationConstraints::slug()->matches($key)) {
+        if (! ValidationConstraints::slug()->matches($key)) {
             throw new \InvalidArgumentException("Unsafe record field key '{$key}'.");
         }
 
@@ -46,6 +46,6 @@ final class RecordFieldSqlExpression
         $key = self::safeJsonKey($key);
 
         return "CASE WHEN (data_json ->> '{$key}') ~ '^-?[0-9]+(\\.[0-9]+)?$' "
-            . "THEN (data_json ->> '{$key}')::numeric ELSE NULL END";
+            ."THEN (data_json ->> '{$key}')::numeric ELSE NULL END";
     }
 }

@@ -6,8 +6,8 @@ namespace Polymorph\Platform\Domain\Records\Services;
 
 use Polymorph\Platform\Domain\Records\Core\Contracts\RecordRepository;
 use Polymorph\Platform\Domain\Records\Core\Models\Record;
-use Polymorph\Platform\Infrastructure\Pagination\V2\LaravelPaginatorAdapter;
 use Polymorph\Platform\Domain\Records\Support\RecordPayloadPathRegistry;
+use Polymorph\Platform\Infrastructure\Pagination\V2\LaravelPaginatorAdapter;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageResult;
@@ -21,15 +21,13 @@ final class RecordReader
         private readonly RecordRelationshipResolver $recordRelationshipResolver,
         private readonly RecordIncludedDataAssembler $recordIncludedDataAssembler,
         private readonly LaravelPaginatorAdapter $paginatorAdapter,
-    ) {
-    }
+    ) {}
 
     public function listForDefinition(
         ?UserIdentity $actor,
         int $recordDefinitionId,
         PageRequest $pagination,
-    ): PageResult
-    {
+    ): PageResult {
         $result = $this->paginatorAdapter->toPageResult(
             $this->recordRepository->paginateForDefinition($recordDefinitionId, $pagination)
         );
@@ -54,17 +52,17 @@ final class RecordReader
     }
 
     /**
-     * @param int[] $recordIds
+     * @param  int[]  $recordIds
      * @return array{by_record_id: object, included: array<string, object>}
      */
     public function hydrate(?UserIdentity $actor, array $recordIds): array
     {
         if ($recordIds === []) {
             return [
-                'by_record_id' => new \stdClass(),
+                'by_record_id' => new \stdClass,
                 'included' => [
-                    'records' => new \stdClass(),
-                    'media' => new \stdClass(),
+                    'records' => new \stdClass,
+                    'media' => new \stdClass,
                 ],
             ];
         }

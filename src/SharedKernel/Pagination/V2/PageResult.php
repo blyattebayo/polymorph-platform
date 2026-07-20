@@ -7,16 +7,15 @@ namespace Polymorph\Platform\SharedKernel\Pagination\V2;
 final readonly class PageResult
 {
     /**
-     * @param list<mixed> $items
+     * @param  list<mixed>  $items
      */
     public function __construct(
         public array $items,
         public PageMeta $meta,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param callable(mixed): mixed $mapper
+     * @param  callable(mixed): mixed  $mapper
      */
     public function mapItems(callable $mapper): self
     {
@@ -27,7 +26,7 @@ final readonly class PageResult
     }
 
     /**
-     * @param list<mixed> $items
+     * @param  list<mixed>  $items
      */
     public function withItems(array $items): self
     {
@@ -38,7 +37,7 @@ final readonly class PageResult
     }
 
     /**
-     * @param callable(mixed): int $idResolver
+     * @param  callable(mixed): int  $idResolver
      * @return list<int>
      */
     public function ids(callable $idResolver): array
@@ -57,4 +56,3 @@ final readonly class PageResult
         ];
     }
 }
-

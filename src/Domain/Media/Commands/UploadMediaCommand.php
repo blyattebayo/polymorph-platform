@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Commands;
 
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Polymorph\Platform\Domain\Media\Actions\CalculateChecksumAction;
 use Polymorph\Platform\Domain\Media\Actions\CreateMediaRecordAction;
 use Polymorph\Platform\Domain\Media\Actions\ExtractMetadataAction;
@@ -12,10 +16,6 @@ use Polymorph\Platform\Domain\Media\Actions\StoreMediaFileAction;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
 use Polymorph\Platform\Domain\Media\Events\MediaUploaded;
-use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
 
 /**
  * Command для загрузки медиа-файла.
@@ -29,8 +29,6 @@ use Illuminate\Support\Facades\Event;
  *
  * Если любой шаг падает - предыдущие откатываются.
  * Это решает проблему 1.2.1: отсутствие транзакций при загрузке.
- *
- * @package Polymorph\Platform\Domain\Media\Commands
  */
 final readonly class UploadMediaCommand
 {
@@ -40,22 +38,22 @@ final readonly class UploadMediaCommand
         private StoreMediaFileAction $storeFile,
         private ExtractMetadataAction $extractMetadata,
         private CreateMediaRecordAction $createRecord,
-    ) {
-    }
+    ) {}
 
     /**
      * Выполнить загрузку медиа-файла.
      *
-     * @param UploadedFile $file Уже провалидированный файл (через StoreMediaRequest)
-     * @param array<string, mixed> $payload Дополнительные данные (title, alt)
+     * @param  UploadedFile  $file  Уже провалидированный файл (через StoreMediaRequest)
+     * @param  array<string, mixed>  $payload  Дополнительные данные (title, alt)
      * @return Media Созданная или существующая запись
+     *
      * @throws \InvalidArgumentException Если файл не валиден
      * @throws \RuntimeException При ошибках сохранения
      */
     public function execute(UploadedFile $file, array $payload = []): Media
     {
         // Валидация должна быть выполнена в Request
-        if (!$file->isValid()) {
+        if (! $file->isValid()) {
             throw new \InvalidArgumentException(
                 'File must be validated before upload. Use StoreMediaRequest validation.'
             );
@@ -67,7 +65,7 @@ final readonly class UploadMediaCommand
         // ШАГ 2: Проверка дедупликации с пессимистичным lock
         // Предотвращает race condition (проблема 1.2.2)
         $existing = $this->findDuplicate->execute($checksum, $payload);
-        
+
         if ($existing !== null) {
             // Дубликат найден - возвращаем существующую запись
             // Файл НЕ загружается повторно

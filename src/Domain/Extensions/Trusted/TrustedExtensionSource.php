@@ -89,7 +89,7 @@ final class TrustedExtensionSource
         $dir = dirname($file);
         for ($i = 0; $i < 6; $i++) {
             foreach (self::MANIFESTS as $manifest) {
-                if (is_file($dir . '/' . $manifest)) {
+                if (is_file($dir.'/'.$manifest)) {
                     return $dir;
                 }
             }
@@ -106,7 +106,7 @@ final class TrustedExtensionSource
     private function readManifestId(string $dir): ?string
     {
         foreach (self::MANIFESTS as $manifest) {
-            $path = $dir . '/' . $manifest;
+            $path = $dir.'/'.$manifest;
             if (! is_file($path)) {
                 continue;
             }

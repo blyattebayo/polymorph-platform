@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\RecordDefinitions\Http\Requests;
 
-use Polymorph\Platform\Domain\RecordDefinitions\Core\ValueObjects\CreateRecordDefinitionData;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Polymorph\Platform\Domain\RecordDefinitions\Core\ValueObjects\CreateRecordDefinitionData;
 
-final class CreateRecordDefinitionRequest extends FormRequest
+final class StoreRecordDefinitionRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -16,7 +17,7 @@ final class CreateRecordDefinitionRequest extends FormRequest
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

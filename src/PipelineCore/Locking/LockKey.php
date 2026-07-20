@@ -11,10 +11,11 @@ readonly class LockKey
         public int|string $resourceId,
         public ?string $scope = null
     ) {}
-    
+
     public function toString(): string
     {
         $base = "{$this->resourceType}:{$this->resourceId}";
+
         return $this->scope ? "{$base}:{$this->scope}" : $base;
     }
 }

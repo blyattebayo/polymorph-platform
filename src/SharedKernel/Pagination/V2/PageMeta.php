@@ -11,8 +11,7 @@ final readonly class PageMeta
         public int $lastPage,
         public int $perPage,
         public int $total,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{current_page: int, last_page: int, per_page: int, total: int}
@@ -27,4 +26,3 @@ final readonly class PageMeta
         ];
     }
 }
-

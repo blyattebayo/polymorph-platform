@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Guard;
 
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Guard;
+use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\CredentialKind;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\RequestCredentialAuthenticator;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
-use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Contracts\Auth\Guard;
-use Illuminate\Http\Request;
 
 final class ApiGuard implements Guard
 {

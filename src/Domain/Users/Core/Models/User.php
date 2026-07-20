@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Users\Core\Models;
 
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
+use Database\Factories\UserFactory;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
+use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
 /**
  * Eloquent модель для пользователей (User).
@@ -19,21 +23,22 @@ use Illuminate\Notifications\Notifiable;
  * @property int $id
  * @property string $name Имя пользователя
  * @property string $email Email пользователя (уникальный)
- * @property \Illuminate\Support\Carbon|null $email_verified_at Дата подтверждения email
+ * @property Carbon|null $email_verified_at Дата подтверждения email
  * @property string $password Хеш пароля
  * @property string|null $remember_token Токен для "запомнить меня"
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
- *
- * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications Уведомления пользователя
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read DatabaseNotificationCollection<int, DatabaseNotification> $notifications Уведомления пользователя
  */
-class User extends Authenticatable implements UserIdentity, MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, UserIdentity
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, MustVerifyEmailTrait;
+    /** @use HasFactory<UserFactory> */
+    use HasFactory, MustVerifyEmailTrait, Notifiable;
 
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_BLOCKED = 'blocked';
+
     public const STATUS_INACTIVE = 'inactive';
 
     /**
@@ -98,5 +103,4 @@ class User extends Authenticatable implements UserIdentity, MustVerifyEmail
     {
         return (int) $this->id;
     }
-
 }

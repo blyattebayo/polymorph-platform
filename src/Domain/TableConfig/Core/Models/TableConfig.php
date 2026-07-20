@@ -29,5 +29,4 @@ class TableConfig extends Model
         'schema_version' => 'integer',
         'config_json' => 'array',
     ];
-
 }

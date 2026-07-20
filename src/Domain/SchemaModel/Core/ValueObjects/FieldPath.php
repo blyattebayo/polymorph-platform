@@ -9,14 +9,14 @@ use Polymorph\Platform\Support\Validation\ValidationConstraints;
 
 /**
  * Value Object для материализованного пути поля.
- * 
+ *
  * Инкапсулирует логику работы с путями: построение, разбор, валидацию.
  * Неизменяемый объект.
  */
 final readonly class FieldPath
 {
     private const SEPARATOR = '.';
-    
+
     private function __construct(
         private string $value
     ) {
@@ -40,7 +40,7 @@ final readonly class FieldPath
             return new self($name);
         }
 
-        return new self($parent->value . self::SEPARATOR . $name);
+        return new self($parent->value.self::SEPARATOR.$name);
     }
 
     /**
@@ -53,7 +53,7 @@ final readonly class FieldPath
 
     /**
      * Получить сегменты пути.
-     * 
+     *
      * @return string[]
      */
     public function segments(): array
@@ -74,7 +74,7 @@ final readonly class FieldPath
      */
     public function isChildOf(self $other): bool
     {
-        return str_starts_with($this->value, $other->value . self::SEPARATOR);
+        return str_starts_with($this->value, $other->value.self::SEPARATOR);
     }
 
     /**
@@ -87,15 +87,15 @@ final readonly class FieldPath
         }
 
         $segments = $this->segments();
-        
+
         foreach ($segments as $segment) {
             if (preg_match('/^__[a-z][a-z0-9_]*$/', $segment)) {
                 continue;
             }
 
-            if (!ValidationConstraints::slug()->matches($segment)) {
+            if (! ValidationConstraints::slug()->matches($segment)) {
                 throw new InvalidArgumentException(
-                    "Invalid field name segment: '{$segment}'. " .
+                    "Invalid field name segment: '{$segment}'. ".
                     'Must start with lowercase letter and contain only lowercase letters, digits, underscores and hyphens.'
                 );
             }

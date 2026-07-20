@@ -26,8 +26,6 @@ use Polymorph\Platform\Domain\Media\Http\Resources\Media\MediaVideoResource;
  * $resource = MediaResourceFactory::make($media);
  * return $resource;
  * ```
- *
- * @package Polymorph\Platform\Http\Resources
  */
 class MediaResourceFactory
 {
@@ -36,8 +34,8 @@ class MediaResourceFactory
      *
      * Выбирает нужный ресурс на основе типа медиа (kind).
      *
-     * @param \Polymorph\Platform\Domain\Media\Core\Models\Media $media Медиа-файл
-     * @return \Polymorph\Platform\Domain\Media\Http\Resources\Media\BaseMediaResource Специализированный ресурс
+     * @param  Media  $media  Медиа-файл
+     * @return BaseMediaResource Специализированный ресурс
      */
     public static function make(Media $media): BaseMediaResource
     {
@@ -49,5 +47,3 @@ class MediaResourceFactory
         };
     }
 }
-
-

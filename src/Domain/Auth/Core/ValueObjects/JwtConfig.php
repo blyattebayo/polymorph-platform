@@ -15,11 +15,10 @@ final readonly class JwtConfig
         public array $keys,
         public string $issuer,
         public string $audience,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string, mixed> $config
+     * @param  array<string, mixed>  $config
      */
     public static function fromArray(array $config): self
     {
@@ -36,7 +35,7 @@ final readonly class JwtConfig
     }
 
     /**
-     * @param array<string, mixed> $config
+     * @param  array<string, mixed>  $config
      * @return array<string, string>
      */
     private static function normalizeKeys(array $config): array

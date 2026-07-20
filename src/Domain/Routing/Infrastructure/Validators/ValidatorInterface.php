@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Infrastructure\Validators;
 
+use Illuminate\Contracts\Validation\ValidationRule;
+
 /**
  * Интерфейс для валидаторов правил RouteNode по kind.
  *
  * Определяет контракт для построения правил валидации
  * для различных типов узлов маршрутов (group, route).
- *
- * @package Polymorph\Platform\Domain\Routing\Validators
  */
 interface ValidatorInterface
 {
@@ -20,7 +20,7 @@ interface ValidatorInterface
      * Правила должны быть специфичны для поддерживаемого kind.
      * Общие правила (kind, parent_id, sort_order, enabled, readonly) обрабатываются отдельно.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function buildRulesForStore(): array;
 
@@ -30,7 +30,7 @@ interface ValidatorInterface
      * Правила должны быть специфичны для поддерживаемого kind.
      * Общие правила обрабатываются отдельно.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function buildRulesForUpdate(): array;
 

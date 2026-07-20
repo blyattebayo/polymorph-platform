@@ -47,7 +47,7 @@ class JwtVerificationException extends RuntimeException implements ErrorConverti
     /**
      * Создать исключение для невалидной audience.
      *
-     * @param string|array<int, string>|null $audience
+     * @param  string|array<int, string>|null  $audience
      */
     public static function invalidAudience(string|array|null $audience): self
     {

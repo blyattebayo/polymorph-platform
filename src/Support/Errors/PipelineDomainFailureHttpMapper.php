@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Support\Errors;
 
-use Polymorph\Platform\PipelineCore\Runtime\PipelineDomainFailureException;
 use Polymorph\Platform\PipelineCore\Runtime\PipelineDomainFailure;
+use Polymorph\Platform\PipelineCore\Runtime\PipelineDomainFailureException;
 use Polymorph\Platform\PipelineCore\Runtime\Stage;
 use Polymorph\Platform\PipelineCore\Runtime\StageResult;
 
@@ -73,13 +73,13 @@ final class PipelineDomainFailureHttpMapper
         }
 
         $stageResult = $result->stageResults[Stage::VALIDATION->value] ?? null;
-        if (!$stageResult instanceof StageResult) {
+        if (! $stageResult instanceof StageResult) {
             return [];
         }
 
         foreach ($stageResult->stepResults as $stepResult) {
             $stepMetadata = $stepResult->metadata;
-            if (!is_array($stepMetadata)) {
+            if (! is_array($stepMetadata)) {
                 continue;
             }
 

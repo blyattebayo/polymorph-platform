@@ -15,8 +15,7 @@ final class RecordMediaExtractor
 {
     public function __construct(
         private readonly ?PathValueResolver $valueResolver = null,
-    ) {
-    }
+    ) {}
 
     /**
      * Extracts all media ids from media fields.
@@ -43,7 +42,7 @@ final class RecordMediaExtractor
      */
     private function extractMediaFromPath(array $data, string $path): array
     {
-        $value = ($this->valueResolver ?? new PathValueResolver())->get($data, $path);
+        $value = ($this->valueResolver ?? new PathValueResolver)->get($data, $path);
 
         if ($value === null) {
             return [];
@@ -68,6 +67,7 @@ final class RecordMediaExtractor
                     $ids[] = $item;
                 }
             }
+
             return $ids;
         }
 

@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Http\Resources\Admin;
 
-use Polymorph\Platform\Http\Resources\Admin\Concerns\ConfiguresAdminResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Polymorph\Platform\Http\Resources\Admin\Concerns\ConfiguresAdminResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -13,8 +14,6 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Автоматически применяет стандартные заголовки для админских ответов
  * через trait ConfiguresAdminResponse.
- *
- * @package Polymorph\Platform\Http\Resources\Admin
  */
 abstract class AdminJsonResource extends JsonResource
 {
@@ -25,9 +24,8 @@ abstract class AdminJsonResource extends JsonResource
      *
      * Вызывает prepareAdminResponse для настройки заголовков и статуса.
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
-     * @param \Symfony\Component\HttpFoundation\Response $response HTTP ответ
-     * @return void
+     * @param  Request  $request  HTTP запрос
+     * @param  Response  $response  HTTP ответ
      */
     public function withResponse($request, $response): void
     {
@@ -40,14 +38,11 @@ abstract class AdminJsonResource extends JsonResource
      * Позволяет переопределить логику подготовки ответа
      * (установка статуса, cookies и т.д.).
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
-     * @param \Symfony\Component\HttpFoundation\Response $response HTTP ответ
-     * @return void
+     * @param  Request  $request  HTTP запрос
+     * @param  Response  $response  HTTP ответ
      */
     protected function prepareAdminResponse($request, Response $response): void
     {
         $this->addAdminResponseHeaders($response);
     }
 }
-
-

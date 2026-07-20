@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Infrastructure\Repositories;
 
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AssignmentRepository;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Assignment;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\PolicySnapshotData;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 final class EloquentAssignmentRepository implements AssignmentRepository
 {

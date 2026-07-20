@@ -6,9 +6,7 @@ namespace Polymorph\Platform\Support\Errors;
 
 final class ErrorFactory
 {
-    public function __construct(private readonly ErrorCatalog $catalog)
-    {
-    }
+    public function __construct(private readonly ErrorCatalog $catalog) {}
 
     public function for(ErrorCode $code): ErrorBuilder
     {
@@ -20,4 +18,3 @@ final class ErrorFactory
         return $this->catalog;
     }
 }
-

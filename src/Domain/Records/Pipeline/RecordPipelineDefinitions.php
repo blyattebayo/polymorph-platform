@@ -7,12 +7,12 @@ namespace Polymorph\Platform\Domain\Records\Pipeline;
 use Polymorph\Platform\Domain\Records\Pipeline\Steps\Write\ApplyAndPersistStep;
 use Polymorph\Platform\Domain\Records\Pipeline\Steps\Write\BuildRecordChangeSetStep;
 use Polymorph\Platform\Domain\Records\Pipeline\Steps\Write\CreateRecordModelStep;
+use Polymorph\Platform\Domain\Records\Pipeline\Steps\Write\ForbidSystemFieldsStep;
 use Polymorph\Platform\Domain\Records\Pipeline\Steps\Write\LoadRecordStep;
 use Polymorph\Platform\Domain\Records\Pipeline\Steps\Write\LoadTrashedRecordStep;
 use Polymorph\Platform\Domain\Records\Pipeline\Steps\Write\NormalizeSchemaDataStep;
 use Polymorph\Platform\Domain\Records\Pipeline\Steps\Write\RestoreRecordStep;
 use Polymorph\Platform\Domain\Records\Pipeline\Steps\Write\SoftDeleteRecordStep;
-use Polymorph\Platform\Domain\Records\Pipeline\Steps\Write\ForbidSystemFieldsStep;
 use Polymorph\Platform\Domain\Records\Pipeline\Steps\Write\ValidateSchemaDataStep;
 use Polymorph\Platform\Domain\Records\Pipeline\Steps\Write\ValidateUpdateStep;
 use Polymorph\Platform\PipelineCore\Runtime\PipelineDefinition;
@@ -32,8 +32,7 @@ final class RecordPipelineDefinitions
         private readonly CreateRecordModelStep $createRecordModelStep,
         private readonly RestoreRecordStep $restoreRecordStep,
         private readonly SoftDeleteRecordStep $softDeleteRecordStep,
-    ) {
-    }
+    ) {}
 
     public function createWrite(): PipelineDefinition
     {

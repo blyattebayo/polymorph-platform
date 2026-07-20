@@ -11,11 +11,10 @@ final class ExtensionManifestValidator
 {
     public function __construct(
         private readonly ExtensionAclManifestParser $aclManifestParser,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string, mixed> $manifest
+     * @param  array<string, mixed>  $manifest
      */
     public function validate(array $manifest, string $manifestPath): void
     {
@@ -30,7 +29,7 @@ final class ExtensionManifestValidator
         $pluginId = (string) $manifest['id'];
         $slug = ValidationConstraints::slug();
         if (! $slug->matches($pluginId)) {
-            throw new PluginException("Manifest {$manifestPath}: plugin id must match " . $slug->pattern() . '.');
+            throw new PluginException("Manifest {$manifestPath}: plugin id must match ".$slug->pattern().'.');
         }
 
         $dbPrefix = data_get($manifest, 'db.tablePrefix');
@@ -69,7 +68,7 @@ final class ExtensionManifestValidator
     }
 
     /**
-     * @param array<string, mixed> $manifest
+     * @param  array<string, mixed>  $manifest
      */
     private function validateDependencies(array $manifest, string $manifestPath, string $pluginId): void
     {
@@ -85,7 +84,7 @@ final class ExtensionManifestValidator
 
         foreach ($dependencies as $dependencyId => $range) {
             if (! is_string($dependencyId) || ! $slug->matches($dependencyId)) {
-                throw new PluginException("Manifest {$manifestPath}: dependency id '{$dependencyId}' must match " . $slug->pattern() . '.');
+                throw new PluginException("Manifest {$manifestPath}: dependency id '{$dependencyId}' must match ".$slug->pattern().'.');
             }
 
             if ($dependencyId === $pluginId) {

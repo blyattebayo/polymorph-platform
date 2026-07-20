@@ -11,8 +11,6 @@ use Polymorph\Platform\Http\Resources\Admin\AdminPingResource;
  *
  * Маршрут /admin/ping должен обрабатываться до fallback,
  * что подтверждает правильный порядок загрузки роутов.
- *
- * @package Polymorph\Platform\Http\Controllers
  */
 class AdminPingController extends Controller
 {
@@ -23,8 +21,11 @@ class AdminPingController extends Controller
      * обрабатываются раньше fallback.
      *
      * @group Admin • System
+     *
      * @name Ping
+     *
      * @unauthenticated
+     *
      * @response status=200 {
      *   "status": "OK",
      *   "message": "Admin ping route is working",
@@ -40,4 +41,3 @@ class AdminPingController extends Controller
         ]);
     }
 }
-

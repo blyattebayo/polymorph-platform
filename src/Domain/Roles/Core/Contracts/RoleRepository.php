@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Roles\Core\Contracts;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Polymorph\Platform\Domain\Roles\Core\Models\Role;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface RoleRepository
 {
@@ -23,7 +23,7 @@ interface RoleRepository
     public function findByCode(string $code): ?Role;
 
     /**
-     * @param list<int> $roleIds
+     * @param  list<int>  $roleIds
      * @return array<int, string>
      */
     public function codesByIds(array $roleIds): array;
@@ -31,7 +31,7 @@ interface RoleRepository
     public function deleteOne(int $roleId): void;
 
     /**
-     * @param list<int> $roleIds
+     * @param  list<int>  $roleIds
      */
     public function deleteByIds(array $roleIds): void;
 }

@@ -4,21 +4,20 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\RecordDefinitions\Http\Resources;
 
+use Illuminate\Http\Request;
 use Polymorph\Platform\Http\Resources\Admin\AdminJsonResource;
 
 /**
  * API Resource для RecordDefinition в админ-панели.
  *
  * Форматирует тип записи для ответа API.
- *
- * @package Polymorph\Platform\Domain\RecordDefinitions\Http\Resources
  */
 class RecordDefinitionResource extends AdminJsonResource
 {
     /**
      * Преобразовать ресурс в массив.
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
+     * @param  Request  $request  HTTP запрос
      * @return array<string, mixed> Массив с полями типа записи
      */
     public function toArray($request): array
@@ -38,4 +37,3 @@ class RecordDefinitionResource extends AdminJsonResource
         ];
     }
 }
-

@@ -9,15 +9,25 @@ final class BuiltInRoleCatalog
     public const ROLE_SYSTEM_ADMIN = 'system.admin';
 
     public const ROLE_ACCESS_POLICY_MANAGER = 'access.policy_manager';
+
     public const ROLE_SCHEMA_READER = 'schema.reader';
+
     public const ROLE_SCHEMA_MANAGER = 'schema.manager';
+
     public const ROLE_RECORDS_EDITOR = 'records.editor';
+
     public const ROLE_RECORDS_ADMIN = 'records.admin';
+
     public const ROLE_MEDIA_EDITOR = 'media.editor';
+
     public const ROLE_MEDIA_ADMIN = 'media.admin';
+
     public const ROLE_USERS_MANAGER = 'users.manager';
+
     public const ROLE_ROUTING_MANAGER = 'routing.manager';
+
     public const ROLE_PLUGINS_MANAGER = 'plugins.manager';
+
     public const ROLE_TABLE_CONFIG_MANAGER = 'table_config.manager';
 
     /**

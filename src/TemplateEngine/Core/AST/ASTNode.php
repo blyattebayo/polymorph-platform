@@ -15,4 +15,3 @@ interface ASTNode
      */
     public function getSpan(): array;
 }
-

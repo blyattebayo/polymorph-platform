@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Infrastructure\Loaders;
 
+use Illuminate\Support\Collection;
 use Polymorph\Platform\Domain\Routing\Core\Contracts\PluginRouteCatalog;
 use Polymorph\Platform\Domain\Routing\Core\Enums\OwnerType;
 use Polymorph\Platform\Domain\Routing\Core\ValueObjects\RouteNodeDefinition;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Support\Collection;
 
 /**
  * Загрузчик declarative-маршрутов плагинов (в памяти, без записи в БД).
@@ -70,7 +70,7 @@ final class PluginRouteLoader
      * Используется и при сборке общего дерева (loadAll), и при вживлении
      * роутов в текущий роутер сразу после enable/update.
      *
-     * @param list<array<string, mixed>> $config
+     * @param  list<array<string, mixed>>  $config
      * @return Collection<int, RouteNodeDefinition>
      */
     public function buildNodes(string $pluginId, array $config): Collection

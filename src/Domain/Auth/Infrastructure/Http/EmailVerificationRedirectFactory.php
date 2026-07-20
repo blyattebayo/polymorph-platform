@@ -13,6 +13,6 @@ final readonly class EmailVerificationRedirectFactory
         $url = (string) config('auth.email_verification.redirect_to', '/');
         $separator = str_contains($url, '?') ? '&' : '?';
 
-        return $url . $separator . 'verify=' . $outcome->value;
+        return $url.$separator.'verify='.$outcome->value;
     }
 }

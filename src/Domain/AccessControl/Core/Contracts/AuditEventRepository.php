@@ -7,7 +7,7 @@ namespace Polymorph\Platform\Domain\AccessControl\Core\Contracts;
 interface AuditEventRepository
 {
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public function append(
         string $eventType,

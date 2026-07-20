@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Polymorph\Platform\Domain\Records\Pipeline\Core;
 
 /**
@@ -9,9 +11,9 @@ namespace Polymorph\Platform\Domain\Records\Pipeline\Core;
 final class RecordChangeSet
 {
     /**
-     * @param bool $isNoop Whether the pending change has no effective impact
-     * @param array<string> $changedFields Field names that changed
-     * @param array{added: array<int>, removed: array<int>} $refDiff Reference IDs diff
+     * @param  bool  $isNoop  Whether the pending change has no effective impact
+     * @param  array<string>  $changedFields  Field names that changed
+     * @param  array{added: array<int>, removed: array<int>}  $refDiff  Reference IDs diff
      */
     public function __construct(
         public readonly bool $isNoop,

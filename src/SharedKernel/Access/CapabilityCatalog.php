@@ -7,9 +7,13 @@ namespace Polymorph\Platform\SharedKernel\Access;
 final class CapabilityCatalog
 {
     public const ACTION_ACCESS = 'access';
+
     public const ACTION_READ = 'read';
+
     public const ACTION_WRITE = 'write';
+
     public const ACTION_DELETE = 'delete';
+
     public const ACTION_WILDCARD = '*';
 
     public const EFFECT_ALLOW = 'allow';
@@ -33,6 +37,6 @@ final class CapabilityCatalog
 
     public static function capabilityKey(string $resource, string $action = self::ACTION_ACCESS): string
     {
-        return $resource . '/' . $action;
+        return $resource.'/'.$action;
     }
 }

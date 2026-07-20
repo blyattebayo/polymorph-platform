@@ -12,6 +12,5 @@ final readonly class RefreshSessionRotation
         public string $refreshToken,
         /** Абсолютный потолок жизни семьи сессий (Unix-время, сек). */
         public int $absoluteExpiresAt = 0,
-    ) {
-    }
+    ) {}
 }

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Events;
 
-use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Polymorph\Platform\Domain\Media\Core\Models\Media;
 
 /**
  * Событие: медиа-файл удалён.
@@ -14,8 +14,7 @@ use Illuminate\Queue\SerializesModels;
  * Отправляется после мягкого удаления (soft delete) медиа-файла.
  * Используется для логирования, уведомлений и автоматических интеграций (CDN purge).
  *
- * @property-read \Polymorph\Platform\Domain\Media\Core\Models\Media $media
- * @package Polymorph\Platform\Domain\Media\Events
+ * @property-read Media $media
  */
 final class MediaDeleted
 {
@@ -23,11 +22,9 @@ final class MediaDeleted
     use SerializesModels;
 
     /**
-     * @param \Polymorph\Platform\Domain\Media\Core\Models\Media $media Удалённый медиа-файл
+     * @param  Media  $media  Удалённый медиа-файл
      */
     public function __construct(
         public readonly Media $media,
-    ) {
-    }
+    ) {}
 }
-

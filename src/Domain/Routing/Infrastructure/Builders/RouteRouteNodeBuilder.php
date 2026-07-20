@@ -14,16 +14,14 @@ use Polymorph\Platform\Domain\Routing\Core\ValueObjects\RouteNodeDefinition;
  * Отвечает за создание и настройку конкретных маршрутов:
  * - Установка полей маршрута (uri, methods, name, domain, middleware, where, defaults)
  * - Обработка action_type и action_meta
- *
- * @package Polymorph\Platform\Domain\Routing\Builders
  */
 class RouteRouteNodeBuilder implements RouteNodeBuilderInterface
 {
     /**
      * Построить RouteNodeDefinition типа ROUTE из массива конфигурации.
      *
-     * @param array<string, mixed> $data Данные конфигурации
-     * @param list<RouteNodeDefinition> $children Дочерние узлы (игнорируются для ROUTE)
+     * @param  array<string, mixed>  $data  Данные конфигурации
+     * @param  list<RouteNodeDefinition>  $children  Дочерние узлы (игнорируются для ROUTE)
      * @return RouteNodeDefinition Созданный RouteNodeDefinition
      */
     public function build(array $data, array $children): ?RouteNodeDefinition

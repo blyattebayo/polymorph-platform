@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Listeners;
 
-use Polymorph\Platform\Domain\Records\Core\Contracts\RecordRepository;
 use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionForceDeleting;
+use Polymorph\Platform\Domain\Records\Core\Contracts\RecordRepository;
 
 final class CleanupRecordDependenciesOnRecordDefinitionForceDelete
 {
     public function __construct(
         private readonly RecordRepository $records,
-    ) {
-    }
+    ) {}
 
     public function handle(RecordDefinitionForceDeleting $event): void
     {

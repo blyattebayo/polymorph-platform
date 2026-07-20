@@ -7,7 +7,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('resource_ownership', function (Blueprint $table): void {
@@ -94,7 +95,7 @@ return new class extends Migration {
             return $metadata;
         }
 
-        if (!is_string($metadata) || trim($metadata) === '') {
+        if (! is_string($metadata) || trim($metadata) === '') {
             return [];
         }
 

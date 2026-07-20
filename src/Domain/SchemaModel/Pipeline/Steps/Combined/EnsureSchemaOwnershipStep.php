@@ -35,7 +35,7 @@ final class EnsureSchemaOwnershipStep extends AbstractStep
     public function run(PipelineContext $context): StepResult
     {
         /** @var SaveSchemaWithFieldsContext $context */
-        if (!$context->savedSchema instanceof SchemaModel) {
+        if (! $context->savedSchema instanceof SchemaModel) {
             throw new \RuntimeException('Schema ownership step requires saved schema.');
         }
 

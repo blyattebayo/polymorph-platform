@@ -11,4 +11,3 @@ interface ErrorConvertible
 {
     public function toError(ErrorFactory $factory): ErrorPayload;
 }
-

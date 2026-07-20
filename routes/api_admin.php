@@ -10,5 +10,5 @@ declare(strict_types=1);
  * @return array<int, array<string, mixed>>
  */
 return [
-	...require __DIR__ . '/admin/v1.php',
+    ...require __DIR__.'/admin/v1.php',
 ];

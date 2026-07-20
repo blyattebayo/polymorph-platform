@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModelValidation\Rules;
 
-use Polymorph\Platform\Domain\SchemaModelValidation\Rules\Support\ScopedPathResolver;
 use Illuminate\Contracts\Validation\DataAwareRule;
 use Illuminate\Contracts\Validation\ImplicitRule;
+use Polymorph\Platform\Domain\SchemaModelValidation\Dsl\DslOperator;
+use Polymorph\Platform\Domain\SchemaModelValidation\Rules\Support\ScopedPathResolver;
 
-final class ScopedRequiredIf implements ImplicitRule, DataAwareRule
+final class ScopedRequiredIf implements DataAwareRule, ImplicitRule
 {
     /**
      * @var array<string, mixed>
@@ -24,7 +25,7 @@ final class ScopedRequiredIf implements ImplicitRule, DataAwareRule
     ) {}
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function setData(array $data)
     {
@@ -56,15 +57,7 @@ final class ScopedRequiredIf implements ImplicitRule, DataAwareRule
 
     private function evaluateCondition(mixed $left, mixed $right): bool
     {
-        return match ($this->operator) {
-            '==' => $left == $right,
-            '!=' => $left != $right,
-            '>' => $left > $right,
-            '<' => $left < $right,
-            '>=' => $left >= $right,
-            '<=' => $left <= $right,
-            default => false,
-        };
+        return DslOperator::tryFrom($this->operator)?->evaluate($left, $right) ?? false;
     }
 
     private function isEmpty(mixed $value): bool

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Roles\Services;
 
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\AccessControl\Access\BuiltInRoleCatalog;
 use Polymorph\Platform\Domain\Roles\Core\Contracts\RoleAssignmentRepository;
 use Polymorph\Platform\Domain\Roles\Core\Contracts\RoleRepository;
 use Polymorph\Platform\Domain\Users\Core\Contracts\PrivilegedUserMembership;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
-use Illuminate\Support\Facades\DB;
 
 final class AccessProvisioner
 {
@@ -17,8 +17,7 @@ final class AccessProvisioner
         private readonly RoleAssignmentRepository $roleAssignments,
         private readonly RoleRepository $roles,
         private readonly PrivilegedUserMembership $privilegedUserMembership,
-    ) {
-    }
+    ) {}
 
     public function syncForUser(User $user): void
     {

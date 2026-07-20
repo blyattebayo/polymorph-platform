@@ -12,8 +12,7 @@ final class SystemFieldSeeder
 {
     public function __construct(
         private readonly FieldRepository $fieldRepository,
-    ) {
-    }
+    ) {}
 
     public function seedFor(SchemaModel $schema): void
     {

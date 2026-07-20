@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Http\Resources;
 
+use Illuminate\Http\Request;
 use Polymorph\Platform\Http\Resources\Admin\AdminJsonResource;
 
 /**
@@ -28,7 +29,7 @@ final class TokenRefreshResource extends AdminJsonResource
     /**
      * Преобразовать ресурс в массив.
      *
-     * @param  \Illuminate\Http\Request  $request  HTTP запрос
+     * @param  Request  $request  HTTP запрос
      * @return array<string, string> Массив с сообщением об успехе
      */
     public function toArray($request): array

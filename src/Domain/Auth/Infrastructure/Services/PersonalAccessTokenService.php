@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Services;
 
-use Polymorph\Platform\Domain\Auth\Core\Contracts\PersonalAccessTokenRepository;
-use Polymorph\Platform\Domain\Auth\Core\Models\PersonalAccessToken;
-use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 use DateInterval;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Polymorph\Platform\Domain\Auth\Core\Contracts\PersonalAccessTokenRepository;
+use Polymorph\Platform\Domain\Auth\Core\Models\PersonalAccessToken;
+use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 
 final class PersonalAccessTokenService
 {

@@ -1,15 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Polymorph\Platform\Domain\Records\Pipeline\Steps\Write;
 
+use Illuminate\Support\Facades\Validator;
 use Polymorph\Platform\Domain\Records\Pipeline\Contexts\RecordWriteContext;
 use Polymorph\Platform\Domain\Records\Support\RecordPayloadPathRegistry;
 use Polymorph\Platform\Domain\SchemaModelValidation\Contracts\SchemaDescriptorProviderInterface;
 use Polymorph\Platform\Domain\SchemaModelValidation\Contracts\SchemaValidationRulesEngineInterface;
-use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\AbstractStep;
+use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\StepResult;
-use Illuminate\Support\Facades\Validator;
 
 /**
  * Enforces schema-driven validation inside write pipeline.

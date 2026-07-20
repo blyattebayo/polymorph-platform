@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Providers;
 
+use Illuminate\Support\ServiceProvider;
 use Polymorph\Platform\Domain\AccessControl\Access\AccessControlCapabilityProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdministration;
+use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\ActionDefinitionProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\ActionRegistry;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\CapabilityDefinitionProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AssignmentRepository;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AuditActorResolver;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AuditEventRepository;
+use Polymorph\Platform\Domain\AccessControl\Core\Contracts\CapabilityDefinitionProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\CompiledPolicyRepository;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyCompilationService;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRepository;
@@ -27,18 +29,17 @@ use Polymorph\Platform\Domain\AccessControl\Services\ConfigurableActionRegistry;
 use Polymorph\Platform\Domain\AccessControl\Services\CurrentAuditActorResolver;
 use Polymorph\Platform\Domain\AccessControl\Services\DefaultPolicyRuntime;
 use Polymorph\Platform\Domain\AccessControl\Services\DotPrefixResourceMatcher;
-use Polymorph\Platform\Domain\AccessControl\Services\RoleAwareAccessSubjectProvider;
 use Polymorph\Platform\Domain\AccessControl\Services\PolicyCompiler;
-use Illuminate\Support\ServiceProvider;
+use Polymorph\Platform\Domain\AccessControl\Services\RoleAwareAccessSubjectProvider;
 
 final class AccessControlServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->bind(PolicyRepository::class, EloquentPolicyRepository::class);
-        $this->app->bind(AssignmentRepository::class, EloquentAssignmentRepository::class);
-        $this->app->bind(CompiledPolicyRepository::class, EloquentCompiledPolicyRepository::class);
-        $this->app->bind(AuditEventRepository::class, EloquentAuditEventRepository::class);
+        $this->app->singleton(PolicyRepository::class, EloquentPolicyRepository::class);
+        $this->app->singleton(AssignmentRepository::class, EloquentAssignmentRepository::class);
+        $this->app->singleton(CompiledPolicyRepository::class, EloquentCompiledPolicyRepository::class);
+        $this->app->singleton(AuditEventRepository::class, EloquentAuditEventRepository::class);
         $this->app->singleton(ActionRegistry::class, function ($app): ActionRegistry {
             /** @var iterable<ActionDefinitionProvider> $providers */
             $providers = $app->tagged('access.action_providers');
@@ -49,7 +50,7 @@ final class AccessControlServiceProvider extends ServiceProvider
         // scoped, не singleton: in-memory кэш субъектов в RoleAwareAccessSubjectProvider
         // должен жить в пределах одного запроса. Под Octane/queue singleton протухал бы
         // между запросами — пользователь сохранял бы доступ снятой роли (см. B2).
-        $this->app->scoped(\Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider::class, RoleAwareAccessSubjectProvider::class);
+        $this->app->scoped(AccessSubjectProvider::class, RoleAwareAccessSubjectProvider::class);
         $this->app->bind(AuditActorResolver::class, CurrentAuditActorResolver::class);
         $this->app->bind(PolicyCompilationService::class, PolicyCompiler::class);
         $this->app->bind(AccessControlAdministration::class, AccessControlAdminService::class);

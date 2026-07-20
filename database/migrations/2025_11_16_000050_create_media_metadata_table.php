@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\Schema;
  * Таблица хранит нормализованные AV-метаданные для видео и аудио:
  * duration_ms, bitrate_kbps, frame_rate, frame_count, video_codec, audio_codec.
  */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('media_av_metadata', function (Blueprint $table): void {
@@ -38,5 +39,3 @@ return new class extends Migration {
         Schema::dropIfExists('media_av_metadata');
     }
 };
-
-

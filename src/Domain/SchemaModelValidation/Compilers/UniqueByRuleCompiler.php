@@ -34,7 +34,7 @@ final class UniqueByRuleCompiler implements RuleCompilerInterface
     }
 
     /**
-     * @param array<string, mixed>|string $config
+     * @param  array<string, mixed>|string  $config
      * @return list<string>
      */
     private function normalizeUniqueByKeys(array|string $config): array

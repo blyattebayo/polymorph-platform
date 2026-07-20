@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Polymorph\Platform\Domain\Records\Pipeline\Steps\Write;
 
 use Polymorph\Platform\Domain\Records\Pipeline\Contexts\RecordWriteContext;
 use Polymorph\Platform\Domain\Records\Pipeline\Core\RecordSnapshot;
 use Polymorph\Platform\Domain\Records\Support\RecordDataNormalizer;
 use Polymorph\Platform\Domain\Records\Support\RecordSystemFields;
-use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\AbstractStep;
+use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\StepResult;
 
 /**
@@ -68,7 +70,4 @@ final class ApplyAndPersistStep extends AbstractStep
 
         return StepResult::success();
     }
-
-    
-
 }

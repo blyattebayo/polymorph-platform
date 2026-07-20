@@ -23,7 +23,7 @@ final class GdImageProcessor implements ImageProcessor
     {
         /** @var \GdImage|false $image */
         $image = @imagecreatefromstring($contents);
-        
+
         if ($image === false) {
             throw new RuntimeException(
                 'GD: Failed to decode image data. The data may be corrupted or in an unsupported format.'
@@ -48,7 +48,7 @@ final class GdImageProcessor implements ImageProcessor
 
         // Создаем новое изображение с нужным размером
         $resampled = imagecreatetruecolor($width, $height);
-        
+
         if ($resampled === false) {
             throw new RuntimeException(
                 "GD: Failed to create image resource for resizing to {$width}x{$height}"
@@ -73,7 +73,7 @@ final class GdImageProcessor implements ImageProcessor
             imagesy($gd)
         );
 
-        if (!$success) {
+        if (! $success) {
             imagedestroy($resampled);
             $originalWidth = imagesx($gd);
             $originalHeight = imagesy($gd);
@@ -109,13 +109,8 @@ final class GdImageProcessor implements ImageProcessor
             default => throw new RuntimeException("GD: Unsupported image format '{$format}'"),
         };
 
-        // MIME типы
-        $mimeType = match ($extension) {
-            'jpg' => 'image/jpeg',
-            'png' => 'image/png',
-            'gif' => 'image/gif',
-            'webp' => 'image/webp',
-        };
+        $mimeType = ImageMimeTypes::fromExtension($extension)
+            ?? throw new RuntimeException("GD: Unsupported image format '{$extension}'");
 
         ob_start();
 
@@ -153,6 +148,7 @@ final class GdImageProcessor implements ImageProcessor
     {
         /** @var \GdImage $gd */
         $gd = $image->native;
+
         return imagesx($gd);
     }
 
@@ -163,6 +159,7 @@ final class GdImageProcessor implements ImageProcessor
     {
         /** @var \GdImage $gd */
         $gd = $image->native;
+
         return imagesy($gd);
     }
 
@@ -182,6 +179,7 @@ final class GdImageProcessor implements ImageProcessor
     public function supports(string $format): bool
     {
         $format = strtolower($format);
+
         return in_array($format, $this->supportedFormats(), true);
     }
 
@@ -217,7 +215,7 @@ final class GdImageProcessor implements ImageProcessor
         $compression = (int) round((100 - $quality) / 11.111);
         $compression = max(0, min(9, $compression));
 
-        if (!imagepng($gd, null, $compression)) {
+        if (! imagepng($gd, null, $compression)) {
             throw new RuntimeException(
                 "GD: Failed to encode PNG with compression level {$compression}"
             );
@@ -229,7 +227,7 @@ final class GdImageProcessor implements ImageProcessor
      */
     private function encodeGif(\GdImage $gd): void
     {
-        if (!imagegif($gd)) {
+        if (! imagegif($gd)) {
             throw new RuntimeException('GD: Failed to encode GIF image');
         }
     }
@@ -239,13 +237,13 @@ final class GdImageProcessor implements ImageProcessor
      */
     private function encodeWebp(\GdImage $gd, int $quality): void
     {
-        if (!function_exists('imagewebp')) {
+        if (! function_exists('imagewebp')) {
             throw new RuntimeException(
                 'GD: WebP support is not available in this PHP installation'
             );
         }
 
-        if (!imagewebp($gd, null, $quality)) {
+        if (! imagewebp($gd, null, $quality)) {
             throw new RuntimeException(
                 "GD: Failed to encode WebP image with quality {$quality}"
             );
@@ -257,7 +255,7 @@ final class GdImageProcessor implements ImageProcessor
      */
     private function encodeJpeg(\GdImage $gd, int $quality): void
     {
-        if (!imagejpeg($gd, null, $quality)) {
+        if (! imagejpeg($gd, null, $quality)) {
             throw new RuntimeException(
                 "GD: Failed to encode JPEG image with quality {$quality}"
             );

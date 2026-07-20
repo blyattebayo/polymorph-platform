@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Materialization\Console\Commands;
 
-use Polymorph\Platform\Domain\Materialization\Services\RecordDefinitionViewManager;
 use Illuminate\Console\Command;
+use Polymorph\Platform\Domain\Materialization\Services\RecordDefinitionViewManager;
 
 final class RebuildRecordDefinitionDisplayViewsCommand extends Command
 {

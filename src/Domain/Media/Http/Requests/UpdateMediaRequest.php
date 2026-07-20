@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Http\Requests;
 
-use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Http\Requests\ApiFormRequest;
 
 /**
@@ -14,8 +13,6 @@ use Polymorph\Platform\Http\Requests\ApiFormRequest;
  * - Все поля опциональны
  * - title: опциональный заголовок (минимум 1, максимум 255 символов, если указан)
  * - alt: опциональный alt текст (минимум 1, максимум 255 символов, если указан)
- *
- * @package Polymorph\Platform\Http\Requests\Admin\Media
  */
 class UpdateMediaRequest extends ApiFormRequest
 {
@@ -23,8 +20,6 @@ class UpdateMediaRequest extends ApiFormRequest
      * Подготовить данные для валидации.
      *
      * Нормализует пустые строки в null для title и alt, чтобы они не проходили валидацию min:1.
-     *
-     * @return void
      */
     protected function prepareForValidation(): void
     {
@@ -59,7 +54,7 @@ class UpdateMediaRequest extends ApiFormRequest
         return [
             'title' => 'nullable|filled|string|min:1|max:255',
             'alt' => 'nullable|filled|string|min:1|max:255',
-            
+
             // Запретить технические поля (security protection)
             'id' => 'prohibited',
             'disk' => 'prohibited',
@@ -69,7 +64,7 @@ class UpdateMediaRequest extends ApiFormRequest
             'size_bytes' => 'prohibited',
             'original_name' => 'prohibited',
             'ext' => 'prohibited',
-            
+
             // Запретить системные timestamp поля
             'created_at' => 'prohibited',
             'updated_at' => 'prohibited',

@@ -10,15 +10,14 @@ use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldPath;
 
 /**
  * Сервис для вычисления материализованных путей полей.
- * 
+ *
  * Отвечает за построение full_path при создании и перемещении полей.
  */
 class FieldPathCalculator
 {
     public function __construct(
         private readonly FieldRepository $repository,
-    ) {
-    }
+    ) {}
 
     /**
      * Вычислить полный путь для поля.
@@ -34,7 +33,7 @@ class FieldPathCalculator
 
     /**
      * Вычислить новые пути при изменении родителя.
-     * 
+     *
      * @return array{field: FieldPath, descendants: array<int, FieldPath>}
      */
     public function recalculatePathsOnParentChange(
@@ -52,7 +51,7 @@ class FieldPathCalculator
             $descendantPath = $descendant->getPathObject();
             $relativePath = $this->getRelativePath($oldPath, $descendantPath);
             $descendantPaths[$descendant->id] = FieldPath::fromString(
-                $newPath->toString() . '.' . $relativePath
+                $newPath->toString().'.'.$relativePath
             );
         }
 

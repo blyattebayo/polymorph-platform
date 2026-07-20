@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Materialization\Services;
 
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\Materialization\Contracts\RecordDisplayValueProvider;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Support\Facades\DB;
 
 final class MaterializedRecordDisplayValueProvider implements RecordDisplayValueProvider
 {

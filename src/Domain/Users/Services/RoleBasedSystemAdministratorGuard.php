@@ -13,8 +13,7 @@ final class RoleBasedSystemAdministratorGuard implements SystemAdministratorGuar
 {
     public function __construct(
         private readonly PrivilegedUserMembership $privilegedUserMembership,
-    ) {
-    }
+    ) {}
 
     public function assertCanMutate(User $user): void
     {
@@ -22,5 +21,4 @@ final class RoleBasedSystemAdministratorGuard implements SystemAdministratorGuar
             throw SystemAdministratorMutationException::forUser((int) $user->id);
         }
     }
-
 }

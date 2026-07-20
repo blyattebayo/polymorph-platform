@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Polymorph\Platform\Domain\EntryView\Core\Models\EntryView;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
-use Illuminate\Database\Eloquent\Factories\Factory;
+use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Polymorph\Platform\Domain\EntryView\Core\Models\EntryView>
+ * @extends Factory<EntryView>
  */
 class EntryViewFactory extends Factory
 {
@@ -38,8 +38,7 @@ class EntryViewFactory extends Factory
     /**
      * Установить конфигурацию формы.
      *
-     * @param array<string, mixed> $config Конфигурация (ключ - full_path, значение - EditComponent)
-     * @return static
+     * @param  array<string, mixed>  $config  Конфигурация (ключ - full_path, значение - EditComponent)
      */
     public function withConfig(array $config): static
     {

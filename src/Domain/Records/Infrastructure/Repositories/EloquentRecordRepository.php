@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Infrastructure\Repositories;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\Records\Core\Contracts\RecordRepository;
 use Polymorph\Platform\Domain\Records\Core\Models\Record;
 use Polymorph\Platform\Domain\Records\Core\Query\RecordQueryCriteria;
 use Polymorph\Platform\Domain\Records\Core\Query\RecordQueryStrategy;
 use Polymorph\Platform\Domain\Records\Query\RecordFieldSqlExpression;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 final class EloquentRecordRepository implements RecordRepository
 {
@@ -22,9 +22,9 @@ final class EloquentRecordRepository implements RecordRepository
         // Атомарно: COALESCE текущего значения (или 0) + delta, обратно в jsonb.
         $affected = DB::update(
             'UPDATE records SET data_json = jsonb_set(data_json, array[?], '
-            . 'to_jsonb(COALESCE((data_json ->> ?)::numeric, 0) + ?), true), '
-            . 'revision = revision + 1, updated_at = now() '
-            . 'WHERE id = ? AND deleted_at IS NULL',
+            .'to_jsonb(COALESCE((data_json ->> ?)::numeric, 0) + ?), true), '
+            .'revision = revision + 1, updated_at = now() '
+            .'WHERE id = ? AND deleted_at IS NULL',
             [$jsonKey, $jsonKey, $delta, $recordId],
         );
 
@@ -114,7 +114,7 @@ final class EloquentRecordRepository implements RecordRepository
         // иначе под generic-планом частичный индекс не применяется.
         $query = Record::query()
             ->with(['recordDefinition', 'author'])
-            ->whereRaw('record_definition_id = ' . (int) $criteria->definitionId)
+            ->whereRaw('record_definition_id = '.(int) $criteria->definitionId)
             ->whereNull('deleted_at');
 
         if ($criteria->authorId !== null) {
@@ -127,6 +127,7 @@ final class EloquentRecordRepository implements RecordRepository
             if ($condition->strategy === RecordQueryStrategy::Containment && $condition->op === '=') {
                 $fragment = json_encode([$key => $condition->value], JSON_THROW_ON_ERROR);
                 $query->whereRaw('data_json @> ?::jsonb', [$fragment]);
+
                 continue;
             }
 
@@ -134,11 +135,13 @@ final class EloquentRecordRepository implements RecordRepository
 
             if ($condition->op === 'notnull') {
                 $query->whereRaw("{$expr} is not null");
+
                 continue;
             }
 
             if ($condition->op === 'isnull') {
                 $query->whereRaw("{$expr} is null");
+
                 continue;
             }
 
@@ -146,10 +149,12 @@ final class EloquentRecordRepository implements RecordRepository
                 $values = is_array($condition->value) ? array_values($condition->value) : [$condition->value];
                 if ($values === []) {
                     $query->whereRaw('1 = 0');
+
                     continue;
                 }
                 $placeholders = implode(', ', array_fill(0, count($values), '?'));
                 $query->whereRaw("{$expr} in ({$placeholders})", $values);
+
                 continue;
             }
 

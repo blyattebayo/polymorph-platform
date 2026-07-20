@@ -12,8 +12,8 @@ namespace Polymorph\Platform\Domain\Records\Core\Query;
 final readonly class RecordQueryCriteria
 {
     /**
-     * @param list<RecordQueryCondition> $conditions
-     * @param list<array{key: string, cast: ?string, dir: string}> $orders
+     * @param  list<RecordQueryCondition>  $conditions
+     * @param  list<array{key: string, cast: ?string, dir: string}>  $orders
      */
     public function __construct(
         public int $definitionId,
@@ -21,6 +21,5 @@ final readonly class RecordQueryCriteria
         public ?int $authorId,
         public array $orders,
         public ?int $limit,
-    ) {
-    }
+    ) {}
 }

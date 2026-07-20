@@ -13,8 +13,7 @@ final readonly class EmailConstraint
         private int $max,
         private string $laravelRule,
         private string $normalizationRule,
-    ) {
-    }
+    ) {}
 
     public function max(): int
     {

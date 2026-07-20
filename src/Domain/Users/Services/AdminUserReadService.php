@@ -21,8 +21,7 @@ final class AdminUserReadService
         private readonly UserRepository $userRepository,
         private readonly FindUserByIdQuery $findUserByIdQuery,
         private readonly LaravelPaginatorAdapter $paginatorAdapter,
-    ) {
-    }
+    ) {}
 
     public function list(PageRequest $page, ?string $search = null): PageResult
     {
@@ -38,6 +37,7 @@ final class AdminUserReadService
 
     /**
      * @return array<string, mixed>
+     *
      * @throws UserNotFoundException
      */
     public function show(int $userId): array
@@ -51,6 +51,7 @@ final class AdminUserReadService
     public function present(User $user): array
     {
         $rolesByUser = $this->userRoleReadModel->rolesByUserIds([$user->id]);
+
         return (new AdminUserResource($user, $rolesByUser[$user->id] ?? []))->resolve();
     }
 }

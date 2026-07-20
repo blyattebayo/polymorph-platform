@@ -11,8 +11,7 @@ final class CompositeCredentialAuthenticator
     public function __construct(
         private readonly PatCredentialAuthenticator $pat,
         private readonly JwtCredentialAuthenticator $jwt,
-    ) {
-    }
+    ) {}
 
     public function authenticate(string $token): ?AuthenticatedCredential
     {

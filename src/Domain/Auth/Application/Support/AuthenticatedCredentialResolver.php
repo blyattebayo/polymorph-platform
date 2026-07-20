@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Application\Support;
 
+use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\CredentialKind;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
-use Illuminate\Http\Request;
 
 final class AuthenticatedCredentialResolver
 {
     public function __construct(
         private readonly CurrentActorResolver $currentActor,
-    ) {
-    }
+    ) {}
 
     public function fromRequest(Request $request): ?AuthenticatedCredential
     {

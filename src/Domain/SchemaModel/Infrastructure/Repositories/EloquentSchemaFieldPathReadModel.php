@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Infrastructure\Repositories;
 
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\SchemaFieldPathReadModel;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 use Polymorph\Platform\Domain\SchemaModelValidation\FieldPathBuilder;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 final class EloquentSchemaFieldPathReadModel implements SchemaFieldPathReadModel
 {
     public function __construct(
         private readonly FieldPathBuilder $pathBuilder,
-    ) {
-    }
+    ) {}
 
     public function schemaPaths(int $schemaId): array
     {
@@ -75,8 +74,8 @@ final class EloquentSchemaFieldPathReadModel implements SchemaFieldPathReadModel
     }
 
     /**
-     * @param Collection<int, object{schema_id:int,full_path:string,cardinality:string,type:string}> $rows
-     * @param array<string, string> $pathCardinalities
+     * @param  Collection<int, object{schema_id:int,full_path:string,cardinality:string,type:string}>  $rows
+     * @param  array<string, string>  $pathCardinalities
      * @return string[]
      */
     private function extractTypedPaths(Collection $rows, array $pathCardinalities, string $fieldType): array

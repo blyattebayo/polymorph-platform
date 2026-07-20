@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModelValidation\Rules;
 
-use Polymorph\Platform\Domain\SchemaModelValidation\Rules\Support\ScopedPathResolver;
 use Closure;
 use Illuminate\Contracts\Validation\DataAwareRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Carbon;
+use Polymorph\Platform\Domain\SchemaModelValidation\Dsl\DslOperator;
+use Polymorph\Platform\Domain\SchemaModelValidation\Rules\Support\ScopedPathResolver;
 
-final class ScopedFieldComparison implements ValidationRule, DataAwareRule
+final class ScopedFieldComparison implements DataAwareRule, ValidationRule
 {
     /**
      * @var array<string, mixed>
@@ -24,7 +25,7 @@ final class ScopedFieldComparison implements ValidationRule, DataAwareRule
     ) {}
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function setData(array $data): static
     {
@@ -54,15 +55,8 @@ final class ScopedFieldComparison implements ValidationRule, DataAwareRule
             return;
         }
 
-        $result = match ($this->operator) {
-            '>=' => $this->compare($value, $compareValue) >= 0,
-            '<=' => $this->compare($value, $compareValue) <= 0,
-            '>' => $this->compare($value, $compareValue) > 0,
-            '<' => $this->compare($value, $compareValue) < 0,
-            '==' => $this->compare($value, $compareValue) === 0,
-            '!=' => $this->compare($value, $compareValue) !== 0,
-            default => false,
-        };
+        $result = DslOperator::tryFrom($this->operator)
+            ?->evaluateComparison($this->compare($value, $compareValue)) ?? false;
 
         if (! $result) {
             $fail("The :attribute must be {$this->operator} {$this->otherFieldTemplate}.");

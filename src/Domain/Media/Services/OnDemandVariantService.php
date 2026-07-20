@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Services;
 
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 use Polymorph\Platform\Domain\Media\Core\Contracts\ImageProcessor;
 use Polymorph\Platform\Domain\Media\Core\Exceptions\InvalidMediaTypeException;
 use Polymorph\Platform\Domain\Media\Core\Exceptions\MediaStorageException;
@@ -13,26 +15,21 @@ use Polymorph\Platform\Domain\Media\Core\Models\MediaVariant;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaVariantStatus;
 use Polymorph\Platform\Domain\Media\Events\MediaProcessed;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Сервис для генерации вариантов медиа-файлов по требованию.
  *
  * Генерирует варианты изображений (thumbnails, resized) на лету
  * через абстракцию ImageProcessor (gd/imagick/glide/external).
- *
- * @package Polymorph\Platform\Domain\Media\Services
  */
 class OnDemandVariantService
 {
     /**
-     * @param \Polymorph\Platform\Domain\Media\Core\Contracts\ImageProcessor $images Процессор изображений
+     * @param  ImageProcessor  $images  Процессор изображений
      */
     public function __construct(
         private readonly ImageProcessor $images
-    ) {
-    }
+    ) {}
 
     /**
      * Убедиться, что вариант существует на диске и в БД.
@@ -41,9 +38,10 @@ class OnDemandVariantService
      * генерирует вариант синхронно. Для preview-запросов всегда генерирует синхронно,
      * чтобы обеспечить немедленную доступность файла.
      *
-     * @param \Polymorph\Platform\Domain\Media\Core\Models\Media $media Медиа-файл
-     * @param string $variant Имя варианта
-     * @return \Polymorph\Platform\Domain\Media\Core\Models\MediaVariant Созданный или существующий вариант
+     * @param  Media  $media  Медиа-файл
+     * @param  string  $variant  Имя варианта
+     * @return MediaVariant Созданный или существующий вариант
+     *
      * @throws InvalidMediaTypeException Если медиа не поддерживает варианты
      * @throws VariantGenerationException Если вариант не настроен или не удалось сгенерировать
      * @throws MediaStorageException Если не удалось прочитать файл
@@ -72,9 +70,10 @@ class OnDemandVariantService
      * кодирует в нужный формат и сохраняет на диск.
      * После успешной генерации отправляет событие MediaProcessed.
      *
-     * @param \Polymorph\Platform\Domain\Media\Core\Models\Media $media Медиа-файл
-     * @param string $variant Имя варианта
-     * @return \Polymorph\Platform\Domain\Media\Core\Models\MediaVariant Созданный вариант
+     * @param  Media  $media  Медиа-файл
+     * @param  string  $variant  Имя варианта
+     * @return MediaVariant Созданный вариант
+     *
      * @throws InvalidMediaTypeException Если медиа не поддерживает варианты
      * @throws VariantGenerationException Если вариант не настроен или не удалось сгенерировать
      * @throws MediaStorageException Если не удалось прочитать/записать файл
@@ -138,7 +137,7 @@ class OnDemandVariantService
             throw VariantGenerationException::forVariant(
                 $variant,
                 $media->id,
-                'Image processing failed: ' . $e->getMessage(),
+                'Image processing failed: '.$e->getMessage(),
                 $e
             );
         }
@@ -183,9 +182,9 @@ class OnDemandVariantService
     /**
      * Проверить, что медиа поддерживает варианты и вариант настроен.
      *
-     * @param \Polymorph\Platform\Domain\Media\Core\Models\Media $media Медиа-файл
-     * @param string $variant Имя варианта
-     * @return void
+     * @param  Media  $media  Медиа-файл
+     * @param  string  $variant  Имя варианта
+     *
      * @throws InvalidMediaTypeException Если медиа не изображение
      * @throws VariantGenerationException Если вариант не настроен
      */
@@ -218,9 +217,9 @@ class OnDemandVariantService
      *
      * Формат: {original-filename}-{variant}.{extension}
      *
-     * @param \Polymorph\Platform\Domain\Media\Core\Models\Media $media Медиа-файл
-     * @param string $variant Имя варианта
-     * @param string $extension Расширение файла
+     * @param  Media  $media  Медиа-файл
+     * @param  string  $variant  Имя варианта
+     * @param  string  $extension  Расширение файла
      * @return string Путь к варианту
      */
     private function buildVariantPath(Media $media, string $variant, string $extension): string
@@ -235,5 +234,3 @@ class OnDemandVariantService
         return ltrim($directory === '.' ? $variantFilename : "{$directory}/{$variantFilename}", '/');
     }
 }
-
-

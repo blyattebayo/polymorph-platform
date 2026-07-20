@@ -9,15 +9,13 @@ namespace Polymorph\Platform\Domain\Media\Services\Metadata\Plugins;
  *
  * Реализации могут использовать внешние утилиты (ffprobe/mediainfo и т.п.)
  * и должны возвращать нормализованный набор полей.
- *
- * @package Polymorph\Platform\Domain\Media\Services
  */
 interface MediaMetadataPlugin
 {
     /**
      * Проверить, поддерживает ли плагин указанный MIME-тип.
      *
-     * @param string $mime MIME-тип файла
+     * @param  string  $mime  MIME-тип файла
      * @return bool true, если плагин может обработать файл
      */
     public function supports(string $mime): bool;
@@ -25,7 +23,7 @@ interface MediaMetadataPlugin
     /**
      * Извлечь нормализованные метаданные из файла.
      *
-     * @param string $path Абсолютный путь к файлу
+     * @param  string  $path  Абсолютный путь к файлу
      * @return array{
      *     duration_ms?: int|null,
      *     bitrate_kbps?: int|null,
@@ -37,5 +35,3 @@ interface MediaMetadataPlugin
      */
     public function extract(string $path): array;
 }
-
-

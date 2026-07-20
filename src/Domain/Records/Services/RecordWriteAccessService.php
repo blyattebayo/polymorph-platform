@@ -16,11 +16,10 @@ final class RecordWriteAccessService
 
     public function __construct(
         private readonly FieldAccessService $fieldAccessService,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string,mixed> $dataJson
+     * @param  array<string,mixed>  $dataJson
      */
     public function assertCanWriteRecordDefinitionPayload(UserIdentity $actor, RecordDefinition $recordDefinition, array $dataJson): void
     {
@@ -33,7 +32,7 @@ final class RecordWriteAccessService
     }
 
     /**
-     * @param array<string,mixed> $dataJson
+     * @param  array<string,mixed>  $dataJson
      */
     private function assertNoForbiddenWritePaths(UserIdentity $actor, int $schemaId, array $dataJson): void
     {

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Infrastructure\Repositories;
 
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Collection;
 use Polymorph\Platform\Domain\Routing\Core\Enums\OwnerType;
 use Polymorph\Platform\Domain\Routing\Core\Models\RouteNode;
 use Polymorph\Platform\Domain\Routing\Core\ValueObjects\RouteNodeDefinition;
 use Polymorph\Platform\Domain\Routing\Services\Cache\RouteCache;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Support\Collection;
 
 final class ClientRouteRepository implements RouteTreeSource
 {
@@ -86,7 +86,7 @@ final class ClientRouteRepository implements RouteTreeSource
     private function loadNodesFromDatabase(bool $enabledOnly, bool $catchDbErrors = true): EloquentCollection
     {
         $query = RouteNode::query()
-            ->where('owner', 'like', OwnerType::CLIENT->value . '%')
+            ->where('owner', 'like', OwnerType::CLIENT->value.'%')
             ->when($enabledOnly, fn ($q) => $q->where('enabled', true))
             ->orderBy('parent_id')
             ->orderBy('sort_order')
@@ -116,6 +116,7 @@ final class ClientRouteRepository implements RouteTreeSource
         foreach ($nodes as $node) {
             if ($node->parent_id === null) {
                 $roots->push($node);
+
                 continue;
             }
 

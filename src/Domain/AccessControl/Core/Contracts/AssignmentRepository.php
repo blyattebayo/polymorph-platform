@@ -4,24 +4,24 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Core\Contracts;
 
+use Illuminate\Support\Collection;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Assignment;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\PolicySnapshotData;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
-use Illuminate\Support\Collection;
 
 interface AssignmentRepository
 {
     public function upsert(int $policyId, Subject $subject): Assignment;
 
     /**
-     * @param list<int> $policyIds
+     * @param  list<int>  $policyIds
      */
     public function upsertManyForSubject(Subject $subject, array $policyIds): void;
 
     public function deleteForPolicyAndSubject(int $policyId, Subject $subject): void;
 
     /**
-     * @param list<int> $policyIds
+     * @param  list<int>  $policyIds
      */
     public function deleteManyForSubject(Subject $subject, array $policyIds): void;
 

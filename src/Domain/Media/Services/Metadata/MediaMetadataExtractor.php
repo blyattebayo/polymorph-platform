@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Services\Metadata;
 
+use Illuminate\Contracts\Cache\Repository;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use Illuminate\Http\UploadedFile;
 use Polymorph\Platform\Domain\Media\Core\Contracts\ImageProcessor;
 use Polymorph\Platform\Domain\Media\Core\Dto\MediaMetadataDto;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
 use Polymorph\Platform\Domain\Media\Services\Metadata\Plugins\MediaMetadataPlugin;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Contracts\Cache\Repository as CacheRepository;
-use Illuminate\Http\UploadedFile;
 
 /**
  * Сервис для извлечения метаданных из медиафайлов.
@@ -22,9 +23,9 @@ use Illuminate\Http\UploadedFile;
 class MediaMetadataExtractor
 {
     /**
-     * @param  \Polymorph\Platform\Domain\Media\Core\Contracts\ImageProcessor  $images  Процессор изображений
+     * @param  ImageProcessor  $images  Процессор изображений
      * @param  iterable<MediaMetadataPlugin>  $plugins  Плагины для извлечения медиаметаданных
-     * @param  \Illuminate\Contracts\Cache\Repository|null  $cache  Кэш для метаданных
+     * @param  Repository|null  $cache  Кэш для метаданных
      * @param  int  $cacheTtl  TTL кэша в секундах (по умолчанию 3600)
      */
     public function __construct(
@@ -56,10 +57,10 @@ class MediaMetadataExtractor
      *
      * Результаты кэшируются для оптимизации производительности.
      *
-     * @param  \Illuminate\Http\UploadedFile  $file  Загруженный файл
+     * @param  UploadedFile  $file  Загруженный файл
      * @param  string|null  $mime  MIME-тип файла (если не указан, определяется автоматически)
-     * @param  \Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind|null  $kind  Тип медиа (для условного извлечения)
-     * @return \Polymorph\Platform\Domain\Media\Core\Dto\MediaMetadataDto Метаданные файла
+     * @param  MediaKind|null  $kind  Тип медиа (для условного извлечения)
+     * @return MediaMetadataDto Метаданные файла
      */
     public function extract(UploadedFile $file, ?string $mime = null, ?MediaKind $kind = null): MediaMetadataDto
     {
@@ -99,7 +100,7 @@ class MediaMetadataExtractor
      * Использует getimagesize() как основной метод (быстро, эффективно).
      * Fallback на ImageProcessor для экзотических форматов.
      *
-     * @param  \Illuminate\Http\UploadedFile  $file  Загруженный файл
+     * @param  UploadedFile  $file  Загруженный файл
      * @param  string  $mime  MIME-тип файла
      */
     private function extractImageMetadata(UploadedFile $file, string $mime): MediaMetadataDto
@@ -150,7 +151,7 @@ class MediaMetadataExtractor
      * - frame_rate, frame_count (специфично для видео)
      * - video_codec, audio_codec
      *
-     * @param  \Illuminate\Http\UploadedFile  $file  Загруженный файл
+     * @param  UploadedFile  $file  Загруженный файл
      * @param  string  $mime  MIME-тип файла
      */
     private function extractVideoMetadata(UploadedFile $file, string $mime): MediaMetadataDto
@@ -199,7 +200,7 @@ class MediaMetadataExtractor
      * НЕ извлекает video-специфичные поля:
      * - frame_rate, frame_count, video_codec (всегда null)
      *
-     * @param  \Illuminate\Http\UploadedFile  $file  Загруженный файл
+     * @param  UploadedFile  $file  Загруженный файл
      * @param  string  $mime  MIME-тип файла
      */
     private function extractAudioMetadata(UploadedFile $file, string $mime): MediaMetadataDto
@@ -245,7 +246,7 @@ class MediaMetadataExtractor
     /**
      * Получить путь к файлу с fallback-ами.
      *
-     * @param  \Illuminate\Http\UploadedFile  $file  Загруженный файл
+     * @param  UploadedFile  $file  Загруженный файл
      * @return string|null Путь к файлу или null
      */
     private function getFilePath(UploadedFile $file): ?string
@@ -303,9 +304,9 @@ class MediaMetadataExtractor
     /**
      * Получить ключ кэша для файла.
      *
-     * @param  \Illuminate\Http\UploadedFile  $file  Загруженный файл
+     * @param  UploadedFile  $file  Загруженный файл
      * @param  string  $mime  MIME-тип файла
-     * @param  \Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind  $kind  Тип медиа
+     * @param  MediaKind  $kind  Тип медиа
      */
     private function getCacheKey(UploadedFile $file, string $mime, MediaKind $kind): string
     {

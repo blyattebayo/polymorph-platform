@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModelValidation;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Polymorph\Platform\Domain\Records\Support\RecordPayloadPathRegistry;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\Cardinality;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\ValidationRules;
 use Polymorph\Platform\Domain\SchemaModelValidation\Cache\RuleSetCache;
 use Polymorph\Platform\Domain\SchemaModelValidation\Compilers\RuleCompilerRegistry;
-use Polymorph\Platform\Domain\SchemaModelValidation\Rules\Iso8601DateTime;
 use Polymorph\Platform\Domain\SchemaModelValidation\Contracts\SchemaValidationRulesEngineInterface;
+use Polymorph\Platform\Domain\SchemaModelValidation\Rules\Iso8601DateTime;
 use Polymorph\Platform\Domain\SchemaModelValidation\Schema\FieldDescriptor;
 use Polymorph\Platform\Domain\SchemaModelValidation\Schema\SchemaDescriptor;
-use Illuminate\Contracts\Validation\ValidationRule;
 
 final class RecordValidationService implements SchemaValidationRulesEngineInterface
 {
@@ -80,7 +80,7 @@ final class RecordValidationService implements SchemaValidationRulesEngineInterf
     }
 
     /**
-     * @param array<string, mixed> $validationRules
+     * @param  array<string, mixed>  $validationRules
      * @return array<int, string>
      */
     private function extractBaseLaravelRules(array $validationRules): array
@@ -154,7 +154,7 @@ final class RecordValidationService implements SchemaValidationRulesEngineInterf
     {
         return str_ends_with($targetPath, '.*')
             ? $targetPath
-            : rtrim($targetPath, '.') . '.*';
+            : rtrim($targetPath, '.').'.*';
     }
 
     private function defaultTypeRuleForFieldType(FieldType $fieldType): string|ValidationRule|null
@@ -165,7 +165,7 @@ final class RecordValidationService implements SchemaValidationRulesEngineInterf
             FieldType::MEDIA => 'ulid',
             FieldType::FLOAT => 'numeric',
             FieldType::BOOL => 'boolean',
-            FieldType::DATETIME => new Iso8601DateTime(),
+            FieldType::DATETIME => new Iso8601DateTime,
             FieldType::JSON => 'array',
         };
     }

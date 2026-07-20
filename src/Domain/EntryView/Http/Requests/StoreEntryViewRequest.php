@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\EntryView\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -11,8 +12,6 @@ use Illuminate\Foundation\Http\FormRequest;
  *
  * Минимальная валидация:
  * - config_json: обязательный JSON (после декодирования — массив PHP)
- *
- * @package Polymorph\Platform\Domain\EntryView\Http\Requests
  */
 class StoreEntryViewRequest extends FormRequest
 {
@@ -20,8 +19,6 @@ class StoreEntryViewRequest extends FormRequest
      * Определить, авторизован ли пользователь для выполнения запроса.
      *
      * Авторизация обрабатывается middleware маршрута.
-     *
-     * @return bool
      */
     public function authorize(): bool
     {
@@ -31,9 +28,9 @@ class StoreEntryViewRequest extends FormRequest
     /**
      * Получить правила валидации для запроса.
      *
-        * Валидирует только наличие и JSON-тип config_json.
+     * Валидирует только наличие и JSON-тип config_json.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

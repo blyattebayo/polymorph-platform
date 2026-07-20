@@ -13,7 +13,7 @@ final class ResourceOwnershipService
             ->where('resource_id', $resourceId)
             ->first();
 
-        if (!$ownership instanceof ResourceOwnership) {
+        if (! $ownership instanceof ResourceOwnership) {
             return null;
         }
 
@@ -58,7 +58,7 @@ final class ResourceOwnershipService
             ->where('resource_id', $resourceId)
             ->exists();
 
-        if (!$exists) {
+        if (! $exists) {
             $this->set($resourceType, $resourceId, ResourceOwner::platform());
         }
     }

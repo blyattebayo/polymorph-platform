@@ -4,20 +4,19 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Polymorph\Platform\Domain\Extensions\Http\Requests\ExtensionLifecycleRequest;
 use Polymorph\Platform\Domain\Extensions\Http\Requests\SyncExtensionsRequest;
 use Polymorph\Platform\Domain\Extensions\Http\Resources\ExtensionResource;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionManager;
 use Polymorph\Platform\Http\Controllers\Controller;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
-use Illuminate\Http\JsonResponse;
 
 final class ExtensionAdminController extends Controller
 {
     public function __construct(
         private readonly ExtensionManager $pluginManager,
-    ) {
-    }
+    ) {}
 
     public function index(SyncExtensionsRequest $request): JsonResponse
     {

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Core\Contracts;
 
-use Polymorph\Platform\Domain\Auth\Core\Models\PersonalAccessToken;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Polymorph\Platform\Domain\Auth\Core\Models\PersonalAccessToken;
 
 interface PersonalAccessTokenRepository
 {
@@ -30,7 +30,7 @@ interface PersonalAccessTokenRepository
     public function listForUser(int $userId): array;
 
     /**
-     * @param array{user_id?: int|null, status?: string|null} $filters
+     * @param  array{user_id?: int|null, status?: string|null}  $filters
      */
     public function paginateAll(int $page, int $perPage, array $filters = []): LengthAwarePaginator;
 

@@ -20,8 +20,8 @@ class DuplicateFieldPathException extends RuntimeException implements ErrorConve
         private readonly string $schemaCode,
     ) {
         parent::__construct(
-            "Путь '{$fullPath}' уже существует в схеме '{$schemaCode}'. " .
-            "Используйте другое имя поля или удалите существующий путь."
+            "Путь '{$fullPath}' уже существует в схеме '{$schemaCode}'. ".
+            'Используйте другое имя поля или удалите существующий путь.'
         );
     }
 

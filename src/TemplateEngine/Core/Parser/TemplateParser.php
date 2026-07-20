@@ -4,25 +4,24 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\TemplateEngine\Core\Parser;
 
-use Polymorph\Platform\TemplateEngine\Core\AST\{
-    ExpressionNode,
-    FieldNode,
-    FilterNode,
-    PathNode,
-    RefNode,
-    TemplateNode,
-    TextNode,
-    WildcardNode
-};
+use Polymorph\Platform\TemplateEngine\Core\AST\ExpressionNode;
+use Polymorph\Platform\TemplateEngine\Core\AST\FieldNode;
+use Polymorph\Platform\TemplateEngine\Core\AST\FilterNode;
+use Polymorph\Platform\TemplateEngine\Core\AST\PathNode;
+use Polymorph\Platform\TemplateEngine\Core\AST\RefNode;
+use Polymorph\Platform\TemplateEngine\Core\AST\TemplateNode;
+use Polymorph\Platform\TemplateEngine\Core\AST\TextNode;
+use Polymorph\Platform\TemplateEngine\Core\AST\WildcardNode;
 use Polymorph\Platform\TemplateEngine\Core\Errors\ParserException;
-use Polymorph\Platform\TemplateEngine\Core\Lexer\{Token, TokenType};
+use Polymorph\Platform\TemplateEngine\Core\Lexer\Token;
+use Polymorph\Platform\TemplateEngine\Core\Lexer\TokenType;
 
 /**
  * Parser for template engine syntax.
  * Converts a token stream to an abstract syntax tree (AST).
- * 
+ *
  * GRAMMAR:
- * 
+ *
  * template     → (text | expression)*
  * expression   → '{{' path filters? '}}'
  * path         → accessor segments*
@@ -34,7 +33,7 @@ use Polymorph\Platform\TemplateEngine\Core\Lexer\{Token, TokenType};
  * filters      → ('|' filter)+
  * filter       → IDENT ('(' args ')')?
  * args         → (STRING | INTEGER) (',' (STRING | INTEGER))*
- * 
+ *
  * AST NODE TYPES:
  * - TemplateNode: Root node containing children
  * - TextNode: Plain text outside expressions
@@ -44,34 +43,35 @@ use Polymorph\Platform\TemplateEngine\Core\Lexer\{Token, TokenType};
  * - FieldNode: field(fieldId) access
  * - WildcardNode: [*] array expansion
  * - FilterNode: filter(args) transformation
- * 
+ *
  * EXAMPLES:
  * {{ field(10) }}                          - Simple field access
  * {{ ref(100).field(200) }}                - Reference traversal to field
  * {{ field(10)[*] }}                       - Field with wildcard
  * {{ field(10) | uppercase }}              - Field with filter
  * {{ ref(1).field(2)[*] | join(', ') }}   - Complex expression
- * 
+ *
  * ERROR HANDLING:
  * Throws ParserException on:
  * - Missing required tokens (parentheses, field IDs, etc.)
  * - Invalid token sequences
  * - Empty expressions
  * - Unexpected tokens
- * 
+ *
  * @see Tests\Unit\TemplateEngine\TemplateParserTest for comprehensive test coverage
  */
 class TemplateParser
 {
     /** @var Token[] */
     private array $tokens;
+
     private int $position = 0;
 
     /**
      * Parse a token stream to an AST.
-     * 
-     * @param Token[] $tokens
-     * @return TemplateNode
+     *
+     * @param  Token[]  $tokens
+     *
      * @throws ParserException
      */
     public function parse(array $tokens): TemplateNode
@@ -81,7 +81,7 @@ class TemplateParser
 
         $children = [];
 
-        while (!$this->isAtEnd()) {
+        while (! $this->isAtEnd()) {
             $token = $this->current();
 
             if ($token->type === TokenType::TEXT) {
@@ -254,7 +254,7 @@ class TemplateParser
         $args = [];
 
         if ($this->match(TokenType::LPAREN)) {
-            if (!$this->check(TokenType::RPAREN)) {
+            if (! $this->check(TokenType::RPAREN)) {
                 do {
                     $args[] = $this->parseFilterArg();
                 } while ($this->match(TokenType::COMMA));
@@ -279,16 +279,18 @@ class TemplateParser
     {
         if ($this->check(TokenType::INTEGER)) {
             $token = $this->advance();
+
             return (int) $token->value;
         }
 
         if ($this->check(TokenType::STRING)) {
             $token = $this->advance();
+
             return $token->value;
         }
 
         throw new ParserException(
-            "Expected integer or string as filter argument",
+            'Expected integer or string as filter argument',
             $this->current()
         );
     }
@@ -307,9 +309,10 @@ class TemplateParser
 
     private function advance(): Token
     {
-        if (!$this->isAtEnd()) {
+        if (! $this->isAtEnd()) {
             $this->position++;
         }
+
         return $this->previous();
     }
 
@@ -323,6 +326,7 @@ class TemplateParser
         if ($this->isAtEnd()) {
             return false;
         }
+
         return $this->current()->type === $type;
     }
 
@@ -331,9 +335,11 @@ class TemplateParser
         foreach ($types as $type) {
             if ($this->check($type)) {
                 $this->advance();
+
                 return true;
             }
         }
+
         return false;
     }
 
@@ -350,4 +356,3 @@ class TemplateParser
         );
     }
 }
-

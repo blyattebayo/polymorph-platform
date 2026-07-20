@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Polymorph\Platform\Domain\Records\Support\RecordPayloadPathRegistry;
 use Polymorph\Platform\Http\Requests\AuthenticatedRequest;
 use Polymorph\Platform\Support\Validation\Rules\ObjectLikeArray;
@@ -11,7 +12,7 @@ use Polymorph\Platform\Support\Validation\Rules\ObjectLikeArray;
 class StoreRecordRequest extends AuthenticatedRequest
 {
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -26,9 +27,9 @@ class StoreRecordRequest extends AuthenticatedRequest
     }
 
     /**
-        * Получить кастомные сообщения для ошибок валидации.
+     * Получить кастомные сообщения для ошибок валидации.
      *
-        * @return array<string, string> Массив сообщений об ошибках
+     * @return array<string, string> Массив сообщений об ошибках
      */
     public function messages(): array
     {
@@ -45,4 +46,3 @@ class StoreRecordRequest extends AuthenticatedRequest
         return $this->validated(RecordPayloadPathRegistry::ROOT_KEY) ?? [];
     }
 }
-

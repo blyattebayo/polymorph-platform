@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Http\Controllers;
 
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\JsonResponse;
 use Polymorph\Platform\Domain\Media\Commands\DeleteMediaCommand;
 use Polymorph\Platform\Domain\Media\Commands\ForceDeleteMediaCommand;
 use Polymorph\Platform\Domain\Media\Commands\RestoreMediaCommand;
@@ -11,7 +13,6 @@ use Polymorph\Platform\Domain\Media\Commands\UpdateMediaCommand;
 use Polymorph\Platform\Domain\Media\Commands\UploadMediaCommand;
 use Polymorph\Platform\Domain\Media\Core\Contracts\MediaRepository;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
-use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaDeletedFilter;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaQuery;
 use Polymorph\Platform\Domain\Media\Http\Requests\BulkDeleteMediaRequest;
 use Polymorph\Platform\Domain\Media\Http\Requests\BulkForceDeleteMediaRequest;
@@ -20,9 +21,9 @@ use Polymorph\Platform\Domain\Media\Http\Requests\BulkStoreMediaRequest;
 use Polymorph\Platform\Domain\Media\Http\Requests\IndexMediaRequest;
 use Polymorph\Platform\Domain\Media\Http\Requests\StoreMediaRequest;
 use Polymorph\Platform\Domain\Media\Http\Requests\UpdateMediaRequest;
+use Polymorph\Platform\Domain\Media\Http\Resources\Media\BaseMediaResource;
 use Polymorph\Platform\Domain\Media\Http\Resources\MediaCollection;
 use Polymorph\Platform\Domain\Media\Http\Resources\MediaConfigResource;
-use Polymorph\Platform\Domain\Media\Http\Resources\Media\BaseMediaResource;
 use Polymorph\Platform\Domain\Media\Http\Resources\MediaResourceFactory;
 use Polymorph\Platform\Domain\Media\Queries\SearchMediaQuery;
 use Polymorph\Platform\Http\Controllers\Controller;
@@ -30,8 +31,9 @@ use Polymorph\Platform\Http\Pagination\V2\PaginatedJsonResponse;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
 use Polymorph\Platform\Infrastructure\Pagination\V2\LaravelPaginatorAdapter;
 use Polymorph\Platform\Support\Errors\ErrorCode;
+use Polymorph\Platform\Support\Errors\HttpErrorException;
 use Polymorph\Platform\Support\Errors\ThrowsErrors;
-use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
@@ -40,10 +42,8 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
  * Предоставляет CRUD операции для медиа-файлов: загрузка, просмотр, обновление,
  * массовое мягкое удаление, массовое окончательное удаление, массовое восстановление,
  * управление вариантами и привязкой к записям.
- *
- * @package Polymorph\Platform\Domain\Media\Http\Controllers
  */
-class MediaController extends Controller
+final class MediaController extends Controller
 {
     use ThrowsErrors;
 
@@ -56,9 +56,7 @@ class MediaController extends Controller
         private readonly SearchMediaQuery $searchMedia,
         private readonly MediaRepository $mediaRepository,
         private readonly LaravelPaginatorAdapter $paginatorAdapter,
-    ) {
-    }
-
+    ) {}
 
     /**
      * Получение конфигурации системы медиа-файлов.
@@ -66,14 +64,14 @@ class MediaController extends Controller
      * Возвращает информацию о разрешенных типах файлов (MIME-типы),
      * максимальном размере загрузки и доступных вариантах изображений.
      *
-     * @return \Polymorph\Platform\Domain\Media\Http\Resources\MediaConfigResource Ресурс с конфигурацией медиа
-     * @throws \Illuminate\Auth\Access\AuthorizationException Если нет прав на просмотр
+     * @return MediaConfigResource Ресурс с конфигурацией медиа
+     *
+     * @throws AuthorizationException Если нет прав на просмотр
      */
     public function config(): MediaConfigResource
     {
         return new MediaConfigResource(null);
     }
-
 
     public function index(IndexMediaRequest $request): JsonResponse
     {
@@ -106,10 +104,11 @@ class MediaController extends Controller
      * При дедупликации (файл с таким же checksum уже существует) возвращает 200,
      * при создании новой записи - 201.
      *
-     * @param \Polymorph\Platform\Domain\Media\Http\Requests\StoreMediaRequest $request HTTP запрос с файлом и метаданными
-     * @return \Illuminate\Http\JsonResponse JSON ответ со специализированным ресурсом медиа-файла
-     * @throws \Illuminate\Auth\Access\AuthorizationException Если нет прав на создание
-     * @throws \Polymorph\Platform\Support\Errors\HttpErrorException Если файл не прошел валидацию или не удалось сохранить
+     * @param  StoreMediaRequest  $request  HTTP запрос с файлом и метаданными
+     * @return JsonResponse JSON ответ со специализированным ресурсом медиа-файла
+     *
+     * @throws AuthorizationException Если нет прав на создание
+     * @throws HttpErrorException Если файл не прошел валидацию или не удалось сохранить
      */
     public function store(StoreMediaRequest $request): JsonResponse
     {
@@ -117,7 +116,7 @@ class MediaController extends Controller
         $file = $request->file('file');
 
         $media = $this->uploadMedia->execute($file, $validated);
-        
+
         // Загружаем связи для MediaResource (width, height из image, duration_ms из avMetadata)
         $media->load(['image', 'avMetadata']);
 
@@ -134,9 +133,10 @@ class MediaController extends Controller
      * Возвращает коллекцию с специализированными ресурсами для каждого типа медиа.
      * Опциональные метаданные (title, alt) применяются ко всем файлам.
      *
-     * @param \Polymorph\Platform\Domain\Media\Http\Requests\BulkStoreMediaRequest $request HTTP запрос с массивом файлов и метаданными
-     * @return \Illuminate\Http\JsonResponse JSON ответ с коллекцией загруженных медиа-файлов (статус 201)
-     * @throws \Illuminate\Auth\Access\AuthorizationException Если нет прав на создание
+     * @param  BulkStoreMediaRequest  $request  HTTP запрос с массивом файлов и метаданными
+     * @return JsonResponse JSON ответ с коллекцией загруженных медиа-файлов (статус 201)
+     *
+     * @throws AuthorizationException Если нет прав на создание
      */
     public function bulkStore(BulkStoreMediaRequest $request): JsonResponse
     {
@@ -155,16 +155,16 @@ class MediaController extends Controller
             }
 
             $media = $this->uploadMedia->execute($file, $payload);
-            
+
             // Загружаем связи для MediaResource (width, height из image, duration_ms из avMetadata)
             $media->load(['image', 'avMetadata']);
-            
+
             $uploadedMedia[] = $media;
         }
 
         // Преобразуем каждый Media в специализированный ресурс
-        $resources = collect($uploadedMedia)->map(fn($media) => MediaResourceFactory::make($media));
-        
+        $resources = collect($uploadedMedia)->map(fn ($media) => MediaResourceFactory::make($media));
+
         return response()->json(['data' => $resources], HttpResponse::HTTP_CREATED);
     }
 
@@ -177,9 +177,10 @@ class MediaController extends Controller
      * - MediaAudioResource для аудио (с duration_ms, bitrate_kbps, audio_codec)
      * - MediaDocumentResource для документов (только базовые поля)
      *
-     * @param string $mediaId ULID идентификатор медиа-файла
-     * @return \Polymorph\Platform\Domain\Media\Http\Resources\Media\BaseMediaResource Специализированный ресурс медиа-файла
-     * @throws \Illuminate\Auth\Access\AuthorizationException Если нет прав на просмотр
+     * @param  string  $mediaId  ULID идентификатор медиа-файла
+     * @return BaseMediaResource Специализированный ресурс медиа-файла
+     *
+     * @throws AuthorizationException Если нет прав на просмотр
      */
     public function show(string $mediaId): BaseMediaResource
     {
@@ -198,10 +199,11 @@ class MediaController extends Controller
      * Обновляет title, alt и возвращает специализированный ресурс
      * в зависимости от типа медиа (изображение, видео, аудио, документ).
      *
-     * @param \Polymorph\Platform\Domain\Media\Http\Requests\UpdateMediaRequest $request HTTP запрос с валидированными данными
-     * @param string $mediaId ULID идентификатор медиа-файла
-     * @return \Polymorph\Platform\Domain\Media\Http\Resources\Media\BaseMediaResource Обновленный специализированный ресурс медиа-файла
-     * @throws \Illuminate\Auth\Access\AuthorizationException Если нет прав на обновление
+     * @param  UpdateMediaRequest  $request  HTTP запрос с валидированными данными
+     * @param  string  $mediaId  ULID идентификатор медиа-файла
+     * @return BaseMediaResource Обновленный специализированный ресурс медиа-файла
+     *
+     * @throws AuthorizationException Если нет прав на обновление
      */
     public function update(UpdateMediaRequest $request, string $mediaId): BaseMediaResource
     {
@@ -212,10 +214,10 @@ class MediaController extends Controller
         }
 
         $updated = $this->updateMedia->execute($mediaId, $request->validated());
-        
+
         // Загружаем связи для MediaResource (width, height из image, duration_ms из avMetadata)
         $updated->load(['image', 'avMetadata']);
-        
+
         return MediaResourceFactory::make($updated);
     }
 
@@ -238,9 +240,10 @@ class MediaController extends Controller
      * Восстанавливает мягко удаленные медиа-файлы по массиву идентификаторов.
      * Возвращает коллекцию с специализированными ресурсами для каждого типа медиа.
      *
-     * @param \Polymorph\Platform\Domain\Media\Http\Requests\BulkRestoreMediaRequest $request HTTP запрос с массивом ids
-     * @return \Polymorph\Platform\Domain\Media\Http\Resources\MediaCollection Коллекция восстановленных медиа-файлов
-     * @throws \Illuminate\Auth\Access\AuthorizationException Если нет прав на восстановление
+     * @param  BulkRestoreMediaRequest  $request  HTTP запрос с массивом ids
+     * @return MediaCollection Коллекция восстановленных медиа-файлов
+     *
+     * @throws AuthorizationException Если нет прав на восстановление
      */
     public function bulkRestore(BulkRestoreMediaRequest $request): MediaCollection
     {
@@ -284,8 +287,9 @@ class MediaController extends Controller
      * Для каждого файла проверяются права доступа через политику forceDelete.
      * Физические файлы и варианты удаляются с диска, затем записи удаляются из БД.
      *
-     * @return \Symfony\Component\HttpFoundation\Response HTTP ответ 204 No Content
-     * @throws \Illuminate\Auth\Access\AuthorizationException Если нет прав на forceDelete
+     * @return Response HTTP ответ 204 No Content
+     *
+     * @throws AuthorizationException Если нет прав на forceDelete
      */
     public function emptyTrash(): HttpResponse
     {
@@ -315,5 +319,3 @@ class MediaController extends Controller
         );
     }
 }
-
-

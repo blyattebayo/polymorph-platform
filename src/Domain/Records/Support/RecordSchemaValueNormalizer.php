@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Records\Support;
 
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\Cardinality;
-use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 use Polymorph\Platform\Domain\SchemaModelValidation\Contracts\SchemaDescriptorProviderInterface;
 use Polymorph\Platform\Domain\SchemaModelValidation\Schema\FieldDescriptor;
 
@@ -17,11 +16,10 @@ final class RecordSchemaValueNormalizer
     public function __construct(
         private readonly SchemaDescriptorProviderInterface $schemaDescriptorProvider,
         private readonly RecordSchemaScalarValueNormalizer $scalarNormalizer,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
     public function normalizeForSchema(int $schemaId, array $payload): array
@@ -40,7 +38,7 @@ final class RecordSchemaValueNormalizer
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
     private function normalizeField(FieldDescriptor $field, array $payload): array
@@ -55,7 +53,7 @@ final class RecordSchemaValueNormalizer
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
     private function normalizeAtPath(array $payload, string $dataPath, callable $normalize): array
@@ -79,18 +77,18 @@ final class RecordSchemaValueNormalizer
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
     private function normalizeManyScalarPath(array $payload, string $dataPath, callable $normalize): array
     {
         $containerPath = substr($dataPath, 0, -2);
-        if (!array_key_exists($containerPath, $payload)) {
+        if (! array_key_exists($containerPath, $payload)) {
             return $payload;
         }
 
         $values = $payload[$containerPath];
-        if (!is_array($values)) {
+        if (! is_array($values)) {
             return $payload;
         }
 
@@ -103,18 +101,18 @@ final class RecordSchemaValueNormalizer
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
     private function normalizeNestedWildcardPath(array $payload, string $dataPath, callable $normalize): array
     {
         [$containerPath, $leafPath] = explode('.*.', $dataPath, 2);
-        if (!array_key_exists($containerPath, $payload) || !is_array($payload[$containerPath])) {
+        if (! array_key_exists($containerPath, $payload) || ! is_array($payload[$containerPath])) {
             return $payload;
         }
 
         foreach ($payload[$containerPath] as $index => $item) {
-            if (!is_array($item)) {
+            if (! is_array($item)) {
                 continue;
             }
 

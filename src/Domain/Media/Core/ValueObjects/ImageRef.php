@@ -14,10 +14,9 @@ namespace Polymorph\Platform\Domain\Media\Core\ValueObjects;
 final class ImageRef
 {
     /**
-     * @param mixed $native Нативный объект/ресурс бэкенда
+     * @param  mixed  $native  Нативный объект/ресурс бэкенда
      */
     public function __construct(
         public readonly mixed $native
-    ) {
-    }
+    ) {}
 }

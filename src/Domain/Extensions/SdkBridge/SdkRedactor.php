@@ -15,9 +15,7 @@ use Polymorph\Sdk\Logging\Redactor;
  */
 final class SdkRedactor implements Redactor
 {
-    public function __construct(private readonly SecretRedactor $redactor)
-    {
-    }
+    public function __construct(private readonly SecretRedactor $redactor) {}
 
     public function redact(array $payload): array
     {

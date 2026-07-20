@@ -14,9 +14,13 @@ final class ErrorBuilder
     private array $meta = [];
 
     private string $detail;
+
     private string $uri;
+
     private string $title;
+
     private int $status;
+
     private ?string $traceId = null;
 
     public function __construct(private readonly ErrorType $type)
@@ -71,7 +75,7 @@ final class ErrorBuilder
     }
 
     /**
-     * @param array<string, mixed> $meta
+     * @param  array<string, mixed>  $meta
      */
     public function meta(array $meta): self
     {
@@ -121,7 +125,7 @@ final class ErrorBuilder
     }
 
     /**
-     * @param array<string, mixed> $meta
+     * @param  array<string, mixed>  $meta
      */
     private function assertMeta(array $meta): void
     {
@@ -136,4 +140,3 @@ final class ErrorBuilder
         }
     }
 }
-

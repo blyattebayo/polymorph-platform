@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Core\Exceptions;
 
+use InvalidArgumentException;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ErrorFactory;
 use Polymorph\Platform\Support\Errors\ErrorPayload;
-use InvalidArgumentException;
 
 /**
  * Исключение при указании недопустимого типа поля.
@@ -20,8 +20,8 @@ class InvalidFieldTypeException extends InvalidArgumentException implements Erro
         private readonly array $validTypes,
     ) {
         parent::__construct(
-            "Недопустимый тип поля '{$invalidType}'. " .
-            "Допустимые типы: " . implode(', ', $validTypes)
+            "Недопустимый тип поля '{$invalidType}'. ".
+            'Допустимые типы: '.implode(', ', $validTypes)
         );
     }
 

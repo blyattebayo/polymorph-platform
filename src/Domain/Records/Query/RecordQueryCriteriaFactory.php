@@ -31,8 +31,8 @@ final class RecordQueryCriteriaFactory
      * значений и индексных проверок: V2 `Polymorph\Sdk\Data\Query` (через DataPlatform)
      * делегирует сюда.
      *
-     * @param list<array{field: string, op: string, value: mixed}> $conditions
-     * @param list<array{field: string, dir: string}> $orders
+     * @param  list<array{field: string, op: string, value: mixed}>  $conditions
+     * @param  list<array{field: string, dir: string}>  $orders
      */
     public function fromParts(
         RecordDefinition $definition,

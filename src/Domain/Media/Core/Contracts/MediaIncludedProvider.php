@@ -7,7 +7,7 @@ namespace Polymorph\Platform\Domain\Media\Core\Contracts;
 interface MediaIncludedProvider
 {
     /**
-     * @param string[] $mediaIds
+     * @param  string[]  $mediaIds
      */
     public function buildIncludedByIds(array $mediaIds): \stdClass;
 }

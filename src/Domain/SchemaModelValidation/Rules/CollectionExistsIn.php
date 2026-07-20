@@ -8,7 +8,7 @@ use Closure;
 use Illuminate\Contracts\Validation\DataAwareRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 
-final class CollectionExistsIn implements ValidationRule, DataAwareRule
+final class CollectionExistsIn implements DataAwareRule, ValidationRule
 {
     /**
      * @var array<string, mixed>
@@ -23,7 +23,7 @@ final class CollectionExistsIn implements ValidationRule, DataAwareRule
     ) {}
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function setData(array $data): static
     {
@@ -41,6 +41,7 @@ final class CollectionExistsIn implements ValidationRule, DataAwareRule
         $foreign = data_get($this->data, $this->foreignCollectionPath, []);
         if (! is_array($foreign) || $foreign === []) {
             $fail('The :attribute field has unresolved foreign collection.');
+
             return;
         }
 
@@ -78,7 +79,7 @@ final class CollectionExistsIn implements ValidationRule, DataAwareRule
     }
 
     /**
-     * @param array<string, mixed> $item
+     * @param  array<string, mixed>  $item
      */
     private function resolveSource(array $item): mixed
     {

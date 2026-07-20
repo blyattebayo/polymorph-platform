@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Polymorph\Platform\Http\Middleware;
 
 use Closure;
@@ -10,8 +12,6 @@ use Symfony\Component\HttpFoundation\Response;
  * Middleware для добавления заголовка Cache-Control: no-store к auth эндпоинтам.
  *
  * Предотвращает кэширование ответов аутентификации прокси и браузерами.
- *
- * @package Polymorph\Platform\Http\Middleware
  */
 final class NoCacheAuth
 {
@@ -20,9 +20,8 @@ final class NoCacheAuth
      *
      * Добавляет заголовок Cache-Control: no-store к ответу.
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
-     * @param \Closure $next Следующий middleware
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @param  Request  $request  HTTP запрос
+     * @param  Closure  $next  Следующий middleware
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -34,4 +33,3 @@ final class NoCacheAuth
         return $response;
     }
 }
-

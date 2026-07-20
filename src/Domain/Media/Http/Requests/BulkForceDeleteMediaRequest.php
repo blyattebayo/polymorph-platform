@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Http\Requests;
 
-use Polymorph\Platform\Http\Requests\ApiFormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Polymorph\Platform\Http\Requests\ApiFormRequest;
 
 /**
  * Request для массового окончательного удаления медиа-файлов.
  *
  * Валидирует массив идентификаторов медиа-файлов для массового окончательного удаления.
- *
- * @package Polymorph\Platform\Http\Requests\Admin\Media
  */
 class BulkForceDeleteMediaRequest extends ApiFormRequest
 {
@@ -59,8 +57,7 @@ class BulkForceDeleteMediaRequest extends ApiFormRequest
     /**
      * Выполнить кастомную валидацию.
      *
-     * @param \Illuminate\Contracts\Validation\Validator $validator Валидатор
-     * @return void
+     * @param  Validator  $validator  Валидатор
      */
     protected function withValidator(Validator $validator): void
     {
@@ -85,4 +82,3 @@ class BulkForceDeleteMediaRequest extends ApiFormRequest
         });
     }
 }
-

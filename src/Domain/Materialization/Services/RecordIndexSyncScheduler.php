@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Materialization\Services;
 
-use Polymorph\Platform\Domain\Materialization\Jobs\SyncRecordIndexesJob;
 use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\Materialization\Jobs\SyncRecordIndexesJob;
 
 final class RecordIndexSyncScheduler
 {

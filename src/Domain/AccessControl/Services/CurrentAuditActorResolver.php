@@ -12,15 +12,14 @@ final class CurrentAuditActorResolver implements AuditActorResolver
 {
     public function __construct(
         private readonly CurrentActorResolver $currentActor,
-    ) {
-    }
+    ) {}
 
     public function resolve(): string
     {
         $actor = $this->currentActor->actor();
 
         if ($actor instanceof UserIdentity) {
-            return 'user:' . $actor->userId();
+            return 'user:'.$actor->userId();
         }
 
         return 'system';

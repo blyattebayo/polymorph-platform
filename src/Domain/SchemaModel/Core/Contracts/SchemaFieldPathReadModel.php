@@ -12,7 +12,7 @@ interface SchemaFieldPathReadModel
     public function schemaPaths(int $schemaId): array;
 
     /**
-     * @param int[] $schemaIds
+     * @param  int[]  $schemaIds
      * @return array<int, array{ref: string[], media: string[]}>
      */
     public function schemaPathsBySchemaIds(array $schemaIds): array;

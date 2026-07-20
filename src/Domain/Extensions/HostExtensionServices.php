@@ -33,11 +33,10 @@ final class HostExtensionServices implements ExtensionServices
         private readonly PolicyRuntime $policyRuntime,
         private readonly AccessSubjectProvider $subjectProvider,
         private readonly UserRepository $users,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param class-string<Entity> $entityClass
+     * @param  class-string<Entity>  $entityClass
      * @return Repository<Entity>
      */
     public function repository(ExtensionContext $context, string $entity, string $entityClass = Entity::class): Repository

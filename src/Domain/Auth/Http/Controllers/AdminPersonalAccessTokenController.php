@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Auth\Application\DTO\CreatePersonalAccessTokenCommand;
 use Polymorph\Platform\Domain\Auth\Application\Support\AuthenticatedCredentialResolver;
 use Polymorph\Platform\Domain\Auth\Application\UseCases\AdminCreatePersonalAccessToken;
@@ -20,8 +22,6 @@ use Polymorph\Platform\Http\Pagination\V2\PaginatedJsonResponse;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
 use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 final class AdminPersonalAccessTokenController
 {
@@ -33,8 +33,7 @@ final class AdminPersonalAccessTokenController
         private readonly FindUserByIdQuery $findUserByIdQuery,
         private readonly CurrentActorResolver $currentActor,
         private readonly AuthenticatedCredentialResolver $credentialResolver,
-    ) {
-    }
+    ) {}
 
     public function indexAll(IndexAdminPersonalAccessTokenRequest $request): JsonResponse
     {
@@ -95,5 +94,4 @@ final class AdminPersonalAccessTokenController
 
         return $user;
     }
-
 }

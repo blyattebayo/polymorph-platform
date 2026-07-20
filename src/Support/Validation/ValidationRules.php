@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Support\Validation;
 
-use Polymorph\Platform\Support\Validation\ValidationConstraints;
-
 final class ValidationRules
 {
     /**
@@ -20,7 +18,7 @@ final class ValidationRules
             'string',
             $constraint->laravelRule(),
             $constraint->normalizationRule(),
-            'max:' . $constraint->max(),
+            'max:'.$constraint->max(),
         ];
     }
 
@@ -33,8 +31,8 @@ final class ValidationRules
         $rules = [
             ...self::presence($required, $sometimes, $nullable),
             'string',
-            'min:' . $constraint->min(),
-            'max:' . $constraint->max(),
+            'min:'.$constraint->min(),
+            'max:'.$constraint->max(),
         ];
 
         if ($confirmed) {
@@ -54,8 +52,8 @@ final class ValidationRules
         return [
             ...self::presence($required, $sometimes, $nullable),
             'string',
-            'max:' . ($max ?? $constraint->max()),
-            'regex:' . $constraint->phpPattern(),
+            'max:'.($max ?? $constraint->max()),
+            'regex:'.$constraint->phpPattern(),
         ];
     }
 
@@ -69,8 +67,8 @@ final class ValidationRules
         return [
             ...self::presence($required, $sometimes, $nullable),
             'string',
-            'max:' . $constraint->max(),
-            'regex:' . $constraint->phpPattern(),
+            'max:'.$constraint->max(),
+            'regex:'.$constraint->phpPattern(),
         ];
     }
 
@@ -84,8 +82,8 @@ final class ValidationRules
         return [
             ...self::presence($required, $sometimes, $nullable),
             'string',
-            'max:' . ($max ?? $constraint->max()),
-            'regex:' . $constraint->phpPattern(),
+            'max:'.($max ?? $constraint->max()),
+            'regex:'.$constraint->phpPattern(),
         ];
     }
 

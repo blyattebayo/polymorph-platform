@@ -20,8 +20,7 @@ final readonly class MediaQuery
         private string $order,
         private int $page,
         private int $perPage,
-    ) {
-    }
+    ) {}
 
     /**
      * Текст поискового запроса (по title и original_name).

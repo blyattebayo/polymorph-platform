@@ -15,6 +15,7 @@ final class ScopedPathResolver
         foreach ($templateSegments as $segment) {
             if ($segment !== '*') {
                 $resolved[] = $segment;
+
                 continue;
             }
 

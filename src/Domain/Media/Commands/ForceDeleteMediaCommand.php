@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Commands;
 
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\Media\Actions\DeleteMediaFileAction;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Command для полного удаления медиа (force delete).

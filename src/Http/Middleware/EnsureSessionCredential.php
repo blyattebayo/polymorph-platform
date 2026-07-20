@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Http\Middleware;
 
+use Closure;
+use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\CredentialKind;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ThrowsErrors;
-use Closure;
-use Illuminate\Http\Request;
 
 final class EnsureSessionCredential
 {

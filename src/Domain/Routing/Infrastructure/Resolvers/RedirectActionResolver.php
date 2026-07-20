@@ -16,6 +16,6 @@ class RedirectActionResolver implements ActionResolverInterface
         $to = $node->actionMeta['to'] ?? null;
         $status = $node->actionMeta['status'] ?? 302;
 
-        return $to ? fn() => redirect($to, $status) : fn() => abort(404);
+        return $to ? fn () => redirect($to, $status) : fn () => abort(404);
     }
 }

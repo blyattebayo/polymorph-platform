@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Services;
 
+use Illuminate\Database\Eloquent\Collection;
 use Polymorph\Platform\Domain\Media\Core\Contracts\MediaIncludedProvider;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
@@ -11,22 +12,22 @@ use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
 final class DefaultMediaIncludedProvider implements MediaIncludedProvider
 {
     /**
-     * @param string[] $mediaIds
+     * @param  string[]  $mediaIds
      */
     public function buildIncludedByIds(array $mediaIds): \stdClass
     {
         if ($mediaIds === []) {
-            return new \stdClass();
+            return new \stdClass;
         }
 
-        /** @var \Illuminate\Database\Eloquent\Collection<int, Media> $mediaItems */
+        /** @var Collection<int, Media> $mediaItems */
         $mediaItems = Media::query()
             ->whereIn('id', $mediaIds)
             ->whereNull('deleted_at')
             ->with(['image', 'avMetadata'])
             ->get();
 
-        $result = new \stdClass();
+        $result = new \stdClass;
         foreach ($mediaItems as $media) {
             $result->{(string) $media->id} = $this->mapMediaIncluded($media);
         }

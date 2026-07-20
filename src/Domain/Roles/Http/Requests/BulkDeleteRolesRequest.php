@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Roles\Http\Requests;
 
-use Polymorph\Platform\Http\Requests\ApiFormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Polymorph\Platform\Http\Requests\ApiFormRequest;
 
 final class BulkDeleteRolesRequest extends ApiFormRequest
 {

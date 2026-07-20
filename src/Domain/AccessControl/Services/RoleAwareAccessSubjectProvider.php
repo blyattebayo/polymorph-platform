@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Services;
 
+use InvalidArgumentException;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Polymorph\Platform\Domain\Roles\Core\Contracts\RoleAssignmentRepository;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
-use InvalidArgumentException;
 
 final class RoleAwareAccessSubjectProvider implements AccessSubjectProvider
 {
@@ -19,8 +19,7 @@ final class RoleAwareAccessSubjectProvider implements AccessSubjectProvider
 
     public function __construct(
         private readonly RoleAssignmentRepository $roleAssignments,
-    ) {
-    }
+    ) {}
 
     /**
      * @return list<Subject>

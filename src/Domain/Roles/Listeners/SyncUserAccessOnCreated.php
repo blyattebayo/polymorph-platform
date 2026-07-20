@@ -11,8 +11,7 @@ final class SyncUserAccessOnCreated
 {
     public function __construct(
         private readonly AccessProvisioner $accessProvisioner,
-    ) {
-    }
+    ) {}
 
     public function handle(UserCreated $event): void
     {

@@ -11,7 +11,7 @@ final class CreateRecordDefinitionCommand
     public readonly CreateRecordDefinitionData $payload;
 
     /**
-     * @param array{name: string, schema_id?: int|null, display_template?: string|null}|CreateRecordDefinitionData $payload
+     * @param  array{name: string, schema_id?: int|null, display_template?: string|null}|CreateRecordDefinitionData  $payload
      */
     public function __construct(
         array|CreateRecordDefinitionData $payload,

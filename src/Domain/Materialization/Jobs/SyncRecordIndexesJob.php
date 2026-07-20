@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Materialization\Jobs;
 
-use Polymorph\Platform\Domain\Materialization\Services\RecordIndexMaterializer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\Materialization\Services\RecordIndexMaterializer;
 
 final class SyncRecordIndexesJob implements ShouldQueue
 {
@@ -23,8 +23,7 @@ final class SyncRecordIndexesJob implements ShouldQueue
         private readonly ?int $schemaId,
         private readonly ?int $definitionId = null,
         private readonly ?int $definitionSchemaId = null,
-    ) {
-    }
+    ) {}
 
     public function handle(RecordIndexMaterializer $materializer): void
     {

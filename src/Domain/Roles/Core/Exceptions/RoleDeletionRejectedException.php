@@ -13,7 +13,7 @@ use RuntimeException;
 final class RoleDeletionRejectedException extends RuntimeException implements ErrorConvertible
 {
     /**
-     * @param array<string, mixed> $meta
+     * @param  array<string, mixed>  $meta
      */
     private function __construct(
         string $message,
@@ -23,7 +23,7 @@ final class RoleDeletionRejectedException extends RuntimeException implements Er
     }
 
     /**
-     * @param array<string, mixed> $violation
+     * @param  array<string, mixed>  $violation
      */
     public static function fromViolation(array $violation): self
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -13,8 +14,6 @@ use Illuminate\Validation\Rule;
  * Валидирует массив узлов для массового изменения parent_id и sort_order:
  * - nodes: обязательный массив узлов с id, parent_id, sort_order
  * - Все id должны существовать
- *
- * @package Polymorph\Platform\Http\Requests\Admin
  */
 class ReorderRouteNodesRequest extends FormRequest
 {
@@ -22,8 +21,6 @@ class ReorderRouteNodesRequest extends FormRequest
      * Определить, авторизован ли пользователь для выполнения запроса.
      *
      * Авторизация обрабатывается middleware маршрута.
-     *
-     * @return bool
      */
     public function authorize(): bool
     {
@@ -39,7 +36,7 @@ class ReorderRouteNodesRequest extends FormRequest
      * - nodes.*.parent_id: опциональный ID родителя (должен существовать или быть null)
      * - nodes.*.sort_order: опциональный порядок сортировки (>= 0)
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -81,4 +78,3 @@ class ReorderRouteNodesRequest extends FormRequest
         ];
     }
 }
-

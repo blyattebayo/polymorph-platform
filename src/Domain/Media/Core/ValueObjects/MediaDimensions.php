@@ -99,7 +99,7 @@ final readonly class MediaDimensions
     /**
      * Рассчитать размеры при масштабировании до максимальной длинной стороны.
      *
-     * @param int $maxLongSide Максимальный размер длинной стороны
+     * @param  int  $maxLongSide  Максимальный размер длинной стороны
      * @return self Новые размеры с сохранением пропорций
      */
     public function scaleToFit(int $maxLongSide): self

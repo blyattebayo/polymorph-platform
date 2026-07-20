@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
+use Illuminate\View\View;
 use Polymorph\Platform\Domain\Routing\Http\Requests\FallbackRequest;
 use Polymorph\Platform\Http\Controllers\Controller;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ErrorFactory;
 use Polymorph\Platform\Support\Errors\ErrorResponseFactory;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
-use Illuminate\View\View;
 
 /**
  * Контроллер для обработки 404 ошибок (fallback маршрут).
@@ -34,8 +34,8 @@ final class FallbackController extends Controller
      * Логирует информацию о запросе и возвращает ответ в зависимости
      * от типа запроса (JSON для API, HTML для веб).
      *
-     * @param  \Polymorph\Platform\Domain\Routing\Http\Requests\FallbackRequest  $request  Запрос
-     * @return \Illuminate\Http\Response|\Illuminate\View\View|\Illuminate\Http\JsonResponse Ответ
+     * @param  FallbackRequest  $request  Запрос
+     * @return Response|View|JsonResponse Ответ
      */
     public function __invoke(FallbackRequest $request): Response|View|JsonResponse
     {

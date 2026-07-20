@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Core\Collections;
 
+use Illuminate\Database\Eloquent\Collection;
 use Polymorph\Platform\Domain\Media\Core\Models\MediaVariant;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaVariantStatus;
-use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Типизированная коллекция вариантов медиа
@@ -125,6 +125,7 @@ class MediaVariantCollection extends Collection
         }
 
         $readyCount = $this->ready()->count();
+
         return round(($readyCount / $this->count()) * 100, 2);
     }
 
@@ -171,6 +172,6 @@ class MediaVariantCollection extends Collection
      */
     public function withErrors(): self
     {
-        return $this->filter(fn (MediaVariant $variant) => !empty($variant->error_message));
+        return $this->filter(fn (MediaVariant $variant) => ! empty($variant->error_message));
     }
 }

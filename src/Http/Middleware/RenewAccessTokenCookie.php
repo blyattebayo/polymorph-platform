@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Http\Middleware;
 
+use Closure;
+use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\AuthCookieFactory;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\JwtService;
 use Polymorph\Platform\Http\Middleware\Concerns\ExtractsJwtAccessToken;
-use Closure;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**

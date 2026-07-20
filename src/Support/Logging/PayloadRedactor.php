@@ -41,8 +41,8 @@ final class PayloadRedactor implements SecretRedactor
     {
         $patterns = [
             // Схема сохраняется (видно, что был токен), вырезается только секрет.
-            '/Bearer\s+[A-Za-z0-9._~+\/=-]+/i' => 'Bearer ' . self::REDACTED,
-            '/Basic\s+[A-Za-z0-9+\/=]+/i' => 'Basic ' . self::REDACTED,
+            '/Bearer\s+[A-Za-z0-9._~+\/=-]+/i' => 'Bearer '.self::REDACTED,
+            '/Basic\s+[A-Za-z0-9+\/=]+/i' => 'Basic '.self::REDACTED,
             // JWT: header.payload.signature.
             '/eyJ[A-Za-z0-9._\-]{20,}/' => self::REDACTED,
             // Длинные непрерывные токены: hex, base64 и base64url ('-'/'_'),

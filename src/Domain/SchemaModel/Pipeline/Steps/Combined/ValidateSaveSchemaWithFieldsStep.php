@@ -10,13 +10,13 @@ use Polymorph\Platform\Domain\SchemaModel\Core\Exceptions\DuplicateSchemaCodeExc
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\Cardinality;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
+use Polymorph\Platform\Domain\SchemaModel\Pipeline\Contexts\SaveSchemaWithFieldsContext;
 use Polymorph\Platform\Domain\SchemaModel\Pipeline\Data\CreateFieldData;
 use Polymorph\Platform\Domain\SchemaModel\Pipeline\Data\UpdateFieldData;
-use Polymorph\Platform\Domain\SchemaModel\Pipeline\Contexts\SaveSchemaWithFieldsContext;
-use Polymorph\Platform\SharedKernel\SystemFields\SystemFieldNames;
 use Polymorph\Platform\PipelineCore\Runtime\AbstractStep;
 use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\StepResult;
+use Polymorph\Platform\SharedKernel\SystemFields\SystemFieldNames;
 use Polymorph\Platform\Support\Validation\ValidationConstraints;
 
 final class ValidateSaveSchemaWithFieldsStep extends AbstractStep
@@ -45,7 +45,6 @@ final class ValidateSaveSchemaWithFieldsStep extends AbstractStep
     public function run(PipelineContext $context): StepResult
     {
         /** @var SaveSchemaWithFieldsContext $context */
-
         $schemaValidation = $this->validateSchemaPayload($context);
         if ($schemaValidation !== null) {
             return StepResult::failure($schemaValidation);
@@ -70,7 +69,7 @@ final class ValidateSaveSchemaWithFieldsStep extends AbstractStep
         $code = (string) ($context->schemaPayload['code'] ?? '');
         $shouldValidateCode = $schema === null || ($code !== '' && $code !== $schema->code);
 
-        if ($shouldValidateCode && !$this->isValidCode($code)) {
+        if ($shouldValidateCode && ! $this->isValidCode($code)) {
             return $this->invalidCodeMessage($code);
         }
 
@@ -122,11 +121,11 @@ final class ValidateSaveSchemaWithFieldsStep extends AbstractStep
         $context->parsedFieldsUpsert = [];
 
         foreach ($context->fieldsUpsert as $index => $item) {
-            if (!is_array($item)) {
+            if (! is_array($item)) {
                 return sprintf('fields.upsert[%d] must be an object', $index);
             }
 
-            if (!array_key_exists('id', $item)) {
+            if (! array_key_exists('id', $item)) {
                 $createValidation = $this->validateCreateItem($item, $index);
                 if ($createValidation !== null) {
                     return $createValidation;
@@ -156,7 +155,7 @@ final class ValidateSaveSchemaWithFieldsStep extends AbstractStep
             $seenIds[$fieldId] = true;
 
             $field = $this->fieldRepository->find($fieldId);
-            if (!$field instanceof Field || (int) $field->schema_id !== (int) $schema->id) {
+            if (! $field instanceof Field || (int) $field->schema_id !== (int) $schema->id) {
                 return sprintf('Field %d is not found in target schema', $fieldId);
             }
 
@@ -180,7 +179,7 @@ final class ValidateSaveSchemaWithFieldsStep extends AbstractStep
     }
 
     /**
-     * @param array<string, mixed> $item
+     * @param  array<string, mixed>  $item
      */
     private function validateCreateItem(array $item, int $index): ?string
     {
@@ -198,12 +197,12 @@ final class ValidateSaveSchemaWithFieldsStep extends AbstractStep
         }
 
         $type = $item['type'] ?? null;
-        if (!$type instanceof FieldType && (!is_string($type) || FieldType::tryFrom($type) === null)) {
+        if (! $type instanceof FieldType && (! is_string($type) || FieldType::tryFrom($type) === null)) {
             return sprintf('fields.upsert[%d].type is invalid', $index);
         }
 
         $cardinality = $item['cardinality'] ?? null;
-        if (!$cardinality instanceof Cardinality && (!is_string($cardinality) || Cardinality::tryFrom($cardinality) === null)) {
+        if (! $cardinality instanceof Cardinality && (! is_string($cardinality) || Cardinality::tryFrom($cardinality) === null)) {
             return sprintf('fields.upsert[%d].cardinality is invalid', $index);
         }
 
@@ -215,7 +214,7 @@ final class ValidateSaveSchemaWithFieldsStep extends AbstractStep
     }
 
     /**
-     * @param array<string, mixed> $item
+     * @param  array<string, mixed>  $item
      */
     private function validateUpdateItem(array $item, int $index): ?string
     {
@@ -265,7 +264,7 @@ final class ValidateSaveSchemaWithFieldsStep extends AbstractStep
             $seenIds[$fieldId] = true;
 
             $field = $this->fieldRepository->find($fieldId);
-            if (!$field instanceof Field || (int) $field->schema_id !== (int) $schema->id) {
+            if (! $field instanceof Field || (int) $field->schema_id !== (int) $schema->id) {
                 return sprintf('Field %d is not found in target schema', $fieldId);
             }
 

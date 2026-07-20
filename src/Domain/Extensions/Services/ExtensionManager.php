@@ -4,20 +4,17 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Services;
 
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
 use Polymorph\Platform\Domain\Extensions\Core\Models\ExtensionRegistry;
 use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
-use Polymorph\Platform\Domain\Extensions\Services\ExtensionCapabilityService;
-use Polymorph\Platform\Domain\Extensions\Services\ExtensionCompatibilityService;
-use Polymorph\Platform\Domain\Extensions\Services\ExtensionMigrationService;
-use Polymorph\Platform\Domain\Extensions\Services\ExtensionRouteService;
-use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
+use Polymorph\Platform\Domain\Extensions\Trusted\TrustedExtensionSource;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\HttpErrorException;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\DB;
 use Polymorph\Sdk\Extension\ExtensionProvider as SdkV2ExtensionProvider;
 
 final class ExtensionManager
@@ -31,7 +28,7 @@ final class ExtensionManager
         private readonly ExtensionMigrationService $migrationService,
         private readonly Application $app,
         private readonly AppLogger $logger,
-        private readonly \Polymorph\Platform\Domain\Extensions\Trusted\TrustedExtensionSource $trusted,
+        private readonly TrustedExtensionSource $trusted,
     ) {}
 
     /**

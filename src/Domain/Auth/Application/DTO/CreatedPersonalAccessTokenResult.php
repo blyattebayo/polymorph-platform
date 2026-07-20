@@ -11,6 +11,5 @@ final readonly class CreatedPersonalAccessTokenResult
     public function __construct(
         public PersonalAccessToken $token,
         public string $plaintext,
-    ) {
-    }
+    ) {}
 }

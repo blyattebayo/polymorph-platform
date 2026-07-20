@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Providers;
 
-use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
-use Polymorph\Platform\Support\Errors\ErrorFactory;
-use Polymorph\Platform\Support\Errors\ErrorKernel;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
+use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
+use Polymorph\Platform\Support\Errors\ErrorFactory;
+use Polymorph\Platform\Support\Errors\ErrorKernel;
 
 /**
  * Основной Service Provider приложения.
@@ -21,8 +21,6 @@ use Illuminate\Support\ServiceProvider;
  *
  * Примечание: Доменные зависимости регистрируются в соответствующих
  * Domain Service Providers (AuthServiceProvider, RoutingServiceProvider и т.д.)
- *
- * @package Polymorph\Platform\Providers
  */
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,8 +28,6 @@ class AppServiceProvider extends ServiceProvider
      * Зарегистрировать сервисы приложения.
      *
      * Регистрирует общие сервисы как singleton.
-     *
-     * @return void
      */
     public function register(): void
     {
@@ -44,11 +40,11 @@ class AppServiceProvider extends ServiceProvider
         // ErrorKernel — единая точка обработки ошибок API.
         // config/errors.php хранит Closure-билдеры как значения, поэтому его НЕ мёржат
         // в config() (иначе config:cache/optimize падают на несериализуемом Closure —
-        // см. PlatformServiceProvider::CONFIG_KEYS). Грузим файл напрямую: массив тот же,
+        // см. PlatformServiceProvider::UNMERGED_CONFIGS). Грузим файл напрямую: массив тот же,
         // но замыкания не попадают в кэшируемый config-репозиторий.
         $this->app->singleton(ErrorKernel::class, function ($app) {
             /** @var array<string, mixed> $config */
-            $config = require dirname(__DIR__, 2) . '/config/errors.php';
+            $config = require dirname(__DIR__, 2).'/config/errors.php';
 
             return ErrorKernel::fromConfig($config, $app);
         });
@@ -62,7 +58,7 @@ class AppServiceProvider extends ServiceProvider
     {
         RateLimiter::for('auth-login', static function (Request $request): Limit {
             $email = strtolower(trim((string) $request->input('email', '')));
-            $key = sha1($request->ip() . '|' . $email);
+            $key = sha1($request->ip().'|'.$email);
 
             return Limit::perMinute(5)->by($key)->response(static function () {
                 return response()->json([
@@ -75,14 +71,14 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('auth-refresh', static function (Request $request): Limit {
             $refreshCookieName = (string) config('jwt.cookies.refresh', 'cms_rt');
             $fingerprint = hash('sha256', (string) $request->cookie($refreshCookieName, ''));
-            $key = sha1($request->ip() . '|' . $fingerprint);
+            $key = sha1($request->ip().'|'.$fingerprint);
 
             return Limit::perMinute(20)->by($key);
         });
 
         RateLimiter::for('pat-create', static function (Request $request): Limit {
             $userId = optional($request->user())->getAuthIdentifier();
-            $key = $userId !== null ? 'user:' . $userId : 'ip:' . $request->ip();
+            $key = $userId !== null ? 'user:'.$userId : 'ip:'.$request->ip();
 
             return Limit::perMinute(10)->by((string) $key);
         });
@@ -90,12 +86,12 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('auth-password-reset', static function (Request $request): Limit {
             $email = strtolower(trim((string) $request->input('email', '')));
 
-            return Limit::perMinute(3)->by(sha1($request->ip() . '|' . $email));
+            return Limit::perMinute(3)->by(sha1($request->ip().'|'.$email));
         });
 
         RateLimiter::for('auth-register', static function (Request $request): Limit {
             $email = strtolower(trim((string) $request->input('email', '')));
-            $key = sha1($request->ip() . '|' . $email);
+            $key = sha1($request->ip().'|'.$email);
 
             return Limit::perMinute(5)->by($key)->response(static function () {
                 return response()->json([
@@ -107,10 +103,9 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('auth-verify-resend', static function (Request $request): Limit {
             $userId = optional($request->user())->getAuthIdentifier();
-            $key = $userId !== null ? 'user:' . $userId : 'ip:' . $request->ip();
+            $key = $userId !== null ? 'user:'.$userId : 'ip:'.$request->ip();
 
             return Limit::perMinute(3)->by((string) $key);
         });
     }
-
 }

@@ -10,6 +10,5 @@ final readonly class PersonalAccessTokenCreated
         public int $tokenId,
         public int $userId,
         public int $createdByUserId,
-    ) {
-    }
+    ) {}
 }

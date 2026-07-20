@@ -4,21 +4,19 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Menu\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Menu\Http\Requests\SaveMenuRequest;
 use Polymorph\Platform\Domain\Menu\Services\MenuService;
 use Polymorph\Platform\Http\Controllers\Controller;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 /**
  * Управление конфигурацией меню (билдер). Требует capability menu.manage.
  */
 final class MenuAdminController extends Controller
 {
-    public function __construct(private readonly MenuService $menus)
-    {
-    }
+    public function __construct(private readonly MenuService $menus) {}
 
     public function show(string $key): JsonResponse
     {

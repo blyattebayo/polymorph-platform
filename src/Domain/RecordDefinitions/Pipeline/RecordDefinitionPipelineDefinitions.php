@@ -22,8 +22,7 @@ final class RecordDefinitionPipelineDefinitions
         private readonly PersistDeletedRecordDefinitionStep $persistDeletedRecordDefinitionStep,
         private readonly DeleteRecordDefinitionOwnershipStep $deleteRecordDefinitionOwnershipStep,
         private readonly ValidateDeleteRecordDefinitionStep $validateDeleteRecordDefinitionStep,
-    ) {
-    }
+    ) {}
 
     public function create(): PipelineDefinition
     {

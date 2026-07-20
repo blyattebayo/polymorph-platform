@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Polymorph\Platform\Domain\Records\Pipeline\Steps\Write;
 
 use Polymorph\Platform\Domain\Records\Core\Models\Record;
@@ -8,8 +10,8 @@ use Polymorph\Platform\Domain\Records\Pipeline\Contexts\RecordWriteContext;
 use Polymorph\Platform\Domain\Records\Pipeline\Core\RecordChangeSet;
 use Polymorph\Platform\Domain\Records\Support\RecordSchemaResolver;
 use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\SchemaFieldPathReadModel;
-use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\AbstractStep;
+use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\StepResult;
 
 /**
@@ -67,7 +69,7 @@ final class BuildRecordChangeSetStep extends AbstractStep
             $context->resolvedPayload()
         );
 
-        $isNoop = empty($changedFields) && !$this->hasRefChanges($refDiff);
+        $isNoop = empty($changedFields) && ! $this->hasRefChanges($refDiff);
 
         $context->setChangeSet(new RecordChangeSet(
             isNoop: $isNoop,
@@ -77,6 +79,7 @@ final class BuildRecordChangeSetStep extends AbstractStep
 
         return StepResult::success();
     }
+
     public function shouldRun(PipelineContext $context): bool
     {
         /** @var RecordWriteContext $context */
@@ -119,7 +122,7 @@ final class BuildRecordChangeSetStep extends AbstractStep
     }
 
     /**
-     * @param array<int|string> $ids
+     * @param  array<int|string>  $ids
      * @return int[]
      */
     private function normalizeRefIds(array $ids): array
@@ -133,7 +136,7 @@ final class BuildRecordChangeSetStep extends AbstractStep
 
     private function hasRefChanges(array $refDiff): bool
     {
-        return !empty($refDiff['added']) || !empty($refDiff['removed']);
+        return ! empty($refDiff['added']) || ! empty($refDiff['removed']);
     }
 
     /**

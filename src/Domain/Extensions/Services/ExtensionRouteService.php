@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Services;
 
-use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
+use Illuminate\Support\Facades\Route;
 use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
+use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
 use Polymorph\Platform\Domain\Routing\Core\Enums\OwnerType;
 use Polymorph\Platform\Domain\Routing\Core\Models\RouteNode;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Loaders\PluginRouteLoader;
 use Polymorph\Platform\Domain\Routing\Infrastructure\RouteRegistrar;
-use Illuminate\Support\Facades\Route;
 
 /**
  * Поддержка declarative-маршрутов плагинов: валидация поверхности/конфликтов
@@ -23,8 +23,7 @@ final class ExtensionRouteService
         private readonly ExtensionRouteConstraints $constraints,
         private readonly RouteRegistrar $routeRegistrar,
         private readonly PluginRouteLoader $pluginRouteLoader,
-    ) {
-    }
+    ) {}
 
     public function registerInCurrentRouter(DiscoveredExtension $plugin): void
     {
@@ -34,7 +33,7 @@ final class ExtensionRouteService
 
         /** @var mixed $config */
         $config = require $plugin->backendRouteFile;
-        if (!is_array($config)) {
+        if (! is_array($config)) {
             return;
         }
 
@@ -53,7 +52,7 @@ final class ExtensionRouteService
 
         /** @var mixed $config */
         $config = require $plugin->backendRouteFile;
-        if (!is_array($config)) {
+        if (! is_array($config)) {
             return;
         }
 
@@ -67,7 +66,7 @@ final class ExtensionRouteService
     }
 
     /**
-     * @param array<int, mixed> $config
+     * @param  array<int, mixed>  $config
      */
     private function assertNoRouteConflicts(string $pluginId, array $config): void
     {
@@ -75,7 +74,7 @@ final class ExtensionRouteService
 
         $seen = [];
         foreach ($newRoutes as [$method, $uri]) {
-            $key = $method . ' ' . $uri;
+            $key = $method.' '.$uri;
             if (isset($seen[$key])) {
                 throw new PluginException("Plugin '{$pluginId}' declares duplicate route '{$key}'.");
             }
@@ -86,7 +85,7 @@ final class ExtensionRouteService
         $existing = $this->existingRouteSurface($owner);
 
         foreach ($newRoutes as [$method, $uri]) {
-            $key = $method . ' ' . $uri;
+            $key = $method.' '.$uri;
             if (isset($existing[$key])) {
                 throw new PluginException(
                     "Plugin '{$pluginId}' route '{$key}' conflicts with existing route owned by '{$existing[$key]}'.",
@@ -96,7 +95,7 @@ final class ExtensionRouteService
     }
 
     /**
-     * @param array<int, mixed> $nodes
+     * @param  array<int, mixed>  $nodes
      * @return list<array{string, string}>
      */
     private function collectRouteSurface(array $nodes, string $prefix): array
@@ -104,7 +103,7 @@ final class ExtensionRouteService
         $routes = [];
 
         foreach ($nodes as $node) {
-            if (!is_array($node)) {
+            if (! is_array($node)) {
                 continue;
             }
 
@@ -164,7 +163,7 @@ final class ExtensionRouteService
 
             foreach ((array) $node->methods as $method) {
                 if (is_string($method)) {
-                    $surface[strtoupper($method) . ' ' . $fullUri] = (string) $node->owner;
+                    $surface[strtoupper($method).' '.$fullUri] = (string) $node->owner;
                 }
             }
         }
@@ -186,7 +185,7 @@ final class ExtensionRouteService
     }
 
     /**
-     * @param array<int, mixed> $config
+     * @param  array<int, mixed>  $config
      */
     private function currentRouterContainsRoutes(array $config): bool
     {
@@ -200,7 +199,7 @@ final class ExtensionRouteService
     }
 
     /**
-     * @param array<int, mixed> $nodes
+     * @param  array<int, mixed>  $nodes
      * @return list<string>
      */
     private function routeNames(array $nodes): array
@@ -208,7 +207,7 @@ final class ExtensionRouteService
         $names = [];
 
         foreach ($nodes as $node) {
-            if (!is_array($node)) {
+            if (! is_array($node)) {
                 continue;
             }
 

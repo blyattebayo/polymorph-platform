@@ -10,8 +10,6 @@ use RuntimeException;
  * Валидатор конфигурации медиа-файлов.
  *
  * Проверяет корректность конфигурации, включая обязательные варианты изображений.
- *
- * @package Polymorph\Platform\Domain\Media\Core\Validation
  */
 final class MediaConfigValidator
 {
@@ -28,8 +26,7 @@ final class MediaConfigValidator
      * Проверяет наличие обязательных вариантов изображений в конфигурации.
      * Выбрасывает RuntimeException, если обязательные варианты отсутствуют.
      *
-     * @return void
-     * @throws \RuntimeException Если обязательные варианты отсутствуют или некорректно настроены
+     * @throws RuntimeException Если обязательные варианты отсутствуют или некорректно настроены
      */
     public function validate(): void
     {
@@ -54,10 +51,9 @@ final class MediaConfigValidator
         if (! empty($missing)) {
             $missingList = implode(', ', $missing);
             throw new RuntimeException(
-                "Required media variants are missing in config: {$missingList}. " .
-                "These variants must always be configured: " . implode(', ', self::REQUIRED_VARIANTS) . '.'
+                "Required media variants are missing in config: {$missingList}. ".
+                'These variants must always be configured: '.implode(', ', self::REQUIRED_VARIANTS).'.'
             );
         }
     }
 }
-

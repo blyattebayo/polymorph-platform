@@ -16,6 +16,6 @@ class ViewActionResolver implements ActionResolverInterface
         $view = $node->actionMeta['view'] ?? null;
         $data = $node->actionMeta['data'] ?? [];
 
-        return $view ? fn() => view($view, $data) : fn() => abort(404);
+        return $view ? fn () => view($view, $data) : fn () => abort(404);
     }
 }

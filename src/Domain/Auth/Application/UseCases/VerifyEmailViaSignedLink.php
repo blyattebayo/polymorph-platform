@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Application\UseCases;
 
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Support\Facades\Event;
 use Polymorph\Platform\Domain\Auth\Application\DTO\EmailVerificationOutcome;
 use Polymorph\Platform\Domain\Auth\Application\DTO\VerifyEmailViaSignedLinkCommand;
 use Polymorph\Platform\Domain\Auth\Application\DTO\VerifyEmailViaSignedLinkResult;
 use Polymorph\Platform\Domain\Users\Actions\MarkEmailVerifiedAction;
 use Polymorph\Platform\Domain\Users\Core\Contracts\UserRepository;
-use Illuminate\Auth\Events\Verified;
-use Illuminate\Support\Facades\Event;
 
 final readonly class VerifyEmailViaSignedLink
 {

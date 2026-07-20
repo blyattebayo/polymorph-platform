@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Core\Models;
 
-use Polymorph\Platform\Domain\Media\Core\Collections\MediaVariantCollection;
-use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaVariantStatus;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+use Polymorph\Platform\Domain\Media\Core\Collections\MediaVariantCollection;
+use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaVariantStatus;
 
 /**
  * Eloquent модель для вариантов медиа-файлов (MediaVariant).
@@ -27,12 +28,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property MediaVariantStatus $status Статус генерации
  * @property string|null $error_message Сообщение об ошибке
  * @property int $attempts Количество попыток
- * @property \Illuminate\Support\Carbon|null $started_at Время начала обработки
- * @property \Illuminate\Support\Carbon|null $finished_at Время завершения обработки
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
- *
- * @property-read \Polymorph\Platform\Domain\Media\Core\Models\Media $media Исходный медиа-файл
+ * @property Carbon|null $started_at Время начала обработки
+ * @property Carbon|null $finished_at Время завершения обработки
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read Media $media Исходный медиа-файл
  */
 class MediaVariant extends Model
 {
@@ -111,7 +111,7 @@ class MediaVariant extends Model
     /**
      * Связь с исходным медиа-файлом.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\Polymorph\Platform\Domain\Media\Core\Models\Media, \Polymorph\Platform\Domain\Media\Core\Models\MediaVariant>
+     * @return BelongsTo<Media, MediaVariant>
      */
     public function media(): BelongsTo
     {
@@ -121,7 +121,7 @@ class MediaVariant extends Model
     /**
      * Создать новую Eloquent коллекцию
      *
-     * @param  array<int, \Illuminate\Database\Eloquent\Model>  $models
+     * @param  array<int, Model>  $models
      */
     public function newCollection(array $models = []): MediaVariantCollection
     {

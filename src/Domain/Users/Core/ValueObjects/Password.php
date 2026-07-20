@@ -16,8 +16,7 @@ final readonly class Password
 {
     private function __construct(
         private string $value
-    ) {
-    }
+    ) {}
 
     /**
      * Создать из открытого пароля с валидацией.

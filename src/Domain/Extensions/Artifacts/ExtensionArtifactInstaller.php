@@ -13,15 +13,14 @@ final class ExtensionArtifactInstaller
 {
     public function __construct(
         private readonly ManifestV2Validator $manifestV2Validator,
-    ) {
-    }
+    ) {}
 
     public function install(ExtensionArtifactSource $source): string
     {
         $artifact = $source->resolve();
         $this->verifyChecksum($artifact);
 
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         if ($zip->open($artifact->zipPath) !== true) {
             throw new ExtensionException("Unable to open plugin artifact: {$artifact->zipPath}");
         }
@@ -37,7 +36,7 @@ final class ExtensionArtifactInstaller
         $this->assertNoZipSlip($zip, $artifact->zipPath);
 
         $runtimeRoot = $this->runtimeRoot();
-        $staging = $this->stagingRoot() . DIRECTORY_SEPARATOR . $pluginId . '-' . uniqid();
+        $staging = $this->stagingRoot().DIRECTORY_SEPARATOR.$pluginId.'-'.uniqid();
         $this->removeDirectory($staging);
 
         $extracted = $zip->extractTo($staging);
@@ -48,7 +47,7 @@ final class ExtensionArtifactInstaller
             throw new ExtensionException("Failed to extract plugin artifact into staging: {$staging}");
         }
 
-        $this->swapIntoPlace($staging, $runtimeRoot . DIRECTORY_SEPARATOR . $pluginId);
+        $this->swapIntoPlace($staging, $runtimeRoot.DIRECTORY_SEPARATOR.$pluginId);
 
         return $pluginId;
     }
@@ -62,7 +61,7 @@ final class ExtensionArtifactInstaller
         $actual = hash_file('sha256', $artifact->zipPath);
         if (! is_string($actual) || ! hash_equals(strtolower($artifact->declaredChecksum), strtolower($actual))) {
             throw new ExtensionException(
-                "Plugin artifact checksum mismatch for {$artifact->zipPath}: expected {$artifact->declaredChecksum}, got " . (is_string($actual) ? $actual : 'n/a') . '.',
+                "Plugin artifact checksum mismatch for {$artifact->zipPath}: expected {$artifact->declaredChecksum}, got ".(is_string($actual) ? $actual : 'n/a').'.',
             );
         }
     }
@@ -106,7 +105,7 @@ final class ExtensionArtifactInstaller
         $backup = null;
 
         if (is_dir($target)) {
-            $backup = $target . '.backup-' . uniqid();
+            $backup = $target.'.backup-'.uniqid();
             if (! $this->renameWithRetry($target, $backup)) {
                 $this->removeDirectory($staging);
                 throw new ExtensionException($this->lockedDirMessage($target, 'move the existing plugin directory aside'));
@@ -142,8 +141,8 @@ final class ExtensionArtifactInstaller
             if ($name === '.' || $name === '..') {
                 continue;
             }
-            $src = $from . DIRECTORY_SEPARATOR . $name;
-            $dst = $to . DIRECTORY_SEPARATOR . $name;
+            $src = $from.DIRECTORY_SEPARATOR.$name;
+            $dst = $to.DIRECTORY_SEPARATOR.$name;
             if (is_link($src)) {
                 continue;
             }
@@ -163,7 +162,7 @@ final class ExtensionArtifactInstaller
     {
         $root = rtrim((string) config('plugins.staging_path'), '/\\');
         if ($root === '') {
-            $root = rtrim(sys_get_temp_dir(), '/\\') . DIRECTORY_SEPARATOR . 'polymorph-plugin-staging';
+            $root = rtrim(sys_get_temp_dir(), '/\\').DIRECTORY_SEPARATOR.'polymorph-plugin-staging';
         }
 
         if (! is_dir($root) && ! mkdir($root, 0755, true) && ! is_dir($root)) {
@@ -230,7 +229,7 @@ final class ExtensionArtifactInstaller
                 continue;
             }
 
-            $child = $path . DIRECTORY_SEPARATOR . $item;
+            $child = $path.DIRECTORY_SEPARATOR.$item;
             if (is_link($child)) {
                 $this->unlinkPath($child);
             } elseif (is_dir($child)) {

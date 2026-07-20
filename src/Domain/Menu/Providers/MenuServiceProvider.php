@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Menu\Providers;
 
-use Polymorph\Platform\Domain\Menu\Access\MenuCapabilityProvider;
 use Illuminate\Support\ServiceProvider;
+use Polymorph\Platform\Domain\Menu\Access\MenuCapabilityProvider;
 
 final class MenuServiceProvider extends ServiceProvider
 {

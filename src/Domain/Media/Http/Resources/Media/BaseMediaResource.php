@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Http\Resources\Media;
 
-use Polymorph\Platform\Http\Resources\Admin\AdminJsonResource;
+use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
+use Polymorph\Platform\Http\Resources\Admin\AdminJsonResource;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -14,8 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Содержит общие поля для всех типов медиа:
  * id, kind, name, ext, mime, size_bytes, title, alt, timestamps, url.
  *
- * @package Polymorph\Platform\Http\Resources\Media
- * @property-read \Polymorph\Platform\Domain\Media\Core\Models\Media $resource Медиа-файл
+ * @property-read Media $resource Медиа-файл
  */
 abstract class BaseMediaResource extends AdminJsonResource
 {
@@ -25,7 +25,7 @@ abstract class BaseMediaResource extends AdminJsonResource
      * Возвращает базовые поля медиа-файла. Специализированные ресурсы
      * должны переопределить этот метод и добавить специфичные поля.
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
+     * @param  Request  $request  HTTP запрос
      * @return array<string, mixed> Массив с базовыми полями медиа-файла
      */
     public function toArray($request): array
@@ -54,9 +54,8 @@ abstract class BaseMediaResource extends AdminJsonResource
      *
      * Устанавливает статус 201 (Created) для только что загруженных медиа-файлов.
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
-     * @param \Symfony\Component\HttpFoundation\Response $response HTTP ответ
-     * @return void
+     * @param  Request  $request  HTTP запрос
+     * @param  Response  $response  HTTP ответ
      */
     public function withResponse($request, $response): void
     {
@@ -70,4 +69,3 @@ abstract class BaseMediaResource extends AdminJsonResource
         parent::prepareAdminResponse($request, $response);
     }
 }
-

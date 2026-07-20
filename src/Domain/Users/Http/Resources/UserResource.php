@@ -19,7 +19,7 @@ final class UserResource extends AdminJsonResource
     public static $wrap = null;
 
     /**
-     * @param list<string> $capabilities
+     * @param  list<string>  $capabilities
      */
     public function __construct($resource, private readonly array $capabilities = [])
     {

@@ -4,22 +4,21 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Services;
 
-use Polymorph\Platform\Domain\Records\Core\Models\Record;
-use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
-use Polymorph\Platform\Domain\Media\Core\Contracts\MediaIncludedProvider;
 use LogicException;
+use Polymorph\Platform\Domain\Media\Core\Contracts\MediaIncludedProvider;
+use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
+use Polymorph\Platform\Domain\Records\Core\Models\Record;
 
 final class RecordIncludedDataAssembler
 {
     public function __construct(
         private readonly RecordDisplayValueService $displayValueService,
         private readonly MediaIncludedProvider $mediaIncludedProvider,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param Record[] $records
-     * @param string[] $mediaIds
+     * @param  Record[]  $records
+     * @param  string[]  $mediaIds
      * @return array{records: \stdClass, media: \stdClass}
      */
     public function buildIncluded(array $records, array $mediaIds): array
@@ -31,17 +30,17 @@ final class RecordIncludedDataAssembler
     }
 
     /**
-     * @param Record[] $records
+     * @param  Record[]  $records
      */
     private function buildRecordData(array $records): \stdClass
     {
         if ($records === []) {
-            return new \stdClass();
+            return new \stdClass;
         }
 
         $displayByRecordId = $this->displayValueService->computeForRecords($records);
 
-        $result = new \stdClass();
+        $result = new \stdClass;
         foreach ($records as $record) {
             $definition = $this->requireRecordDefinition($record);
 

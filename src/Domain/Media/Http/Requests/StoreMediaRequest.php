@@ -15,8 +15,6 @@ use Polymorph\Platform\Http\Requests\ApiFormRequest;
  * - file: обязательный файл (размер и MIME тип из конфига)
  * - title: опциональный заголовок (минимум 1, максимум 255 символов)
  * - alt: опциональный alt текст (минимум 1, максимум 255 символов)
- *
- * @package Polymorph\Platform\Http\Requests\Admin\Media
  */
 class StoreMediaRequest extends ApiFormRequest
 {
@@ -24,8 +22,6 @@ class StoreMediaRequest extends ApiFormRequest
      * Подготовить данные для валидации.
      *
      * Нормализует пустые строки в null для title и alt, чтобы они не проходили валидацию min:1.
-     *
-     * @return void
      */
     protected function prepareForValidation(): void
     {
@@ -63,7 +59,7 @@ class StoreMediaRequest extends ApiFormRequest
     {
         $maxFileSizeBytes = (int) config('media.max_upload_mb', 1024) * 1024 * 1024;
         $maxDimension = config('media.validation.dimensions.max');
-        
+
         return [
             'file' => [
                 'required',
@@ -74,7 +70,7 @@ class StoreMediaRequest extends ApiFormRequest
             ],
             'title' => 'nullable|filled|string|min:1|max:255',
             'alt' => 'nullable|filled|string|min:1|max:255',
-            
+
             // Запретить технические поля (security protection)
             'id' => 'prohibited',
             'disk' => 'prohibited',
@@ -84,7 +80,7 @@ class StoreMediaRequest extends ApiFormRequest
             'size_bytes' => 'prohibited',
             'original_name' => 'prohibited',
             'ext' => 'prohibited',
-            
+
             // Запретить системные timestamp поля
             'created_at' => 'prohibited',
             'updated_at' => 'prohibited',

@@ -11,11 +11,10 @@ final class SchemaDescriptorFactory
 {
     public function __construct(
         private readonly FieldPathBuilder $pathBuilder,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param iterable<object> $rows
+     * @param  iterable<object>  $rows
      */
     public function fromFieldRows(int $schemaId, iterable $rows): SchemaDescriptor
     {

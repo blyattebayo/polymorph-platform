@@ -37,8 +37,7 @@ final class ExtensionAssetController extends Controller
 
     public function __construct(
         private readonly ExtensionRegistryService $registryService,
-    ) {
-    }
+    ) {}
 
     public function show(string $plugin, string $path): BinaryFileResponse
     {
@@ -53,17 +52,17 @@ final class ExtensionAssetController extends Controller
             abort(404);
         }
 
-        $base = realpath(dirname($manifestPath) . DIRECTORY_SEPARATOR . 'fe' . DIRECTORY_SEPARATOR . 'dist');
+        $base = realpath(dirname($manifestPath).DIRECTORY_SEPARATOR.'fe'.DIRECTORY_SEPARATOR.'dist');
         if ($base === false) {
             abort(404);
         }
 
         $relative = str_replace('/', DIRECTORY_SEPARATOR, ltrim($path, '/'));
-        $target = realpath($base . DIRECTORY_SEPARATOR . $relative);
+        $target = realpath($base.DIRECTORY_SEPARATOR.$relative);
 
         if ($target === false
             || ! is_file($target)
-            || ! str_starts_with($target, $base . DIRECTORY_SEPARATOR)) {
+            || ! str_starts_with($target, $base.DIRECTORY_SEPARATOR)) {
             abort(404);
         }
 

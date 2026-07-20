@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\RecordDefinitions\Http\Requests;
 
-use Polymorph\Platform\Domain\RecordDefinitions\Core\ValueObjects\UpdateRecordDefinitionData;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Polymorph\Platform\Domain\RecordDefinitions\Core\ValueObjects\UpdateRecordDefinitionData;
 
 final class UpdateRecordDefinitionRequest extends FormRequest
 {
@@ -16,7 +17,7 @@ final class UpdateRecordDefinitionRequest extends FormRequest
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

@@ -11,6 +11,5 @@ final readonly class LoginSessionCommand
         public string $password,
         public ?string $ip,
         public ?string $userAgent,
-    ) {
-    }
+    ) {}
 }

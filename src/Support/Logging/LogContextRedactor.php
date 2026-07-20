@@ -13,9 +13,7 @@ use Polymorph\Platform\Support\Logging\Contracts\SecretRedactor;
  */
 final class LogContextRedactor
 {
-    public function __construct(private readonly SecretRedactor $redactor)
-    {
-    }
+    public function __construct(private readonly SecretRedactor $redactor) {}
 
     /**
      * @param  array<string, mixed>  $context

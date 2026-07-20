@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Core\Models;
 
-use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
-use Polymorph\Platform\Domain\SchemaModel\Core\Collections\FieldCollection;
-use Polymorph\Platform\Domain\SchemaModel\Core\Collections\SchemaCollection;
 use Database\Factories\SchemaModelFactory;
-use Polymorph\Platform\SharedKernel\Ownership\ResourceOwnership;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
+use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
+use Polymorph\Platform\Domain\SchemaModel\Core\Collections\FieldCollection;
+use Polymorph\Platform\Domain\SchemaModel\Core\Collections\SchemaCollection;
+use Polymorph\Platform\SharedKernel\Ownership\ResourceOwnership;
 
 /**
  * Схема структуры данных для Record.
- * 
+ *
  * Схема определяет набор полей (Fields) и их организацию.
  * Используется RecordDefinition для валидации и структурирования Record.
  *
@@ -25,8 +26,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $code Уникальный код (slug)
  * @property string|null $description Описание схемы
  * @property array|null $metadata Дополнительные метаданные (JSON)
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read FieldCollection|Field[] $fields
  */
 class SchemaModel extends Model

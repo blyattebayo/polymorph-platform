@@ -8,22 +8,24 @@ use Database\Factories\FieldRefConstraintFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Ограничение на допустимый RecordDefinition для ref-поля.
- * 
+ *
  * Каждое поле типа REF может ссылаться только на один тип поста.
  *
  * @property int $id
  * @property int $field_id
  * @property int $allowed_record_definition_id
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read Field $field
  */
 class FieldRefConstraint extends Model
 {
     use HasFactory;
+
     protected $table = 'field_ref_constraints';
 
     protected $fillable = [

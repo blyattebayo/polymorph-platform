@@ -18,8 +18,7 @@ final class ScheduleViewRebuildOnSchemaChange
 {
     public function __construct(
         private readonly SchemaViewRebuildScheduler $rebuildScheduler,
-    ) {
-    }
+    ) {}
 
     public function handle(SchemaChangeEvent $event): void
     {

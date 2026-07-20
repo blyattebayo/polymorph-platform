@@ -11,7 +11,7 @@ use RuntimeException;
 final class HttpErrorException extends RuntimeException
 {
     /**
-     * @param Closure(JsonResponse):JsonResponse|null $responseConfigurator
+     * @param  Closure(JsonResponse):JsonResponse|null  $responseConfigurator
      */
     public function __construct(
         private readonly ErrorPayload $payload,
@@ -36,4 +36,3 @@ final class HttpErrorException extends RuntimeException
         return $configurator($response);
     }
 }
-

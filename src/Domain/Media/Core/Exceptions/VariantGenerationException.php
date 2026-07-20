@@ -17,6 +17,7 @@ use Throwable;
 class VariantGenerationException extends RuntimeException implements ErrorConvertible
 {
     private ?string $variantName = null;
+
     private ?string $mediaId = null;
 
     /**
@@ -35,6 +36,7 @@ class VariantGenerationException extends RuntimeException implements ErrorConver
         );
         $exception->variantName = $variantName;
         $exception->mediaId = $mediaId;
+
         return $exception;
     }
 

@@ -17,11 +17,10 @@ final class RecordRelationshipResolver
         private readonly RecordRefExtractor $refExtractor,
         private readonly RecordMediaExtractor $mediaExtractor,
         private readonly SchemaFieldPathReadModel $schemaFieldPathReadModel,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param iterable<Record> $records
+     * @param  iterable<Record>  $records
      * @return array{relationships_by_record: array<int, array{records:int[],media:string[]}>, record_ids: int[], media_ids: string[]}
      */
     public function resolveBatch(iterable $records): array
@@ -68,8 +67,8 @@ final class RecordRelationshipResolver
     }
 
     /**
-     * @param array<int|string> $recordIds
-     * @param array<int|string> $mediaIds
+     * @param  array<int|string>  $recordIds
+     * @param  array<int|string>  $mediaIds
      * @return array{0: int[], 1: string[]}
      */
     private function normalizeRelationshipIds(array $recordIds, array $mediaIds): array
@@ -83,7 +82,7 @@ final class RecordRelationshipResolver
     }
 
     /**
-     * @param iterable<Record> $records
+     * @param  iterable<Record>  $records
      * @return list<Record>
      */
     private function materializeRecords(iterable $records): array
@@ -96,7 +95,7 @@ final class RecordRelationshipResolver
     }
 
     /**
-     * @param iterable<Record> $records
+     * @param  iterable<Record>  $records
      * @return array<int, array{ref: string[], media: string[]}>
      */
     private function prefetchPathsBySchemaId(iterable $records): array

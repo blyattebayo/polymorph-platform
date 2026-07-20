@@ -46,7 +46,8 @@ class FilterRegistry
     /**
      * Compile filter to SQL expression
      *
-     * @param array<int, mixed> $args
+     * @param  array<int, mixed>  $args
+     *
      * @throws ValidationException
      */
     public function compileSql(string $name, string $expr, array $args): string
@@ -54,7 +55,7 @@ class FilterRegistry
         $this->validate($name, count($args));
 
         $filter = $this->get($name);
-        if (!$filter instanceof FilterDescriptor || !$filter->supportsSql || !is_callable($filter->sqlRenderer)) {
+        if (! $filter instanceof FilterDescriptor || ! $filter->supportsSql || ! is_callable($filter->sqlRenderer)) {
             throw new ValidationException("Filter '{$name}' is not supported by SQL engine");
         }
 
@@ -73,8 +74,8 @@ class FilterRegistry
             supportsSql: true,
             minArgs: 0,
             maxArgs: 0,
-            handler: fn($value) => is_string($value) ? strtoupper($value) : $value,
-            sqlRenderer: fn(string $expr, array $args): string => "UPPER(($expr)::text)",
+            handler: fn ($value) => is_string($value) ? strtoupper($value) : $value,
+            sqlRenderer: fn (string $expr, array $args): string => "UPPER(($expr)::text)",
         ));
 
         // lower: Convert to lowercase (scalar only)
@@ -84,8 +85,8 @@ class FilterRegistry
             supportsSql: true,
             minArgs: 0,
             maxArgs: 0,
-            handler: fn($value) => is_string($value) ? strtolower($value) : $value,
-            sqlRenderer: fn(string $expr, array $args): string => "LOWER(($expr)::text)",
+            handler: fn ($value) => is_string($value) ? strtolower($value) : $value,
+            sqlRenderer: fn (string $expr, array $args): string => "LOWER(($expr)::text)",
         ));
 
         // truncate: Truncate string to length (scalar only)
@@ -95,11 +96,11 @@ class FilterRegistry
             supportsSql: true,
             minArgs: 1,
             maxArgs: 1,
-            handler: fn($value, int $length) => is_string($value) 
-                ? mb_substr($value, 0, $length) 
+            handler: fn ($value, int $length) => is_string($value)
+                ? mb_substr($value, 0, $length)
                 : $value,
             sqlRenderer: function (string $expr, array $args): string {
-                if (count($args) !== 1 || !is_int($args[0])) {
+                if (count($args) !== 1 || ! is_int($args[0])) {
                     throw new ValidationException("Filter 'truncate' expects one integer argument");
                 }
 
@@ -116,7 +117,7 @@ class FilterRegistry
             supportsSql: true,
             minArgs: 1,
             maxArgs: 1,
-            handler: fn($value, $default) => empty($value) ? $default : $value,
+            handler: fn ($value, $default) => empty($value) ? $default : $value,
             sqlRenderer: function (string $expr, array $args): string {
                 if (count($args) !== 1) {
                     throw new ValidationException("Filter 'default' expects one argument");
@@ -134,14 +135,14 @@ class FilterRegistry
 
     /**
      * Validate filter call (name exists, arg count correct)
-     * 
+     *
      * @throws ValidationException
      */
     public function validate(string $name, int $argCount): void
     {
         $filter = $this->get($name);
 
-        if (!$filter) {
+        if (! $filter) {
             throw new ValidationException("Unknown filter: {$name}");
         }
 
@@ -160,7 +161,6 @@ class FilterRegistry
 
     private function sqlStringLiteral(string $value): string
     {
-        return "'" . str_replace("'", "''", $value) . "'";
+        return "'".str_replace("'", "''", $value)."'";
     }
 }
-

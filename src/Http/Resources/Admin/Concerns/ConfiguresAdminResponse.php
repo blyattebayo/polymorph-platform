@@ -12,21 +12,16 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Применяет стандартные заголовки для всех админских ресурсов
  * через AdminResponseHeaders.
- *
- * @package Polymorph\Platform\Http\Resources\Admin\Concerns
  */
 trait ConfiguresAdminResponse
 {
     /**
      * Установить стандартные заголовки для админских ответов.
      *
-     * @param \Symfony\Component\HttpFoundation\Response $response HTTP ответ
-     * @return void
+     * @param  Response  $response  HTTP ответ
      */
     protected function addAdminResponseHeaders(Response $response): void
     {
         AdminResponseHeaders::apply($response);
     }
 }
-
-

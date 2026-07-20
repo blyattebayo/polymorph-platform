@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Core\Models;
 
-use Polymorph\Platform\Domain\Media\Core\Collections\MediaCollection;
-use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Support\Carbon;
+use Polymorph\Platform\Domain\Media\Core\Collections\MediaCollection;
+use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
 
 /**
  * Eloquent модель для медиа-файлов (Media).
@@ -33,13 +35,12 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
  * @property string|null $checksum_sha256 SHA256 checksum файла (индексирован)
  * @property string|null $title Заголовок медиа
  * @property string|null $alt Альтернативный текст
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at Дата мягкого удаления
- *
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \Polymorph\Platform\Domain\Media\Core\Models\MediaVariant> $variants Варианты файла (превью, миниатюры)
- * @property-read \Polymorph\Platform\Domain\Media\Core\Models\MediaImage|null $image Метаданные изображения (только для изображений)
- * @property-read \Polymorph\Platform\Domain\Media\Core\Models\MediaAvMetadata|null $avMetadata Нормализованные AV-метаданные (только для видео/аудио)
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at Дата мягкого удаления
+ * @property-read Collection<int, MediaVariant> $variants Варианты файла (превью, миниатюры)
+ * @property-read MediaImage|null $image Метаданные изображения (только для изображений)
+ * @property-read MediaAvMetadata|null $avMetadata Нормализованные AV-метаданные (только для видео/аудио)
  */
 class Media extends Model
 {
@@ -109,7 +110,7 @@ class Media extends Model
     /**
      * Связь с вариантами медиа-файла (превью, миниатюры, ресайзы).
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\Polymorph\Platform\Domain\Media\Core\Models\MediaVariant, \Polymorph\Platform\Domain\Media\Core\Models\Media>
+     * @return HasMany<MediaVariant, Media>
      */
     public function variants(): HasMany
     {
@@ -122,7 +123,7 @@ class Media extends Model
      * Связь с таблицей media_images, содержащей специфичные метаданные для изображений:
      * width, height, exif_json.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne<\Polymorph\Platform\Domain\Media\Core\Models\MediaImage, \Polymorph\Platform\Domain\Media\Core\Models\Media>
+     * @return HasOne<MediaImage, Media>
      */
     public function image(): HasOne
     {
@@ -135,7 +136,7 @@ class Media extends Model
      * Связь с таблицей media_av_metadata, содержащей технические характеристики
      * аудио/видео: длительность, битрейт, частоту кадров, кодеки.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne<\Polymorph\Platform\Domain\Media\Core\Models\MediaAvMetadata, \Polymorph\Platform\Domain\Media\Core\Models\Media>
+     * @return HasOne<MediaAvMetadata, Media>
      */
     public function avMetadata(): HasOne
     {
@@ -147,7 +148,7 @@ class Media extends Model
      *
      * Возвращает MediaKind enum в зависимости от MIME-типа.
      *
-     * @return \Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind Тип медиа-файла
+     * @return MediaKind Тип медиа-файла
      */
     public function kind(): MediaKind
     {
@@ -157,7 +158,7 @@ class Media extends Model
     /**
      * Создать новую Eloquent коллекцию
      *
-     * @param  array<int, \Illuminate\Database\Eloquent\Model>  $models
+     * @param  array<int, Model>  $models
      */
     public function newCollection(array $models = []): MediaCollection
     {

@@ -11,8 +11,6 @@ use Polymorph\Platform\Domain\Routing\Core\ValueObjects\RouteNodeDefinition;
  *
  * Определяет контракт для регистрации узла в Laravel Router.
  * Каждый регистратор отвечает за регистрацию узлов определённого типа (GROUP или ROUTE).
- *
- * @package Polymorph\Platform\Domain\Routing\Registrars
  */
 interface RouteNodeRegistrarInterface
 {
@@ -22,8 +20,7 @@ interface RouteNodeRegistrarInterface
      * Регистрирует узел в Laravel Router в соответствии с его типом и настройками.
      * Выполняет валидацию, построение атрибутов и регистрацию маршрута/группы.
      *
-     * @param RouteNodeDefinition $node Узел для регистрации
-     * @return void
+     * @param  RouteNodeDefinition  $node  Узел для регистрации
      */
     public function register(RouteNodeDefinition $node): void;
 }

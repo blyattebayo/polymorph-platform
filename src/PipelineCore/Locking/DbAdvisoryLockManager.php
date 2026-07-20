@@ -74,11 +74,10 @@ class DbAdvisoryLockManager implements LockManager
         $firstEightBytes = substr($hashBytes, 0, 8);
         $unpacked = unpack('qlock', $firstEightBytes);
 
-        if (!is_array($unpacked) || !isset($unpacked['lock'])) {
+        if (! is_array($unpacked) || ! isset($unpacked['lock'])) {
             throw new LockException('Failed to hash advisory lock key');
         }
 
         return $unpacked['lock'];
     }
-
 }

@@ -12,8 +12,7 @@ final readonly class PasswordConstraint
     public function __construct(
         private int $min,
         private int $max,
-    ) {
-    }
+    ) {}
 
     public function min(): int
     {

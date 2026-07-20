@@ -18,19 +18,17 @@ final class StorageKey
 
     public const SEPARATOR = '__';
 
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     public static function schemaCode(string $extensionId, string $entity): string
     {
-        return self::schemaPrefix($extensionId) . trim($entity);
+        return self::schemaPrefix($extensionId).trim($entity);
     }
 
     /** Префикс кодов всех схем расширения: 'ext__{id}__'. */
     public static function schemaPrefix(string $extensionId): string
     {
-        return self::PREFIX . self::SEPARATOR . trim($extensionId) . self::SEPARATOR;
+        return self::PREFIX.self::SEPARATOR.trim($extensionId).self::SEPARATOR;
     }
 
     /**
@@ -42,7 +40,7 @@ final class StorageKey
      */
     public static function parse(string $schemaCode): ?array
     {
-        $prefix = self::PREFIX . self::SEPARATOR; // 'ext__'
+        $prefix = self::PREFIX.self::SEPARATOR; // 'ext__'
         if (! str_starts_with($schemaCode, $prefix)) {
             return null;
         }

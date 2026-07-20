@@ -14,8 +14,8 @@ use InvalidArgumentException;
 final class ErrorReportDefinition
 {
     /**
-     * @param class-string<T>|null $throwableClass
-     * @param Closure(T, ErrorPayload): array<string, mixed>|null $contextResolver
+     * @param  class-string<T>|null  $throwableClass
+     * @param  Closure(T, ErrorPayload): array<string, mixed>|null  $contextResolver
      */
     public function __construct(
         public readonly ?string $throwableClass,
@@ -29,7 +29,7 @@ final class ErrorReportDefinition
     }
 
     /**
-     * @param Closure $resolver
+     * @param  Closure  $resolver
      */
     public function bind(?Container $container): self
     {
@@ -53,7 +53,7 @@ final class ErrorReportDefinition
     }
 
     /**
-     * @param T $throwable
+     * @param  T  $throwable
      * @return array<string, mixed>|null
      */
     public function resolveContext(\Throwable $throwable, ErrorPayload $payload): ?array
@@ -68,4 +68,3 @@ final class ErrorReportDefinition
         return $resolver($throwable, $payload);
     }
 }
-

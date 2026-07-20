@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Users\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Polymorph\Platform\Domain\Users\Http\Requests\IndexUsersRequest;
 use Polymorph\Platform\Domain\Users\Http\Requests\SetUserPasswordRequest;
 use Polymorph\Platform\Domain\Users\Http\Requests\StoreUserRequest;
@@ -13,7 +14,6 @@ use Polymorph\Platform\Domain\Users\Services\AdminUserReadService;
 use Polymorph\Platform\Http\Controllers\Controller;
 use Polymorph\Platform\Http\Pagination\V2\PaginatedJsonResponse;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
-use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 final class UserController extends Controller
@@ -21,8 +21,7 @@ final class UserController extends Controller
     public function __construct(
         private readonly AdminUserManagementService $adminUserManagementService,
         private readonly AdminUserReadService $adminUserReadService,
-    ) {
-    }
+    ) {}
 
     public function index(IndexUsersRequest $request): JsonResponse
     {
@@ -39,6 +38,7 @@ final class UserController extends Controller
     public function store(StoreUserRequest $request): JsonResponse
     {
         $user = $this->adminUserManagementService->create($request->validated());
+
         return AdminResponse::json([
             'data' => $this->adminUserReadService->present($user),
         ], 201);
@@ -47,6 +47,7 @@ final class UserController extends Controller
     public function update(UpdateUserRequest $request, int $userId): JsonResponse
     {
         $updatedUser = $this->adminUserManagementService->update($userId, $request->validated());
+
         return AdminResponse::json([
             'data' => $this->adminUserReadService->present($updatedUser),
         ]);
@@ -55,6 +56,7 @@ final class UserController extends Controller
     public function setPassword(SetUserPasswordRequest $request, int $userId): Response
     {
         $this->adminUserManagementService->setPassword($userId, (string) $request->validated()['password']);
+
         return AdminResponse::noContent();
     }
 }

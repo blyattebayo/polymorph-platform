@@ -19,7 +19,7 @@ class TableConfigResource extends AdminJsonResource
             'scope' => $this->scope,
             'user_id' => $this->user_id,
             'schema_version' => $this->schema_version,
-            'config_json' => $this->config_json ?? new \stdClass(),
+            'config_json' => $this->config_json ?? new \stdClass,
             'created_at' => optional($this->created_at)->toIso8601String(),
             'updated_at' => optional($this->updated_at)->toIso8601String(),
         ];

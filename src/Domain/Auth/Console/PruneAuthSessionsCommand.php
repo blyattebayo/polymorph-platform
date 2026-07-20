@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Console;
 
-use Polymorph\Platform\Domain\Auth\Core\Contracts\RefreshSessionRepository;
 use Illuminate\Console\Command;
+use Polymorph\Platform\Domain\Auth\Core\Contracts\RefreshSessionRepository;
 
 final class PruneAuthSessionsCommand extends Command
 {

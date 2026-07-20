@@ -30,7 +30,7 @@ final class RecordIndexNameBuilder
 
     private static function build(string $prefix, int $definitionId, string $fieldPath, ?string $cast): string
     {
-        $hash = substr(md5($fieldPath . '|' . ($cast ?? '')), 0, self::HASH_LENGTH);
+        $hash = substr(md5($fieldPath.'|'.($cast ?? '')), 0, self::HASH_LENGTH);
         $base = "{$prefix}_{$definitionId}_";
         $slug = strtolower($fieldPath);
         $slug = preg_replace('/[^a-z0-9_]/', '_', $slug) ?? $slug;
@@ -46,6 +46,6 @@ final class RecordIndexNameBuilder
 
         $slug = substr($slug, 0, $maxSlugLength);
 
-        return $base . $slug . '_' . $hash;
+        return $base.$slug.'_'.$hash;
     }
 }

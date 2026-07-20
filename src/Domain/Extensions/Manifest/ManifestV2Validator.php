@@ -20,13 +20,13 @@ use Polymorph\Sdk\Version\SdkVersion;
 final class ManifestV2Validator
 {
     /**
-     * @param array<string, mixed> $manifest
+     * @param  array<string, mixed>  $manifest
      */
     public function validate(array $manifest, string $source = 'manifest'): ManifestV2
     {
         $id = $this->requireString($manifest, 'id', $source);
-        if (!ValidationConstraints::slug()->matches($id)) {
-            throw new \InvalidArgumentException("{$source}: id must match " . ValidationConstraints::slug()->pattern() . '.');
+        if (! ValidationConstraints::slug()->matches($id)) {
+            throw new \InvalidArgumentException("{$source}: id must match ".ValidationConstraints::slug()->pattern().'.');
         }
 
         $name = $this->requireString($manifest, 'name', $source);
@@ -42,9 +42,9 @@ final class ManifestV2Validator
             ?? throw new \InvalidArgumentException("{$source}: kind '{$kindValue}' is invalid (plugin|module|integration).");
 
         $sdk = $this->requireString($manifest, 'sdk', $source);
-        if (!Compatibility::satisfiesRange(Sdk::VERSION, $sdk)) {
+        if (! Compatibility::satisfiesRange(Sdk::VERSION, $sdk)) {
             throw new \InvalidArgumentException(
-                "{$source}: requires SDK '{$sdk}', host SDK is " . Sdk::VERSION . ' (incompatible).',
+                "{$source}: requires SDK '{$sdk}', host SDK is ".Sdk::VERSION.' (incompatible).',
             );
         }
 
@@ -65,12 +65,12 @@ final class ManifestV2Validator
     }
 
     /**
-     * @param array<string, mixed> $manifest
+     * @param  array<string, mixed>  $manifest
      */
     private function requireString(array $manifest, string $field, string $source): string
     {
         $value = $manifest[$field] ?? null;
-        if (!is_string($value) || trim($value) === '') {
+        if (! is_string($value) || trim($value) === '') {
             throw new \InvalidArgumentException("{$source}: field '{$field}' must be a non-empty string.");
         }
 
@@ -91,7 +91,7 @@ final class ManifestV2Validator
      */
     private function stringList(mixed $value): array
     {
-        if (!is_array($value)) {
+        if (! is_array($value)) {
             return [];
         }
 

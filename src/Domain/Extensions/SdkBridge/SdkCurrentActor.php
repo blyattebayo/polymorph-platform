@@ -24,8 +24,7 @@ final class SdkCurrentActor implements CurrentActor
         private readonly CurrentActorResolver $actors,
         private readonly PolicyRuntime $policyRuntime,
         private readonly AccessSubjectProvider $subjectProvider,
-    ) {
-    }
+    ) {}
 
     public function actor(): ?Actor
     {

@@ -17,8 +17,7 @@ final readonly class CreateUserAction
 {
     public function __construct(
         private UserRepository $userRepository
-    ) {
-    }
+    ) {}
 
     /**
      * Создать нового пользователя.
@@ -30,6 +29,7 @@ final readonly class CreateUserAction
      *     status?: string,
      *     email_verified_at?: \DateTimeInterface|null
      * } $data
+     *
      * @throws UserAlreadyExistsException
      */
     public function execute(array $data): User

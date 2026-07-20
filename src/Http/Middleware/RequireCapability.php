@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Http\Middleware;
 
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRuntime;
+use Closure;
+use Illuminate\Http\Request;
+use InvalidArgumentException;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider;
+use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRuntime;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ThrowsErrors;
-use Closure;
-use Illuminate\Http\Request;
-use InvalidArgumentException;
 
 final class RequireCapability
 {
@@ -32,15 +32,14 @@ final class RequireCapability
             throw new InvalidArgumentException('Capability resource and action must not be empty.');
         }
 
-        return self::ALIAS . ':' . $normalizedResource . ',' . $normalizedAction;
+        return self::ALIAS.':'.$normalizedResource.','.$normalizedAction;
     }
 
     public function __construct(
         private readonly PolicyRuntime $policyRuntime,
         private readonly AccessSubjectProvider $subjectProvider,
         private readonly CurrentActorResolver $currentActor,
-    ) {
-    }
+    ) {}
 
     public function handle(Request $request, Closure $next, string $resource, string $action = CapabilityCatalog::ACTION_ACCESS)
     {
@@ -55,7 +54,7 @@ final class RequireCapability
 
         if (! $this->policyRuntime->allows($this->subjectProvider->for($user), $normalizedResource, $normalizedAction)) {
             $this->throwError(ErrorCode::FORBIDDEN, 'Required capability is missing.', [
-                'capability' => $normalizedResource . '/' . $normalizedAction,
+                'capability' => $normalizedResource.'/'.$normalizedAction,
                 'resource' => $normalizedResource,
                 'action' => $normalizedAction,
             ]);

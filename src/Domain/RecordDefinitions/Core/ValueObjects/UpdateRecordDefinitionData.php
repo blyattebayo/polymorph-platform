@@ -16,7 +16,7 @@ final class UpdateRecordDefinitionData
     ) {}
 
     /**
-     * @param array<string, mixed> $validated
+     * @param  array<string, mixed>  $validated
      */
     public static function fromValidated(array $validated): self
     {

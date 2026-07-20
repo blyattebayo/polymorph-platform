@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Console;
 
-use Polymorph\Platform\Domain\Extensions\Services\ExtensionManager;
 use Illuminate\Console\Command;
+use Polymorph\Platform\Domain\Extensions\Services\ExtensionManager;
 
 final class PluginsUninstallCommand extends Command
 {
     protected $signature = 'plugins:uninstall {pluginId : Plugin identifier} {--purge : Also drop the plugin tables and data}';
+
     protected $description = 'Uninstall a plugin (remove from registry; keeps data unless --purge).';
 
     public function handle(ExtensionManager $pluginManager): int

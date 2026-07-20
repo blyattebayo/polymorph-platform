@@ -13,6 +13,5 @@ final readonly class RecordQueryCondition
         public string $op,
         public mixed $value,
         public RecordQueryStrategy $strategy = RecordQueryStrategy::Expression,
-    ) {
-    }
+    ) {}
 }

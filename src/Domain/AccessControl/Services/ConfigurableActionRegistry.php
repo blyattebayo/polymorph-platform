@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Services;
 
+use InvalidArgumentException;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\ActionDefinitionProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\ActionRegistry;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
-use InvalidArgumentException;
 
 final class ConfigurableActionRegistry implements ActionRegistry
 {
@@ -17,7 +17,7 @@ final class ConfigurableActionRegistry implements ActionRegistry
     private readonly array $actions;
 
     /**
-     * @param iterable<ActionDefinitionProvider> $providers
+     * @param  iterable<ActionDefinitionProvider>  $providers
      */
     public function __construct(iterable $providers = [])
     {

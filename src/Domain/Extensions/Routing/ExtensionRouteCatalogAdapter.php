@@ -44,7 +44,7 @@ final class ExtensionRouteCatalogAdapter implements PluginRouteCatalog
             $mtime = ($plugin->backendRouteFile !== null && is_file($plugin->backendRouteFile))
                 ? (string) (filemtime($plugin->backendRouteFile) ?: 0)
                 : '0';
-            $parts[] = $plugin->id . ':' . $plugin->manifestHash . ':' . $mtime;
+            $parts[] = $plugin->id.':'.$plugin->manifestHash.':'.$mtime;
         }
 
         sort($parts);

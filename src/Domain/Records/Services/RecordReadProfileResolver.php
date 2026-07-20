@@ -19,8 +19,7 @@ final class RecordReadProfileResolver
         private readonly FieldAccessService $fieldAccessService,
         private readonly AccessSubjectProvider $subjectProvider,
         private readonly PolicyRuntime $policyRuntime,
-    ) {
-    }
+    ) {}
 
     public function forDefinition(?UserIdentity $actor, int $recordDefinitionId, string $action = 'read'): RecordReadProfile
     {
@@ -46,7 +45,7 @@ final class RecordReadProfileResolver
         }
 
         $subjects = $this->subjectProvider->for($actor);
-        $schemaResource = 'schema.' . $schemaId . '.fields';
+        $schemaResource = 'schema.'.$schemaId.'.fields';
         if ($this->policyRuntime->allows($subjects, $schemaResource, $action)) {
             return new RecordReadProfile($schemaId, [], true);
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Polymorph\Platform\Domain\Auth\Application\DTO\LoginSessionCommand;
 use Polymorph\Platform\Domain\Auth\Application\DTO\LogoutSessionCommand;
 use Polymorph\Platform\Domain\Auth\Application\DTO\RefreshSessionCommand;
@@ -28,7 +29,7 @@ use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ErrorKernel;
 use Polymorph\Platform\Support\Errors\ErrorResponseFactory;
-use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\Cookie;
 
 /**
  * Контроллер для управления аутентификацией.
@@ -144,7 +145,7 @@ final class AuthController
     }
 
     /**
-     * @param  list<\Symfony\Component\HttpFoundation\Cookie>  $cookies
+     * @param  list<Cookie>  $cookies
      */
     private function withCookies(JsonResponse $response, array $cookies): JsonResponse
     {

@@ -14,8 +14,7 @@ final readonly class PatternConstraint
     public function __construct(
         private string $pattern,
         private ?int $max = null,
-    ) {
-    }
+    ) {}
 
     public function pattern(): string
     {
@@ -24,7 +23,7 @@ final readonly class PatternConstraint
 
     public function phpPattern(): string
     {
-        return '/' . str_replace('/', '\\/', $this->pattern) . '/';
+        return '/'.str_replace('/', '\\/', $this->pattern).'/';
     }
 
     public function max(): ?int
@@ -48,8 +47,8 @@ final readonly class PatternConstraint
         return [
             ...self::presence($required, $sometimes, $nullable),
             'string',
-            ...($resolvedMax !== null ? ['max:' . $resolvedMax] : []),
-            'regex:' . $this->phpPattern(),
+            ...($resolvedMax !== null ? ['max:'.$resolvedMax] : []),
+            'regex:'.$this->phpPattern(),
         ];
     }
 

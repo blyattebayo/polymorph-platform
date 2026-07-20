@@ -12,6 +12,5 @@ final class RouteNodeDeleted
     public function __construct(
         public readonly int $routeNodeId,
         public readonly int $deletedCount,
-    ) {
-    }
+    ) {}
 }

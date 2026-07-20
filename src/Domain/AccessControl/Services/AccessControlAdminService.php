@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Services;
 
+use Closure;
+use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdministration;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\ActionRegistry;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AssignmentRepository;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AuditActorResolver;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AuditEventRepository;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyCompilationService;
+use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRepository;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Assignment;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Policy;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRepository;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\PolicyData;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
-use Closure;
-use InvalidArgumentException;
-use Illuminate\Support\Facades\DB;
 
 final class AccessControlAdminService implements AccessControlAdministration
 {
@@ -29,8 +29,7 @@ final class AccessControlAdminService implements AccessControlAdministration
         private readonly AuditEventRepository $auditEvents,
         private readonly AuditActorResolver $auditActorResolver,
         private readonly ActionRegistry $actionRegistry,
-    ) {
-    }
+    ) {}
 
     public function createPolicy(array $data): Policy
     {
@@ -245,7 +244,7 @@ final class AccessControlAdminService implements AccessControlAdministration
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     private function policyDataFromInput(array $data): PolicyData
     {
@@ -266,7 +265,7 @@ final class AccessControlAdminService implements AccessControlAdministration
     }
 
     /**
-     * @param list<Subject> $subjects
+     * @param  list<Subject>  $subjects
      * @return list<string>
      */
     private function subjectKeys(array $subjects): array
@@ -275,7 +274,7 @@ final class AccessControlAdminService implements AccessControlAdministration
     }
 
     /**
-     * @param list<int> $policyIds
+     * @param  list<int>  $policyIds
      * @return list<int>
      */
     private function normalizePolicyIds(array $policyIds, bool $allowEmpty = false): array
@@ -289,7 +288,7 @@ final class AccessControlAdminService implements AccessControlAdministration
     }
 
     /**
-     * @param list<int> $policyIds
+     * @param  list<int>  $policyIds
      */
     private function assertAllPoliciesExist(array $policyIds): void
     {
@@ -318,7 +317,7 @@ final class AccessControlAdminService implements AccessControlAdministration
     }
 
     /**
-     * @param list<Subject> $subjects
+     * @param  list<Subject>  $subjects
      */
     private function scheduleSubjectsRecompile(array $subjects): void
     {

@@ -16,8 +16,7 @@ final class SdkExtensionState implements ExtensionState
 {
     public function __construct(
         private readonly ExtensionRegistryState $registryState,
-    ) {
-    }
+    ) {}
 
     public function isEnabled(string $extensionId): bool
     {

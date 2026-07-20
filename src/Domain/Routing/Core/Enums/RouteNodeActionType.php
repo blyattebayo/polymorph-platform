@@ -11,8 +11,6 @@ namespace Polymorph\Platform\Domain\Routing\Core\Enums;
  * - CONTROLLER: для контроллеров (Controller@method или invokable)
  * - VIEW: для статических страниц (view с опциональными данными)
  * - REDIRECT: для редиректов (URL с опциональным статусом)
- *
- * @package Polymorph\Platform\Domain\Routing\Enums
  */
 enum RouteNodeActionType: string
 {
@@ -21,14 +19,14 @@ enum RouteNodeActionType: string
      *
      * Поддерживает следующие форматы в `action_meta['action']`:
      * - Controller@method: `Polymorph\Platform\Http\Controllers\BlogController@show`
-    * - Invokable controller: `Polymorph\Platform\Domain\Routing\Http\Controllers\HomeController`
+     * - Invokable controller: `Polymorph\Platform\Domain\Routing\Http\Controllers\HomeController`
      *
      * Использование:
      * - Кастомная логика, API endpoints, сложная обработка запросов
      *
      * Формат action_meta:
      * ```php
-    * ['action' => 'Polymorph\Platform\Domain\Routing\Http\Controllers\HomeController']
+     * ['action' => 'Polymorph\Platform\Domain\Routing\Http\Controllers\HomeController']
      * ```
      */
     case CONTROLLER = 'controller';

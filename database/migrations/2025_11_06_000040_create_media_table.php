@@ -15,7 +15,8 @@ use Illuminate\Support\Facades\Schema;
  * Уникальность медиа-файлов обеспечивается составным индексом (disk, path),
  * так как один и тот же путь может существовать на разных дисках.
  */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('media', function (Blueprint $table): void {

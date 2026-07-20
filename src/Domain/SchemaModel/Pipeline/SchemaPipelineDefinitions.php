@@ -28,8 +28,7 @@ final class SchemaPipelineDefinitions
         private readonly ValidateDeleteSchemaStep $validateDeleteSchemaStep,
         private readonly PersistDeletedSchemaStep $persistDeletedSchemaStep,
         private readonly DeleteSchemaOwnershipStep $deleteSchemaOwnershipStep,
-    ) {
-    }
+    ) {}
 
     public function saveWithFields(): PipelineDefinition
     {

@@ -10,7 +10,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 final class UniqueByKeys implements ValidationRule
 {
     /**
-     * @param list<string> $keys
+     * @param  list<string>  $keys
      */
     public function __construct(
         private readonly array $keys,
@@ -46,6 +46,7 @@ final class UniqueByKeys implements ValidationRule
 
             if (isset($seen[$signature])) {
                 $fail("The :attribute field has duplicate element by keys at index {$index}.");
+
                 return;
             }
 

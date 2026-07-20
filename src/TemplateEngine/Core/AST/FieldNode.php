@@ -13,12 +13,10 @@ readonly class FieldNode implements ASTNode
         public int $fieldId,
         public int $start,
         public int $end
-    ) {
-    }
+    ) {}
 
     public function getSpan(): array
     {
         return [$this->start, $this->end];
     }
 }
-

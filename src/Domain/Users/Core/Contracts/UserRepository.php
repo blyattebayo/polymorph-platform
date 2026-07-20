@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Users\Core\Contracts;
 
+use Illuminate\Pagination\LengthAwarePaginator;
 use Polymorph\Platform\Domain\Users\Core\Exceptions\UserNotFoundException;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Репозиторий для работы с пользователями.
@@ -27,21 +27,21 @@ interface UserRepository
     /**
      * Найти пользователя по ID или выбросить исключение.
      *
-        * @throws UserNotFoundException
+     * @throws UserNotFoundException
      */
     public function findOrFail(int $id): User;
 
     /**
      * Создать нового пользователя.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function create(array $data): User;
 
     /**
      * Обновить данные пользователя.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function update(User $user, array $data): User;
 

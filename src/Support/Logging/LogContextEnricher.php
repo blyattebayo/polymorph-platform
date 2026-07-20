@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Support\Logging;
 
-use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
+use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
 
 final class LogContextEnricher
 {
@@ -173,7 +173,7 @@ final class LogContextEnricher
             'class' => $exception::class,
             'message' => $this->truncate($exception->getMessage(), 2000),
             'code' => $exception->getCode(),
-            'file' => $exception->getFile() . ':' . $exception->getLine(),
+            'file' => $exception->getFile().':'.$exception->getLine(),
             'trace' => $this->truncate($exception->getTraceAsString(), 8000),
         ];
 
@@ -188,6 +188,6 @@ final class LogContextEnricher
 
     private function truncate(string $value, int $max): string
     {
-        return mb_strlen($value) > $max ? mb_substr($value, 0, $max) . '…[truncated]' : $value;
+        return mb_strlen($value) > $max ? mb_substr($value, 0, $max).'…[truncated]' : $value;
     }
 }

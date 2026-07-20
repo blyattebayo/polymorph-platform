@@ -26,7 +26,7 @@ use JsonSerializable;
 final class ErrorPayload implements JsonSerializable
 {
     /**
-     * @param array<string, mixed> $meta
+     * @param  array<string, mixed>  $meta
      */
     private function __construct(
         public readonly string $type,
@@ -44,7 +44,7 @@ final class ErrorPayload implements JsonSerializable
     }
 
     /**
-     * @param array<string, mixed> $meta
+     * @param  array<string, mixed>  $meta
      */
     public static function create(
         string $type,
@@ -74,9 +74,6 @@ final class ErrorPayload implements JsonSerializable
         return $this->meta;
     }
 
-    /**
-     * @return self
-     */
     public function withTraceId(?string $traceId): self
     {
         if ($traceId !== null && trim($traceId) === '') {
@@ -95,7 +92,7 @@ final class ErrorPayload implements JsonSerializable
     }
 
     /**
-     * @param array<string, mixed> $meta
+     * @param  array<string, mixed>  $meta
      */
     public function withMeta(array $meta): self
     {
@@ -166,7 +163,7 @@ final class ErrorPayload implements JsonSerializable
     }
 
     /**
-     * @param array<mixed> $meta
+     * @param  array<mixed>  $meta
      */
     private function assertMeta(array $meta): void
     {
@@ -181,4 +178,3 @@ final class ErrorPayload implements JsonSerializable
         }
     }
 }
-

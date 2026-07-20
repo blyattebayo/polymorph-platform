@@ -1,15 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Polymorph\Platform\Domain\Records\Pipeline\Handlers;
 
+use Illuminate\Support\Facades\Event;
 use Polymorph\Platform\Domain\Records\Events\RecordDeleted;
 use Polymorph\Platform\Domain\Records\Pipeline\Commands\DeleteRecordCommand;
-use Polymorph\Platform\Domain\Records\Pipeline\RecordPipelineDefinitions;
 use Polymorph\Platform\Domain\Records\Pipeline\Contexts\RecordWriteContext;
 use Polymorph\Platform\Domain\Records\Pipeline\Core\RecordId;
+use Polymorph\Platform\Domain\Records\Pipeline\RecordPipelineDefinitions;
 use Polymorph\Platform\PipelineCore\Observability\OperationId;
 use Polymorph\Platform\PipelineCore\Runtime\TransactionalPipelineRunner;
-use Illuminate\Support\Facades\Event;
 
 /**
  * Handler for DeleteRecordCommand
@@ -24,8 +26,8 @@ final class DeleteRecordHandler
 
     public function handle(DeleteRecordCommand $command): void
     {
-        $operationId = $command->operationId 
-            ? OperationId::fromString($command->operationId) 
+        $operationId = $command->operationId
+            ? OperationId::fromString($command->operationId)
             : OperationId::generate();
         $recordId = RecordId::fromInt($command->recordId);
 

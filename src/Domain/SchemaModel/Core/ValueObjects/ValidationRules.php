@@ -6,13 +6,13 @@ namespace Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects;
 
 /**
  * Value Object для правил валидации поля.
- * 
+ *
  * Инкапсулирует логику работы с validation_rules.
  */
 final readonly class ValidationRules
 {
     /**
-     * @param array<string, mixed> $rules
+     * @param  array<string, mixed>  $rules
      */
     private function __construct(
         private array $rules
@@ -20,8 +20,8 @@ final readonly class ValidationRules
 
     /**
      * Создать из массива.
-     * 
-     * @param array<string, mixed> $rules
+     *
+     * @param  array<string, mixed>  $rules
      */
     public static function fromArray(array $rules): self
     {
@@ -30,7 +30,7 @@ final readonly class ValidationRules
 
     /**
      * Получить все правила как массив.
-     * 
+     *
      * @return array<string, mixed>
      */
     public function toArray(): array
@@ -40,7 +40,7 @@ final readonly class ValidationRules
 
     /**
      * Конвертировать в Laravel validation rules.
-     * 
+     *
      * @return string[]
      */
     public function toLaravelRules(): array
@@ -51,9 +51,10 @@ final readonly class ValidationRules
                 if ($value === true) {
                     $laravelRules[] = $key;
                 }
+
                 continue;
             }
-            $laravelRules[] = match($key) {
+            $laravelRules[] = match ($key) {
                 'required' => 'required',
                 'nullable' => 'nullable',
                 'string' => 'string',
@@ -67,11 +68,12 @@ final readonly class ValidationRules
                 'email' => 'email',
                 'url' => 'url',
                 'regex' => "regex:{$value}",
-                'in' => 'in:' . implode(',', (array) $value),
+                'in' => 'in:'.implode(',', (array) $value),
                 'unique' => "unique:{$value}",
                 default => "{$key}:{$value}",
             };
         }
+
         return $laravelRules;
     }
 }

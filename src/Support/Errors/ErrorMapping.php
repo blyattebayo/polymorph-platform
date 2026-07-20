@@ -12,15 +12,14 @@ use Closure;
 final class ErrorMapping
 {
     /**
-     * @param class-string<T> $throwableClass
-     * @param Closure(T, ErrorFactory): ErrorPayload $builder
+     * @param  class-string<T>  $throwableClass
+     * @param  Closure(T, ErrorFactory): ErrorPayload  $builder
      */
     public function __construct(
         public readonly string $throwableClass,
         private readonly Closure $builder,
         private readonly ?ErrorReportDefinition $reportDefinition = null,
-    ) {
-    }
+    ) {}
 
     public function matches(\Throwable $throwable): bool
     {
@@ -40,5 +39,3 @@ final class ErrorMapping
         return $this->reportDefinition;
     }
 }
-
-

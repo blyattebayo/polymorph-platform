@@ -2,13 +2,13 @@
 
 namespace Database\Factories;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\FieldRefConstraint;
-use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
-use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Polymorph\Platform\Domain\SchemaModel\Core\Models\FieldRefConstraint>
+ * @extends Factory<FieldRefConstraint>
  */
 class FieldRefConstraintFactory extends Factory
 {

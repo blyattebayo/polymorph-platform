@@ -7,8 +7,8 @@ namespace Polymorph\Platform\Domain\SchemaModelValidation\Schema;
 final readonly class SchemaDescriptor
 {
     /**
-     * @param list<FieldDescriptor> $fields
-     * @param array<string, string> $pathIndex
+     * @param  list<FieldDescriptor>  $fields
+     * @param  array<string, string>  $pathIndex
      */
     public function __construct(
         public int $schemaId,

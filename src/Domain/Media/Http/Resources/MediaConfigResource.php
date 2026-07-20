@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Http\Resources;
 
+use Illuminate\Http\Request;
 use Polymorph\Platform\Http\Resources\Admin\AdminJsonResource;
 
 /**
  * API Resource для конфигурации системы медиа-файлов.
  *
  * Возвращает информацию о разрешенных типах файлов и вариантах изображений.
- *
- * @package Polymorph\Platform\Domain\Media\Http\Resources
  */
 class MediaConfigResource extends AdminJsonResource
 {
@@ -25,7 +24,7 @@ class MediaConfigResource extends AdminJsonResource
     /**
      * Преобразовать ресурс в массив.
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
+     * @param  Request  $request  HTTP запрос
      * @return array<string, mixed> Массив с конфигурацией медиа
      */
     public function toArray($request): array
@@ -51,4 +50,3 @@ class MediaConfigResource extends AdminJsonResource
         ];
     }
 }
-

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\PipelineCore\Providers;
 
+use Illuminate\Support\ServiceProvider;
 use Polymorph\Platform\PipelineCore\Locking\DbAdvisoryLockManager;
 use Polymorph\Platform\PipelineCore\Locking\LockManager;
 use Polymorph\Platform\PipelineCore\Observability\PipelineLogger;
@@ -13,7 +14,6 @@ use Polymorph\Platform\PipelineCore\Runtime\PipelineExecutor;
 use Polymorph\Platform\PipelineCore\Runtime\TransactionalPipelineRunner;
 use Polymorph\Platform\PipelineCore\Tx\TransactionManager;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Support\ServiceProvider;
 
 class PipelineCoreServiceProvider extends ServiceProvider
 {

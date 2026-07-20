@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Support\Logging;
 
-use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 use Illuminate\Log\LogManager;
 use Illuminate\Support\ServiceProvider;
+use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 use Psr\Log\LoggerInterface;
 
 final class LoggingServiceProvider extends ServiceProvider

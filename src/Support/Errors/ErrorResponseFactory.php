@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Support\Errors;
 
-use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponseHeaders;
 use Illuminate\Http\JsonResponse;
+use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponseHeaders;
 
 final class ErrorResponseFactory
 {
@@ -28,4 +28,3 @@ final class ErrorResponseFactory
         return $response;
     }
 }
-

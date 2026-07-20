@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Polymorph\Platform\Http\Middleware;
 
 use Closure;
@@ -10,8 +12,6 @@ use Illuminate\Http\Request;
  *
  * Обеспечивает корректное поведение кэша при наличии cookies,
  * так как ответы с cookies могут различаться в зависимости от заголовков Origin и Cookie.
- *
- * @package Polymorph\Platform\Http\Middleware
  */
 final class AddCacheVary
 {
@@ -20,8 +20,8 @@ final class AddCacheVary
      *
      * Добавляет заголовки Vary: Origin, Cookie к ответам, которые устанавливают cookies.
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
-     * @param \Closure $next Следующий middleware
+     * @param  Request  $request  HTTP запрос
+     * @param  Closure  $next  Следующий middleware
      * @return mixed
      */
     public function handle(Request $request, Closure $next)
@@ -35,10 +35,10 @@ final class AddCacheVary
             $varyHeaders = array_map('trim', $varyHeaders);
 
             // Add Origin and Cookie if not already present
-            if (!in_array('Origin', $varyHeaders, true)) {
+            if (! in_array('Origin', $varyHeaders, true)) {
                 $varyHeaders[] = 'Origin';
             }
-            if (!in_array('Cookie', $varyHeaders, true)) {
+            if (! in_array('Cookie', $varyHeaders, true)) {
                 $varyHeaders[] = 'Cookie';
             }
 
@@ -48,4 +48,3 @@ final class AddCacheVary
         return $response;
     }
 }
-

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\SdkBridge;
 
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdministration;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRuntime;
@@ -13,7 +14,6 @@ use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Decision;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Polymorph\Platform\Domain\Users\Core\Contracts\UserRepository;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
-use Illuminate\Support\Facades\DB;
 use Polymorph\Sdk\Access\AccessGrants;
 use Polymorph\Sdk\Access\CapabilityAction;
 use Polymorph\Sdk\Extension\ExtensionContext;
@@ -37,8 +37,7 @@ final class SdkAccessGrants implements AccessGrants
         private readonly AccessSubjectProvider $subjectProvider,
         private readonly UserRepository $users,
         private readonly ExtensionContext $context,
-    ) {
-    }
+    ) {}
 
     public function grantToUser(int $userId, string $resource, string $action = CapabilityAction::ACCESS): void
     {
@@ -98,7 +97,7 @@ final class SdkAccessGrants implements AccessGrants
         )));
 
         foreach ($resources as $resource) {
-            if (!str_starts_with($resource, $resourcePrefix)) {
+            if (! str_starts_with($resource, $resourcePrefix)) {
                 throw new \InvalidArgumentException("Resource '{$resource}' is outside prefix '{$resourcePrefix}'.");
             }
         }
@@ -158,7 +157,7 @@ final class SdkAccessGrants implements AccessGrants
         $rows = Assignment::query()
             ->where('subject', 'like', 'user:%')
             ->whereHas('policy', function ($query) use ($resourcePrefix, $action): void {
-                $query->where('resource_pattern', 'like', $this->escapeLike($resourcePrefix) . '%')
+                $query->where('resource_pattern', 'like', $this->escapeLike($resourcePrefix).'%')
                     ->where('action', $action)
                     ->where('effect', CapabilityCatalog::EFFECT_ALLOW)
                     ->where('is_active', true);
@@ -169,7 +168,7 @@ final class SdkAccessGrants implements AccessGrants
         $grants = [];
         foreach ($rows as $assignment) {
             $policy = $assignment->policy;
-            if (!$policy instanceof Policy) {
+            if (! $policy instanceof Policy) {
                 continue;
             }
 
@@ -192,7 +191,7 @@ final class SdkAccessGrants implements AccessGrants
         $rows = Assignment::query()
             ->where('subject', (string) Subject::user($userId))
             ->whereHas('policy', function ($query) use ($resourcePrefix, $action): void {
-                $query->where('resource_pattern', 'like', $this->escapeLike($resourcePrefix) . '%')
+                $query->where('resource_pattern', 'like', $this->escapeLike($resourcePrefix).'%')
                     ->where('action', $action)
                     ->where('effect', CapabilityCatalog::EFFECT_ALLOW);
             })
@@ -237,7 +236,7 @@ final class SdkAccessGrants implements AccessGrants
         $resource = trim($resource);
         $prefix = $this->context->resourcePrefix();
 
-        if (!str_starts_with($resource, $prefix) || strlen($resource) <= strlen($prefix)) {
+        if (! str_starts_with($resource, $prefix) || strlen($resource) <= strlen($prefix)) {
             throw new \InvalidArgumentException(
                 "Extension '{$this->context->id->value}' grants must target '{$prefix}…' resources, got '{$resource}'.",
             );

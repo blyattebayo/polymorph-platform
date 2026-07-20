@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Core\Exceptions;
 
+use Exception;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ErrorFactory;
 use Polymorph\Platform\Support\Errors\ErrorPayload;
-use Exception;
 
 /**
  * Исключение выбрасывается при попытке изменить readonly узел маршрута.
  * Декларативные и системные маршруты нельзя изменять.
- *
- * @package Polymorph\Platform\Domain\Routing\Exceptions
  */
 class ReadonlyRouteNodeException extends Exception implements ErrorConvertible
 {

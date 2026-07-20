@@ -15,8 +15,7 @@ final readonly class TemplateParsePipeline
         private TemplateLexer $lexer,
         private TemplateParser $parser,
         private ASTValidator $validator,
-    ) {
-    }
+    ) {}
 
     public function parseAndValidate(string $template): TemplateNode
     {
@@ -27,4 +26,3 @@ final readonly class TemplateParsePipeline
         return $ast;
     }
 }
-

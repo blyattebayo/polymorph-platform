@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Roles\Infrastructure\Repositories;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\AccessControl\Access\BuiltInRoleCatalog;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Assignment;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
@@ -13,9 +16,6 @@ use Polymorph\Platform\Domain\Roles\Core\Exceptions\RoleNotFoundException;
 use Polymorph\Platform\Domain\Roles\Core\Models\Role;
 use Polymorph\Platform\Domain\Roles\Core\Models\UserRoleAssignment;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Support\Facades\DB;
 
 final class EloquentRoleRepository implements RoleRepository
 {
@@ -99,7 +99,7 @@ final class EloquentRoleRepository implements RoleRepository
     }
 
     /**
-     * @param list<int> $roleIds
+     * @param  list<int>  $roleIds
      * @return EloquentCollection<int, Role>
      */
     private function findByIds(array $roleIds): EloquentCollection

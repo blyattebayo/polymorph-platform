@@ -13,8 +13,6 @@ use Illuminate\Http\UploadedFile;
  *
  * Определяет реальный MIME-тип файла по его сигнатурам и сравнивает
  * с заявленным типом. Защищает от подмены расширения файла.
- *
- * @package Polymorph\Platform\Domain\Media\Http\Rules
  */
 final class ValidMimeSignature implements ValidationRule
 {
@@ -53,20 +51,18 @@ final class ValidMimeSignature implements ValidationRule
     ];
 
     /**
-     * @param array<string> $allowedMimes Опциональный список допустимых MIME-типов
+     * @param  array<string>  $allowedMimes  Опциональный список допустимых MIME-типов
      */
     public function __construct(
         private readonly array $allowedMimes = []
-    ) {
-    }
+    ) {}
 
     /**
      * Выполнить валидацию файла.
      *
-     * @param string $attribute Имя атрибута (поля формы)
-     * @param mixed $value Значение для валидации
-     * @param Closure $fail Callback для регистрации ошибки валидации
-     * @return void
+     * @param  string  $attribute  Имя атрибута (поля формы)
+     * @param  mixed  $value  Значение для валидации
+     * @param  Closure  $fail  Callback для регистрации ошибки валидации
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
@@ -79,7 +75,8 @@ final class ValidMimeSignature implements ValidationRule
 
         // Проверка в белом списке (если задан)
         if (! empty($this->allowedMimes) && ! in_array($mime, $this->allowedMimes, true)) {
-            $fail("The {$attribute} must be a file of type: " . implode(', ', $this->allowedMimes) . '.');
+            $fail("The {$attribute} must be a file of type: ".implode(', ', $this->allowedMimes).'.');
+
             return;
         }
 
@@ -87,12 +84,14 @@ final class ValidMimeSignature implements ValidationRule
 
         if (! is_string($path) || ! is_file($path)) {
             $fail("The {$attribute} file cannot be read for validation.");
+
             return;
         }
 
         $handle = @fopen($path, 'rb');
         if ($handle === false) {
             $fail("The {$attribute} file cannot be opened for validation.");
+
             return;
         }
 
@@ -121,8 +120,8 @@ final class ValidMimeSignature implements ValidationRule
     /**
      * Прочитать сигнатуру файла.
      *
-     * @param resource $handle Файловый дескриптор
-     * @param string $mime MIME-тип для определения стратегии чтения
+     * @param  resource  $handle  Файловый дескриптор
+     * @param  string  $mime  MIME-тип для определения стратегии чтения
      * @return string Hex-строка сигнатуры
      */
     private function readSignature($handle, string $mime): string
@@ -177,8 +176,8 @@ final class ValidMimeSignature implements ValidationRule
     /**
      * Определить MIME-типы по сигнатуре.
      *
-     * @param string $signature Hex-строка сигнатуры
-     * @param string $path Путь к файлу (для дополнительных проверок)
+     * @param  string  $signature  Hex-строка сигнатуры
+     * @param  string  $path  Путь к файлу (для дополнительных проверок)
      * @return array<string> Массив возможных MIME-типов
      */
     private function detectMimeBySignature(string $signature, string $path): array

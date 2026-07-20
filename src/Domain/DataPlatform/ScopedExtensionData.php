@@ -21,12 +21,11 @@ final class ScopedExtensionData implements ExtensionData
     public function __construct(
         private readonly DataPlatform $platform,
         private readonly string $extensionId,
-    ) {
-    }
+    ) {}
 
     public function repository(string $entity, string $entityClass = Entity::class): Repository
     {
-        return $this->repositories[$entity . '|' . $entityClass]
+        return $this->repositories[$entity.'|'.$entityClass]
             ??= $this->platform->repository($this->extensionId, $entity, $entityClass);
     }
 }

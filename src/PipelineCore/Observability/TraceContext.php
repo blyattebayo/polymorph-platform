@@ -41,7 +41,7 @@ class TraceContext
 
     public function endStage(Stage $stage, bool $success): void
     {
-        if (!isset($this->stages[$stage->value])) {
+        if (! isset($this->stages[$stage->value])) {
             return;
         }
 
@@ -59,7 +59,7 @@ class TraceContext
 
     public function endStep(string $stepName): void
     {
-        if (!isset($this->steps[$stepName])) {
+        if (! isset($this->steps[$stepName])) {
             return;
         }
 
@@ -101,6 +101,7 @@ class TraceContext
     public function getDurationMs(): float
     {
         $end = $this->endTime ?? microtime(true);
+
         return ($end - $this->startTime) * 1000;
     }
 

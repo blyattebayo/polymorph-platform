@@ -5,25 +5,23 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\SchemaModelValidation\DslValidation;
 
 use Polymorph\Platform\Domain\Records\Support\RecordPayloadPathRegistry;
+use Polymorph\Platform\Domain\SchemaModelValidation\Dsl\DslOperator;
 use Polymorph\Platform\Domain\SchemaModelValidation\Operands\DslOperandResolver;
 use Polymorph\Platform\Domain\SchemaModelValidation\Schema\SchemaDescriptor;
 
 final class DslValidator
 {
-    private const OPERATORS = ['==', '!=', '>', '<', '>=', '<='];
     private const QUANTIFIER_TYPES = ['all', 'any', 'count'];
+
     private const COLLECTION_MODES = ['all', 'any'];
 
     public function __construct(
         private readonly DslOperandResolver $operandResolver,
     ) {}
 
-    /**
-     * @param mixed $validationRules
-     */
     public function validate(mixed $validationRules, SchemaDescriptor $schemaDescriptor, string $currentFieldFullPath): DslValidationResult
     {
-        $result = new DslValidationResult();
+        $result = new DslValidationResult;
 
         if ($validationRules === null) {
             return $result;
@@ -31,11 +29,13 @@ final class DslValidator
 
         if (! is_array($validationRules)) {
             $result->addError('validation_rules', 'validation_rules must be an object-like map.');
+
             return $result;
         }
 
         if (array_is_list($validationRules)) {
             $result->addError('validation_rules', 'validation_rules must be an object-like map, list format is not supported.');
+
             return $result;
         }
 
@@ -56,12 +56,13 @@ final class DslValidator
 
         if (! is_array($config)) {
             $result->addError('validation_rules.field_comparison', 'field_comparison must be an object.');
+
             return;
         }
 
         $operator = $config['operator'] ?? null;
-        if ($operator !== null && (! is_string($operator) || ! in_array($operator, self::OPERATORS, true))) {
-            $result->addError('validation_rules.field_comparison.operator', 'field_comparison.operator must be one of: ' . implode(', ', self::OPERATORS));
+        if ($operator !== null && (! is_string($operator) || ! in_array($operator, DslOperator::values(), true))) {
+            $result->addError('validation_rules.field_comparison.operator', 'field_comparison.operator must be one of: '.implode(', ', DslOperator::values()));
         }
 
         $hasField = is_string($config['field'] ?? null) && trim((string) $config['field']) !== '';
@@ -90,18 +91,20 @@ final class DslValidator
 
         if (! is_array($config)) {
             $result->addError('validation_rules.required_if', 'required_if must be an object.');
+
             return;
         }
 
         $field = $config['field'] ?? null;
         if (! is_string($field) || trim($field) === '') {
             $result->addError('validation_rules.required_if.field', 'required_if.field must be a non-empty string operand.');
+
             return;
         }
 
         $operator = $config['operator'] ?? null;
-        if ($operator !== null && (! is_string($operator) || ! in_array($operator, self::OPERATORS, true))) {
-            $result->addError('validation_rules.required_if.operator', 'required_if.operator must be one of: ' . implode(', ', self::OPERATORS));
+        if ($operator !== null && (! is_string($operator) || ! in_array($operator, DslOperator::values(), true))) {
+            $result->addError('validation_rules.required_if.operator', 'required_if.operator must be one of: '.implode(', ', DslOperator::values()));
         }
 
         $this->validateOperandReference($field, $currentFieldFullPath, $schemaDescriptor, 'validation_rules.required_if.field', $result);
@@ -123,12 +126,14 @@ final class DslValidator
 
         if (! is_array($config)) {
             $result->addError('validation_rules.unique_by', 'unique_by must be a string or an object/list of keys.');
+
             return;
         }
 
         $rawKeys = $config['keys'] ?? $config;
         if (! is_array($rawKeys) || $rawKeys === []) {
             $result->addError('validation_rules.unique_by.keys', 'unique_by.keys must contain at least one key.');
+
             return;
         }
 
@@ -147,23 +152,25 @@ final class DslValidator
 
         if (! is_array($config)) {
             $result->addError('validation_rules.quantifier', 'quantifier must be an object.');
+
             return;
         }
 
         $left = $config['left'] ?? null;
         if (! is_string($left) || trim($left) === '') {
             $result->addError('validation_rules.quantifier.left', 'quantifier.left must be a non-empty string operand.');
+
             return;
         }
 
         $type = $config['type'] ?? null;
         if ($type !== null && (! is_string($type) || ! in_array($type, self::QUANTIFIER_TYPES, true))) {
-            $result->addError('validation_rules.quantifier.type', 'quantifier.type must be one of: ' . implode(', ', self::QUANTIFIER_TYPES));
+            $result->addError('validation_rules.quantifier.type', 'quantifier.type must be one of: '.implode(', ', self::QUANTIFIER_TYPES));
         }
 
         $operator = $config['operator'] ?? null;
-        if ($operator !== null && (! is_string($operator) || ! in_array($operator, self::OPERATORS, true))) {
-            $result->addError('validation_rules.quantifier.operator', 'quantifier.operator must be one of: ' . implode(', ', self::OPERATORS));
+        if ($operator !== null && (! is_string($operator) || ! in_array($operator, DslOperator::values(), true))) {
+            $result->addError('validation_rules.quantifier.operator', 'quantifier.operator must be one of: '.implode(', ', DslOperator::values()));
         }
 
         if (array_key_exists('right', $config) && ! is_string($config['right'])) {
@@ -191,6 +198,7 @@ final class DslValidator
 
         if (! is_array($config)) {
             $result->addError('validation_rules.in_collection', 'in_collection must be an object.');
+
             return;
         }
 
@@ -212,7 +220,7 @@ final class DslValidator
 
         $mode = $config['mode'] ?? null;
         if ($mode !== null && (! is_string($mode) || ! in_array($mode, self::COLLECTION_MODES, true))) {
-            $result->addError('validation_rules.in_collection.mode', 'in_collection.mode must be one of: ' . implode(', ', self::COLLECTION_MODES));
+            $result->addError('validation_rules.in_collection.mode', 'in_collection.mode must be one of: '.implode(', ', self::COLLECTION_MODES));
         }
 
         if (is_string($source)) {

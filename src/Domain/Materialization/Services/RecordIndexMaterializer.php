@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Materialization\Services;
 
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\Materialization\Support\RecordIndexNameBuilder;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use Polymorph\Platform\Domain\Records\Query\RecordFieldSqlExpression;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
-use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Support\Validation\ValidationConstraints;
 
 /**
@@ -29,7 +29,7 @@ final class RecordIndexMaterializer
     /** Синхронизировать индексы всех определений схемы (поля схемо-скоупны). */
     public function syncSchema(int $schemaId, bool $concurrent = true): void
     {
-        if (!$this->supported()) {
+        if (! $this->supported()) {
             return;
         }
 
@@ -45,7 +45,7 @@ final class RecordIndexMaterializer
     /** Синхронизировать индексы одного определения. */
     public function syncDefinition(int $definitionId, ?int $schemaId = null, bool $concurrent = true): void
     {
-        if (!$this->supported()) {
+        if (! $this->supported()) {
             return;
         }
 
@@ -69,17 +69,17 @@ final class RecordIndexMaterializer
      */
     public function invalidIndexes(): array
     {
-        if (!$this->supported()) {
+        if (! $this->supported()) {
             return [];
         }
 
         $rows = DB::select(
             'SELECT c.relname AS name '
-            . 'FROM pg_class c '
-            . 'JOIN pg_index i ON i.indexrelid = c.oid '
-            . 'JOIN pg_class t ON t.oid = i.indrelid '
-            . "WHERE t.relname = 'records' AND i.indisvalid = false "
-            . "AND (c.relname LIKE 'idx_reca\_%' OR c.relname LIKE 'idx_recf\_%' OR c.relname LIKE 'uq_recf\_%')",
+            .'FROM pg_class c '
+            .'JOIN pg_index i ON i.indexrelid = c.oid '
+            .'JOIN pg_class t ON t.oid = i.indrelid '
+            ."WHERE t.relname = 'records' AND i.indisvalid = false "
+            ."AND (c.relname LIKE 'idx_reca\_%' OR c.relname LIKE 'idx_recf\_%' OR c.relname LIKE 'uq_recf\_%')",
         );
 
         $result = [];
@@ -102,21 +102,22 @@ final class RecordIndexMaterializer
         // затем создаём заново; иначе stale-invalid индекс висит вечно (и для unique блокирует запись).
         $existing = [];
         foreach ($this->existingIndexes($definitionId) as $name => $valid) {
-            if (!$valid) {
+            if (! $valid) {
                 $this->run($this->dropIndexSql($name, $concurrent));
+
                 continue;
             }
             $existing[] = $name;
         }
 
         foreach ($desired as $name => $sql) {
-            if (!in_array($name, $existing, true)) {
+            if (! in_array($name, $existing, true)) {
                 $this->run($sql);
             }
         }
 
         foreach ($existing as $name) {
-            if (!isset($desired[$name])) {
+            if (! isset($desired[$name])) {
                 $this->run($this->dropIndexSql($name, $concurrent));
             }
         }
@@ -145,7 +146,7 @@ final class RecordIndexMaterializer
 
         foreach ($fields as $field) {
             $name = (string) $field->full_path;
-            if (!ValidationConstraints::slug()->matches($name)) {
+            if (! ValidationConstraints::slug()->matches($name)) {
                 continue;
             }
             if ($field->type->isContainer()) {
@@ -161,10 +162,11 @@ final class RecordIndexMaterializer
                 $expr = RecordFieldSqlExpression::indexExpression($name, $cast);
                 $desired[$uniqueName] =
                     "{$createUniqueKeyword} IF NOT EXISTS {$uniqueName} ON records {$expr} {$predicate}";
+
                 continue;
             }
 
-            if (!$field->is_indexed) {
+            if (! $field->is_indexed) {
                 continue;
             }
 
@@ -185,11 +187,11 @@ final class RecordIndexMaterializer
     {
         $rows = DB::select(
             'SELECT c.relname AS name, i.indisvalid AS valid '
-            . 'FROM pg_class c '
-            . 'JOIN pg_index i ON i.indexrelid = c.oid '
-            . 'JOIN pg_class t ON t.oid = i.indrelid '
-            . "WHERE t.relname = 'records' "
-            . 'AND (c.relname = ? OR c.relname LIKE ? OR c.relname LIKE ?)',
+            .'FROM pg_class c '
+            .'JOIN pg_index i ON i.indexrelid = c.oid '
+            .'JOIN pg_class t ON t.oid = i.indrelid '
+            ."WHERE t.relname = 'records' "
+            .'AND (c.relname = ? OR c.relname LIKE ? OR c.relname LIKE ?)',
             ["idx_reca_{$definitionId}", "idx_recf_{$definitionId}\_%", "uq_recf_{$definitionId}\_%"],
         );
 
@@ -216,7 +218,7 @@ final class RecordIndexMaterializer
     }
 
     /**
-     * @param callable():void $callback
+     * @param  callable():void  $callback
      */
     private function withDefinitionLock(int $definitionId, callable $callback): void
     {

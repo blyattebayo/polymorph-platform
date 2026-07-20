@@ -9,18 +9,13 @@ namespace Polymorph\Platform\Domain\Media\Services\Metadata\Plugins;
  *
  * Использует mediainfo для извлечения метаданных видео/аудио файлов
  * с более детальной информацией, чем ffprobe (например, для некоторых форматов).
- *
- * @package Polymorph\Platform\Domain\Media\Services
  */
 class MediainfoMediaMetadataPlugin implements MediaMetadataPlugin
 {
-    /**
-     * @var string
-     */
     private string $binary;
 
     /**
-     * @param string|null $binary Путь к бинарнику mediainfo (по умолчанию 'mediainfo')
+     * @param  string|null  $binary  Путь к бинарнику mediainfo (по умолчанию 'mediainfo')
      */
     public function __construct(?string $binary = null)
     {
@@ -30,7 +25,7 @@ class MediainfoMediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Проверить, поддерживает ли плагин указанный MIME-тип.
      *
-     * @param string $mime MIME-тип файла
+     * @param  string  $mime  MIME-тип файла
      * @return bool true, если плагин может обработать файл
      */
     public function supports(string $mime): bool
@@ -41,7 +36,7 @@ class MediainfoMediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Извлечь нормализованные метаданные из файла.
      *
-     * @param string $path Абсолютный путь к файлу
+     * @param  string  $path  Абсолютный путь к файлу
      * @return array{
      *     duration_ms?: int|null,
      *     bitrate_kbps?: int|null,
@@ -81,8 +76,7 @@ class MediainfoMediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Выполнить команду оболочки и вернуть stdout или null при ошибке.
      *
-     * @param string $command Команда для выполнения
-     * @return string|null
+     * @param  string  $command  Команда для выполнения
      */
     protected function runCommand(string $command): ?string
     {
@@ -118,7 +112,7 @@ class MediainfoMediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Нормализовать структуру mediainfo JSON в плоский массив значений.
      *
-     * @param array<string, mixed> $data Данные mediainfo
+     * @param  array<string, mixed>  $data  Данные mediainfo
      * @return array{
      *     duration_ms?: int|null,
      *     bitrate_kbps?: int|null,
@@ -173,7 +167,7 @@ class MediainfoMediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Распарсить длительность из строки вида "123.456" или "2mn 3s".
      *
-     * @param mixed $value Значение длительности
+     * @param  mixed  $value  Значение длительности
      * @return int|null Длительность в миллисекундах
      */
     private function parseDuration(mixed $value): ?int
@@ -202,7 +196,7 @@ class MediainfoMediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Распарсить битрейт из строки вида "1234567" или "1234 kbps".
      *
-     * @param mixed $value Значение битрейта
+     * @param  mixed  $value  Значение битрейта
      * @return int|null Битрейт в килобитах в секунду
      */
     private function parseBitrate(mixed $value): ?int
@@ -231,8 +225,7 @@ class MediainfoMediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Распарсить частоту кадров из строки вида "25.000" или "30000/1001".
      *
-     * @param mixed $value Значение частоты кадров
-     * @return float|null
+     * @param  mixed  $value  Значение частоты кадров
      */
     private function parseFrameRate(mixed $value): ?float
     {
@@ -258,8 +251,7 @@ class MediainfoMediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Распарсить строковое значение.
      *
-     * @param mixed $value Значение
-     * @return string|null
+     * @param  mixed  $value  Значение
      */
     private function parseString(mixed $value): ?string
     {
@@ -269,8 +261,7 @@ class MediainfoMediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Распарсить целочисленное значение.
      *
-     * @param mixed $value Значение
-     * @return int|null
+     * @param  mixed  $value  Значение
      */
     private function parseInt(mixed $value): ?int
     {
@@ -285,4 +276,3 @@ class MediainfoMediaMetadataPlugin implements MediaMetadataPlugin
         return null;
     }
 }
-

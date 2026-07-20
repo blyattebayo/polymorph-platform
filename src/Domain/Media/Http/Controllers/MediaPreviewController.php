@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Http\Controllers;
 
+use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Polymorph\Platform\Domain\Media\Core\Contracts\MediaRepository;
 use Polymorph\Platform\Domain\Media\Core\Exceptions\MediaNotFoundException;
 use Polymorph\Platform\Domain\Media\Core\Exceptions\MediaStorageException;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Domain\Media\Services\OnDemandVariantService;
 use Polymorph\Platform\Http\Controllers\Controller;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
@@ -23,10 +24,10 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  * и админских запросов. Для админов поддерживает доступ к удаленным файлам (withTrashed).
  * Для публичных запросов доступны только активные (не удаленные) файлы.
  */
-class MediaPreviewController extends Controller
+final class MediaPreviewController extends Controller
 {
     /**
-     * @param  \Polymorph\Platform\Domain\Media\Services\OnDemandVariantService  $variantService  Сервис для генерации вариантов
+     * @param  OnDemandVariantService  $variantService  Сервис для генерации вариантов
      */
     public function __construct(
         private readonly OnDemandVariantService $variantService,
@@ -105,7 +106,7 @@ class MediaPreviewController extends Controller
      *   "trace_id": "00-0b0b0b0bb7cb6c30033f3f5e0b0b0b04-0b0b0b0bb7cb6c30-01"
      * }
      *
-     * @param  \Illuminate\Http\Request  $request  HTTP запрос
+     * @param  Request  $request  HTTP запрос
      * @param  string  $id  ULID идентификатор медиа-файла
      */
     public function show(Request $request, string $id): RedirectResponse|BinaryFileResponse
@@ -143,7 +144,7 @@ class MediaPreviewController extends Controller
      * Генерирует или возвращает существующий вариант изображения (thumbnail, medium, large).
      * Для админов поддерживает доступ к удаленным файлам.
      *
-     * @param  \Polymorph\Platform\Domain\Media\Core\Models\Media  $media  Медиа-файл
+     * @param  Media  $media  Медиа-файл
      * @param  string  $variant  Имя варианта
      */
     private function serveVariant(Media $media, string $variant): RedirectResponse|BinaryFileResponse
@@ -168,7 +169,7 @@ class MediaPreviewController extends Controller
      * @param  string  $mimeType  MIME-тип файла для установки Content-Type
      * @param  bool  $isAdmin  Является ли запрос админским
      *
-     * @throws \Polymorph\Platform\Domain\Media\Core\Exceptions\MediaStorageException Если не удалось создать URL или файл не найден
+     * @throws MediaStorageException Если не удалось создать URL или файл не найден
      */
     private function serveFile(string $diskName, string $path, string $mimeType, bool $isAdmin): RedirectResponse|BinaryFileResponse
     {
@@ -204,7 +205,7 @@ class MediaPreviewController extends Controller
 
         // Для облачных дисков используем подписанный URL
         try {
-            /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+            /** @var FilesystemAdapter $disk */
             $url = $disk->temporaryUrl($path, $expiry);
 
             return redirect()->away($url)->withHeaders([
@@ -213,7 +214,7 @@ class MediaPreviewController extends Controller
             ]);
         } catch (\Throwable) {
             // Fallback на обычный URL для облачных дисков
-            /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+            /** @var FilesystemAdapter $disk */
             $url = $disk->url($path);
 
             if (! $url) {
@@ -235,7 +236,7 @@ class MediaPreviewController extends Controller
      * пользователя при наличии валидного access-токена.
      * Это позволяет админам получать доступ к удаленным файлам даже на публичных эндпоинтах.
      *
-     * @param  \Illuminate\Http\Request  $request  HTTP запрос
+     * @param  Request  $request  HTTP запрос
      * @return bool true, если запрос от админа
      */
     private function isAdminRequest(Request $request): bool

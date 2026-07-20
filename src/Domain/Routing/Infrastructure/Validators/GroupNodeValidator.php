@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Infrastructure\Validators;
 
-use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeKind;
+use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
  * Валидатор правил для узлов типа GROUP.
@@ -12,8 +12,6 @@ use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeKind;
  * Строит правила валидации для узлов с kind='group'.
  * Группы маршрутов могут иметь: prefix, domain, namespace, middleware, where, children.
  * Группы НЕ могут иметь: uri, methods, name, action_type, action_meta.
- *
- * @package Polymorph\Platform\Domain\Routing\Validators
  */
 final class GroupNodeValidator implements ValidatorInterface
 {
@@ -27,9 +25,9 @@ final class GroupNodeValidator implements ValidatorInterface
      * - middleware: nullable, array
      * - where: nullable, array
      * - children: nullable, array (для будущей поддержки)
-    * - Запретить: uri, methods, name, action_type, action_meta
+     * - Запретить: uri, methods, name, action_type, action_meta
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function buildRulesForStore(): array
     {
@@ -54,9 +52,9 @@ final class GroupNodeValidator implements ValidatorInterface
      * - middleware: sometimes, nullable, array
      * - where: sometimes, nullable, array
      * - children: sometimes, nullable, array
-    * - Запретить: uri, methods, name, action_type, action_meta
+     * - Запретить: uri, methods, name, action_type, action_meta
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function buildRulesForUpdate(): array
     {

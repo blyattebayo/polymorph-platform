@@ -48,7 +48,7 @@ final class JwtCredentialAuthenticator
             );
         } catch (JwtConfigurationException $exception) {
             throw $exception;
-        } catch (JwtVerificationException | \UnexpectedValueException | \InvalidArgumentException | \DomainException) {
+        } catch (JwtVerificationException|\UnexpectedValueException|\InvalidArgumentException|\DomainException) {
             // Невалидный/просроченный/повреждённый токен: ExpiredException,
             // SignatureInvalidException, BeforeValidException (все наследуют
             // \UnexpectedValueException) + ошибки декодирования Firebase JWT.

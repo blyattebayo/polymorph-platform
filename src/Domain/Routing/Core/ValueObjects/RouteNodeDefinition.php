@@ -20,13 +20,13 @@ use Polymorph\Platform\Domain\Routing\Core\Models\RouteNode;
 final readonly class RouteNodeDefinition
 {
     /**
-     * @param list<string> $methods
-     * @param array<string, mixed> $actionMeta
-     * @param list<string> $middleware
-     * @param array<string, string> $where
-     * @param array<string, mixed> $defaults
-     * @param list<RouteNodeDefinition> $children
-     * @param int|null $sourceId id исходной записи (для логов), null для in-memory
+     * @param  list<string>  $methods
+     * @param  array<string, mixed>  $actionMeta
+     * @param  list<string>  $middleware
+     * @param  array<string, string>  $where
+     * @param  array<string, mixed>  $defaults
+     * @param  list<RouteNodeDefinition>  $children
+     * @param  int|null  $sourceId  id исходной записи (для логов), null для in-memory
      */
     public function __construct(
         public RouteNodeKind $kind,

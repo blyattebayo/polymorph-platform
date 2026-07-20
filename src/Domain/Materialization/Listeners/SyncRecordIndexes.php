@@ -17,8 +17,7 @@ final class SyncRecordIndexes
 {
     public function __construct(
         private readonly RecordIndexSyncScheduler $scheduler,
-    ) {
-    }
+    ) {}
 
     public function handleSchemaChange(SchemaChangeEvent $event): void
     {

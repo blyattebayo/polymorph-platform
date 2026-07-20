@@ -17,6 +17,7 @@ use Throwable;
 class MediaProcessingException extends RuntimeException implements ErrorConvertible
 {
     private ?string $mediaId = null;
+
     private ?string $processingStage = null;
 
     /**
@@ -26,6 +27,7 @@ class MediaProcessingException extends RuntimeException implements ErrorConverti
     {
         $exception = new self("Media processing failed for ID '{$mediaId}': {$message}", 0, $previous);
         $exception->mediaId = $mediaId;
+
         return $exception;
     }
 
@@ -36,6 +38,7 @@ class MediaProcessingException extends RuntimeException implements ErrorConverti
     {
         $exception = new self("Media processing failed at stage '{$stage}': {$message}", 0, $previous);
         $exception->processingStage = $stage;
+
         return $exception;
     }
 

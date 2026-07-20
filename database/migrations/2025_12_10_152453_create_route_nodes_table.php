@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\Schema;
  * Системные и плагинные маршруты declarative — грузятся из файлов в память
  * на boot и в эту таблицу не пишутся.
  */
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Выполнить миграцию.
      */
@@ -21,50 +22,50 @@ return new class extends Migration {
     {
         Schema::create('route_nodes', function (Blueprint $table): void {
             $table->id();
-            
+
             // Self-relation для иерархии
             $table->foreignId('parent_id')->nullable()
                 ->constrained('route_nodes')->restrictOnDelete();
-            
+
             // Сортировка и состояние
             $table->unsignedInteger('sort_order')->default(0);
             $table->boolean('enabled')->default(true)->index();
             $table->boolean('readonly')->default(false)->index(); // Защита от изменения декларативных маршрутов
-            
+
             // Владение и аудит
             $table->string('owner')->default('client')->index(); // только client (создаётся через админку)
             $table->unsignedBigInteger('created_by_user_id')->nullable();
             $table->unsignedBigInteger('updated_by_user_id')->nullable();
-            
+
             // Тип узла
             $table->enum('kind', ['group', 'route'])->index();
-            
+
             // Настройки маршрута/группы
             $table->string('name')->nullable(); // Имя маршрута (Route::name())
             $table->string('domain')->nullable(); // Домен для маршрута
             $table->string('prefix')->nullable(); // Префикс URI для группы
             $table->string('namespace')->nullable(); // Namespace контроллеров для группы
-            
+
             // HTTP методы и URI (только для kind='route')
             $table->json('methods')->nullable(); // ['GET', 'POST', ...]
             $table->string('uri')->nullable(); // URI паттерн маршрута
-            
+
             // Тип действия и метаданные действия
             $table->enum('action_type', ['controller', 'view', 'redirect'])->index();
             $table->json('action_meta')->nullable(); // Метаданные действия в зависимости от action_type
-            
+
             // Дополнительные настройки
             $table->json('middleware')->nullable(); // ['web', 'auth', ...]
             $table->json('where')->nullable(); // {"id": "[0-9]+", ...}
             $table->json('defaults')->nullable(); // {"key": "value", ...}
-            
+
             $table->timestamps();
             $table->softDeletes();
-            
+
             // Foreign keys для аудита
             $table->foreign('created_by_user_id')->references('id')->on('users')->nullOnDelete();
             $table->foreign('updated_by_user_id')->references('id')->on('users')->nullOnDelete();
-            
+
             // Составной индекс для эффективной загрузки дерева с сортировкой
             $table->index(['parent_id', 'sort_order'], 'route_nodes_parent_sort_idx');
         });

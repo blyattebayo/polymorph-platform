@@ -7,17 +7,16 @@ namespace Polymorph\Platform\Domain\AccessControl\Core\ValueObjects;
 final readonly class Decision
 {
     /**
-     * @param list<int> $matchedPolicyIds
+     * @param  list<int>  $matchedPolicyIds
      */
     public function __construct(
         private bool $allowed,
         private string $reason,
         private array $matchedPolicyIds = [],
-    ) {
-    }
+    ) {}
 
     /**
-     * @param list<int> $matchedPolicyIds
+     * @param  list<int>  $matchedPolicyIds
      */
     public static function allow(
         string $reason = 'explicit_allow',
@@ -27,7 +26,7 @@ final readonly class Decision
     }
 
     /**
-     * @param list<int> $matchedPolicyIds
+     * @param  list<int>  $matchedPolicyIds
      */
     public static function deny(
         string $reason = 'explicit_deny',

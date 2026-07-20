@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Services;
 
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Polymorph\Platform\Domain\Routing\Core\Enums\OwnerType;
 use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeKind;
 use Polymorph\Platform\Domain\Routing\Core\Exceptions\ReadonlyRouteNodeException;
@@ -17,9 +21,6 @@ use Polymorph\Platform\Domain\Routing\Infrastructure\Repositories\ClientRouteRep
 use Polymorph\Platform\Domain\Routing\Infrastructure\Repositories\SystemRouteRepository;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Validators\RouteValidator;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class RouteNodeService implements RouteNodeServiceInterface
 {
@@ -198,7 +199,7 @@ class RouteNodeService implements RouteNodeServiceInterface
         return $updated;
     }
 
-    public function getTree(bool $enabledOnly = true): \Illuminate\Support\Collection
+    public function getTree(bool $enabledOnly = true): Collection
     {
         return $this->repository->eloquentTree($enabledOnly);
     }

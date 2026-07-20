@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\PipelineCore\Runtime;
 
-use Polymorph\Platform\PipelineCore\Locking\LockManager;
 use Polymorph\Platform\PipelineCore\Locking\LockKey;
+use Polymorph\Platform\PipelineCore\Locking\LockManager;
 use Polymorph\Platform\PipelineCore\Observability\OperationId;
 use Polymorph\Platform\PipelineCore\Observability\PipelineLogger;
 use Polymorph\Platform\PipelineCore\Observability\PipelineTracer;
@@ -21,14 +21,12 @@ class PipelineExecutor
 
     /**
      * Исполнить пайплайн БЕЗ транзакции
-     * 
+     *
      * ⚠️ Handler/use-case сам решает, оборачивать ли в транзакцию
-     * 
-     * @param PipelineDefinition $definition
-     * @param object $context Типизированный контекст (EntryWriteContext, etc.)
-     * @param OperationId $operationId Для трассировки
-     * @param LockKey|null $lockKey Ключ блокировки (если null, берётся из context)
-     * @return PipelineResult
+     *
+     * @param  object  $context  Типизированный контекст (EntryWriteContext, etc.)
+     * @param  OperationId  $operationId  Для трассировки
+     * @param  LockKey|null  $lockKey  Ключ блокировки (если null, берётся из context)
      */
     public function execute(
         PipelineDefinition $definition,
@@ -62,8 +60,8 @@ class PipelineExecutor
                     trace: $trace,
                 );
 
-                if (!$stageResult->success) {
-                    if (!$stage->isBlocking()) {
+                if (! $stageResult->success) {
+                    if (! $stage->isBlocking()) {
                         $warnings[$stage->value] = $stageResult;
                         $stageResults[$stage->value] = $stageResult;
 
@@ -141,7 +139,7 @@ class PipelineExecutor
 
         foreach ($steps as $step) {
             $expectedContextClass = $step->contextClass();
-            if (!$context instanceof $expectedContextClass) {
+            if (! $context instanceof $expectedContextClass) {
                 throw new \LogicException(sprintf(
                     "Step '%s' expects context '%s', got '%s'",
                     $step->name(),
@@ -150,11 +148,12 @@ class PipelineExecutor
                 ));
             }
 
-            if (!$step->shouldRun($context)) {
+            if (! $step->shouldRun($context)) {
                 $this->logger->debug('Step skipped', [
                     'step' => $step->name(),
                     'stage' => $stage->value,
                 ]);
+
                 continue;
             }
 
@@ -167,13 +166,13 @@ class PipelineExecutor
 
             $stepResults[$step->name()] = $result;
 
-            if (!$result->success) {
+            if (! $result->success) {
                 $this->logger->warning('Step failed', [
                     'step' => $step->name(),
                     'stage' => $stage->value,
                     'error' => $result->errorMessage,
                     'cause' => $result->cause !== null
-                        ? $result->cause::class . ': ' . $result->cause->getMessage()
+                        ? $result->cause::class.': '.$result->cause->getMessage()
                         : null,
                 ]);
 

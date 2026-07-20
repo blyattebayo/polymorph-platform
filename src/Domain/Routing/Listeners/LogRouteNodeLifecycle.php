@@ -20,8 +20,7 @@ final class LogRouteNodeLifecycle
 {
     public function __construct(
         private readonly AppLogger $logger,
-    ) {
-    }
+    ) {}
 
     public function handleCreated(RouteNodeCreated $event): void
     {

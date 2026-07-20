@@ -10,6 +10,5 @@ declare(strict_types=1);
  * Должен совпадать с SecretRedactor::DEFAULT_SENSITIVE_KEY_PATTERN (standalone-фолбэк).
  */
 return [
-    'sensitive_key_pattern' =>
-        '/(^|[_-])(password|passwd|secret|token|authorization|cookie|api[_-]?key|private[_-]?key|code[_-]?verifier|device[_-]?code|user[_-]?code)([_-]|$)/i',
+    'sensitive_key_pattern' => '/(^|[_-])(password|passwd|secret|token|authorization|cookie|api[_-]?key|private[_-]?key|code[_-]?verifier|device[_-]?code|user[_-]?code)([_-]|$)/i',
 ];

@@ -9,8 +9,8 @@ use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\ValidationRules;
 final readonly class UpdateFieldData
 {
     /**
-     * @param array<string, mixed>|null $metadata
-     * @param array<string, mixed>|null $constraints
+     * @param  array<string, mixed>|null  $metadata
+     * @param  array<string, mixed>|null  $constraints
      */
     public function __construct(
         public int $fieldId,
@@ -29,7 +29,7 @@ final readonly class UpdateFieldData
     ) {}
 
     /**
-     * @param array<string, mixed> $item
+     * @param  array<string, mixed>  $item
      */
     public static function fromArray(array $item): self
     {

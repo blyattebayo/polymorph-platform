@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Polymorph\Platform\Http\Middleware;
 
+use Closure;
+use Illuminate\Http\Request;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ErrorFactory;
 use Polymorph\Platform\Support\Errors\HttpErrorException;
-use Closure;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -68,10 +70,10 @@ final class VerifyApiCsrf
 
     private function isAllowedOrigin(string $value): bool
     {
-        $origin = parse_url($value, PHP_URL_SCHEME) . '://' . parse_url($value, PHP_URL_HOST);
+        $origin = parse_url($value, PHP_URL_SCHEME).'://'.parse_url($value, PHP_URL_HOST);
         $port = parse_url($value, PHP_URL_PORT);
         if (is_int($port)) {
-            $origin .= ':' . $port;
+            $origin .= ':'.$port;
         }
 
         $allowedOrigins = (array) config('security.csrf.allowed_origins', []);

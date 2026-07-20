@@ -21,6 +21,6 @@ final class DotPrefixResourceMatcher implements ResourceMatcher
             return true;
         }
 
-        return str_starts_with($normalizedResource, $normalizedPattern . '.');
+        return str_starts_with($normalizedResource, $normalizedPattern.'.');
     }
 }

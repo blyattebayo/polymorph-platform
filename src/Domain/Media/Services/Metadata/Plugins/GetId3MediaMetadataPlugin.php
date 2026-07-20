@@ -9,8 +9,6 @@ namespace Polymorph\Platform\Domain\Media\Services\Metadata\Plugins;
  *
  * Использует getID3 для извлечения метаданных видео/аудио файлов.
  * getID3 - это чистая PHP библиотека, не требующая внешних утилит.
- *
- * @package Polymorph\Platform\Domain\Media\Services
  */
 class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
 {
@@ -34,17 +32,17 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
     private \getID3 $getID3;
 
     /**
-     * @param \getID3|null $getID3 Экземпляр getID3 (если не указан, создаётся новый)
+     * @param  \getID3|null  $getID3  Экземпляр getID3 (если не указан, создаётся новый)
      */
     public function __construct(?\getID3 $getID3 = null)
     {
-        $this->getID3 = $getID3 ?? new \getID3();
+        $this->getID3 = $getID3 ?? new \getID3;
     }
 
     /**
      * Проверить, поддерживает ли плагин указанный MIME-тип.
      *
-     * @param string $mime MIME-тип файла
+     * @param  string  $mime  MIME-тип файла
      * @return bool true, если плагин может обработать файл
      */
     public function supports(string $mime): bool
@@ -55,7 +53,7 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Извлечь нормализованные метаданные из файла.
      *
-     * @param string $path Абсолютный путь к файлу
+     * @param  string  $path  Абсолютный путь к файлу
      * @return array{
      *     duration_ms?: int|null,
      *     bitrate_kbps?: int|null,
@@ -87,7 +85,7 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Нормализовать структуру getID3 в плоский массив значений.
      *
-     * @param array<string, mixed> $data Данные getID3
+     * @param  array<string, mixed>  $data  Данные getID3
      * @return array{
      *     duration_ms?: int|null,
      *     bitrate_kbps?: int|null,
@@ -119,7 +117,7 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Извлечь длительность в миллисекундах.
      *
-     * @param array<string, mixed> $data Данные getID3
+     * @param  array<string, mixed>  $data  Данные getID3
      * @return int|null Длительность в миллисекундах или null
      */
     private function extractDuration(array $data): ?int
@@ -148,7 +146,7 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Извлечь битрейт в килобитах в секунду.
      *
-     * @param array<string, mixed> $data Данные getID3
+     * @param  array<string, mixed>  $data  Данные getID3
      * @return int|null Битрейт в кбит/с или null
      */
     private function extractBitrate(array $data): ?int
@@ -177,7 +175,7 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Извлечь частоту кадров.
      *
-     * @param array<string, mixed> $data Данные getID3
+     * @param  array<string, mixed>  $data  Данные getID3
      * @return float|null Частота кадров или null
      */
     private function extractFrameRate(array $data): ?float
@@ -199,7 +197,7 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Извлечь видео-кодек.
      *
-     * @param array<string, mixed> $data Данные getID3
+     * @param  array<string, mixed>  $data  Данные getID3
      * @return string|null Название видео-кодека или null
      */
     private function extractVideoCodec(array $data): ?string
@@ -230,7 +228,7 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Извлечь аудио-кодек.
      *
-     * @param array<string, mixed> $data Данные getID3
+     * @param  array<string, mixed>  $data  Данные getID3
      * @return string|null Название аудио-кодека или null
      */
     private function extractAudioCodec(array $data): ?string
@@ -248,9 +246,9 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
      *
      * Если не найдено напрямую, вычисляется из длительности и частоты кадров.
      *
-     * @param array<string, mixed> $data Данные getID3
-     * @param int|null $durationMs Длительность в миллисекундах
-     * @param float|null $frameRate Частота кадров
+     * @param  array<string, mixed>  $data  Данные getID3
+     * @param  int|null  $durationMs  Длительность в миллисекундах
+     * @param  float|null  $frameRate  Частота кадров
      * @return int|null Количество кадров или null
      */
     private function extractFrameCount(array $data, ?int $durationMs, ?float $frameRate): ?int
@@ -272,8 +270,8 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Извлечь строковое значение из массива по приоритетным полям.
      *
-     * @param array<string, mixed> $data Массив данных
-     * @param array<int, string> $fields Приоритетные поля для проверки
+     * @param  array<string, mixed>  $data  Массив данных
+     * @param  array<int, string>  $fields  Приоритетные поля для проверки
      * @return string|null Первое найденное непустое строковое значение или null
      */
     private function extractStringFromFields(array $data, array $fields): ?string
@@ -291,8 +289,8 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Извлечь строковое значение из вложенного массива по пути ключей.
      *
-     * @param array<string, mixed> $data Массив данных
-     * @param string ...$keys Путь к значению (ключи через точку)
+     * @param  array<string, mixed>  $data  Массив данных
+     * @param  string  ...$keys  Путь к значению (ключи через точку)
      * @return string|null Строковое значение или null
      */
     private function extractString(array $data, string ...$keys): ?string
@@ -308,8 +306,8 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Извлечь числовое значение из вложенного массива по пути ключей.
      *
-     * @param array<string, mixed> $data Массив данных
-     * @param string ...$keys Путь к значению (ключи через точку)
+     * @param  array<string, mixed>  $data  Массив данных
+     * @param  string  ...$keys  Путь к значению (ключи через точку)
      * @return float|null Числовое значение или null
      */
     private function extractNumeric(array $data, string ...$keys): ?float
@@ -325,8 +323,8 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Извлечь целочисленное значение из вложенного массива по пути ключей.
      *
-     * @param array<string, mixed> $data Массив данных
-     * @param string ...$keys Путь к значению (ключи через точку)
+     * @param  array<string, mixed>  $data  Массив данных
+     * @param  string  ...$keys  Путь к значению (ключи через точку)
      * @return int|null Целочисленное значение или null
      */
     private function extractInt(array $data, string ...$keys): ?int
@@ -342,8 +340,8 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Извлечь массив из вложенной структуры по пути ключей.
      *
-     * @param array<string, mixed> $data Массив данных
-     * @param string ...$keys Путь к массиву (ключи через точку)
+     * @param  array<string, mixed>  $data  Массив данных
+     * @param  string  ...$keys  Путь к массиву (ключи через точку)
      * @return array<string, mixed>|null Массив или null
      */
     private function extractArray(array $data, string ...$keys): ?array
@@ -359,8 +357,8 @@ class GetId3MediaMetadataPlugin implements MediaMetadataPlugin
     /**
      * Извлечь значение из вложенной структуры по пути ключей.
      *
-     * @param array<string, mixed> $data Массив данных
-     * @param string ...$keys Путь к значению (ключи через точку)
+     * @param  array<string, mixed>  $data  Массив данных
+     * @param  string  ...$keys  Путь к значению (ключи через точку)
      * @return mixed Значение или null
      */
     private function extractValue(array $data, string ...$keys): mixed

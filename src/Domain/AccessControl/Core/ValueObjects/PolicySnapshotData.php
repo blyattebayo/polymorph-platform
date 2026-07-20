@@ -12,6 +12,5 @@ final readonly class PolicySnapshotData
         public string $action,
         public string $effect,
         public int $priority,
-    ) {
-    }
+    ) {}
 }

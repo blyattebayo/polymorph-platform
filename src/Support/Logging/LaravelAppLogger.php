@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Support\Logging;
 
-use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 use Illuminate\Log\LogManager;
+use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 use Psr\Log\LogLevel;
 use Stringable;
 

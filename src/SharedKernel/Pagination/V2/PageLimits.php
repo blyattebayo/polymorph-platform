@@ -11,7 +11,5 @@ final readonly class PageLimits
         public int $defaultPerPage = 15,
         public int $minPerPage = 1,
         public int $maxPerPage = 100,
-    ) {
-    }
+    ) {}
 }
-

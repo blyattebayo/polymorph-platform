@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\EntryView\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Polymorph\Platform\Domain\EntryView\Http\Requests\StoreEntryViewRequest;
 use Polymorph\Platform\Domain\EntryView\Http\Resources\EntryViewResource;
 use Polymorph\Platform\Domain\EntryView\Queries\FindEntryViewQuery;
@@ -11,9 +12,10 @@ use Polymorph\Platform\Domain\EntryView\Services\EntryViewService;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionRepository;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
 use Polymorph\Platform\Http\Controllers\Controller;
-use Polymorph\Platform\Support\Errors\ErrorCode;
-use Polymorph\Platform\Support\Errors\ThrowsErrors;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
+use Polymorph\Platform\Support\Errors\ErrorCode;
+use Polymorph\Platform\Support\Errors\HttpErrorException;
+use Polymorph\Platform\Support\Errors\ThrowsErrors;
 
 /**
  * Контроллер для управления JSON-конфигом формы (EntryView).
@@ -26,9 +28,8 @@ use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
  * - PUT: сохранение/обновление конфигурации
  *
  * @group Admin • Form configs
- * @package Polymorph\Platform\Domain\EntryView\Http\Controllers
  */
-class EntryViewController extends Controller
+final class EntryViewController extends Controller
 {
     use ThrowsErrors;
 
@@ -36,23 +37,26 @@ class EntryViewController extends Controller
         private readonly EntryViewService $entryViewService,
         private readonly FindEntryViewQuery $findQuery,
         private readonly RecordDefinitionRepository $recordDefinitions,
-    ) {
-    }
+    ) {}
 
     /**
      * Получение конфигурации формы по типу контента и schema.
      *
      * @group Admin • Form configs
+     *
      * @name Get form config
+     *
      * @authenticated
+     *
      * @urlParam record_definition_id integer required ID типа контента. Example: 1
      * @urlParam schema integer required ID schema. Example: 1
-    * @response status=200 {
-    *   "data": {
-    *     "layout": "tabs",
-    *     "fields": ["title", "slug"]
-    *   }
-    * }
+     *
+     * @response status=200 {
+     *   "data": {
+     *     "layout": "tabs",
+     *     "fields": ["title", "slug"]
+     *   }
+     * }
      * @response status=200 {
      *   "data": {}
      * }
@@ -64,9 +68,9 @@ class EntryViewController extends Controller
      *   "detail": "RecordDefinition not found: 1"
      * }
      *
-     * @param int $recordDefinitionId ID типа контента
-     * @param SchemaModel $schema Schema (route model binding)
-     * @return \Illuminate\Http\JsonResponse
+     * @param  int  $recordDefinitionId  ID типа контента
+     * @param  SchemaModel  $schema  Schema (route model binding)
+     * @return JsonResponse
      */
     public function show(int $recordDefinitionId, SchemaModel $schema)
     {
@@ -75,8 +79,8 @@ class EntryViewController extends Controller
         $config = $this->findQuery->execute($recordDefinitionId, $schema->id);
 
         // Если конфигурация не найдена, возвращаем пустой объект
-        if (!$config) {
-            return response()->json(new \stdClass());
+        if (! $config) {
+            return response()->json(new \stdClass);
         }
 
         return AdminResponse::json($config->config_json ?? []);
@@ -86,11 +90,16 @@ class EntryViewController extends Controller
      * Сохранение или обновление конфигурации формы.
      *
      * @group Admin • Form configs
+     *
      * @name Update form config
+     *
      * @authenticated
+     *
      * @urlParam record_definition_id integer required ID типа контента. Example: 1
      * @urlParam schema integer required ID schema. Example: 1
-    * @bodyParam config_json object required JSON-конфиг формы (сохраняется без доменной валидации/нормализации). Example: {"layout":"tabs","fields":["title","slug"]}
+     *
+     * @bodyParam config_json object required JSON-конфиг формы (сохраняется без доменной валидации/нормализации). Example: {"layout":"tabs","fields":["title","slug"]}
+     *
      * @response status=200 {
      *   "data": {
      *     "record_definition_id": 1,
@@ -122,12 +131,11 @@ class EntryViewController extends Controller
      *   "detail": "The config_json field is required."
      * }
      *
-     * @param StoreEntryViewRequest $request Валидированный запрос
-     * @param int $recordDefinitionId ID типа контента
-     * @param SchemaModel $schema Schema (route model binding)
-     * @return \Illuminate\Http\JsonResponse
+     * @param  StoreEntryViewRequest  $request  Валидированный запрос
+     * @param  int  $recordDefinitionId  ID типа контента
+     * @param  SchemaModel  $schema  Schema (route model binding)
      */
-    public function update(StoreEntryViewRequest $request, int $recordDefinitionId, SchemaModel $schema): \Illuminate\Http\JsonResponse
+    public function update(StoreEntryViewRequest $request, int $recordDefinitionId, SchemaModel $schema): JsonResponse
     {
         $this->ensureRecordDefinitionExists($recordDefinitionId);
 
@@ -142,8 +150,9 @@ class EntryViewController extends Controller
     /**
      * Проверить существование RecordDefinition по ID.
      *
-     * @param int $recordDefinitionId ID типа контента
-     * @throws \Polymorph\Platform\Support\Errors\HttpErrorException Если RecordDefinition не найден
+     * @param  int  $recordDefinitionId  ID типа контента
+     *
+     * @throws HttpErrorException Если RecordDefinition не найден
      */
     private function ensureRecordDefinitionExists(int $recordDefinitionId): void
     {

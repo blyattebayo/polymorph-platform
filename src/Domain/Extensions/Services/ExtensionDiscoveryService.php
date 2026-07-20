@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Services;
 
+use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
 use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
 use Polymorph\Platform\Domain\Extensions\Manifest\ManifestV2Validator;
-use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
 use Polymorph\Platform\Domain\Extensions\Trusted\TrustedExtensionSource;
 
 final class ExtensionDiscoveryService
@@ -19,8 +19,7 @@ final class ExtensionDiscoveryService
         private readonly ExtensionAclManifestParser $aclManifestParser,
         private readonly ManifestV2Validator $manifestV2Validator,
         private readonly TrustedExtensionSource $trusted,
-    ) {
-    }
+    ) {}
 
     /**
      * @return list<DiscoveredExtension>
@@ -34,7 +33,7 @@ final class ExtensionDiscoveryService
         // Рантайм drop-in плагины (магазинные) из plugins.root_path.
         $rootPath = (string) config('plugins.root_path');
         if ($rootPath !== '' && is_dir($rootPath)) {
-            $directories = glob($rootPath . '/*', GLOB_ONLYDIR) ?: [];
+            $directories = glob($rootPath.'/*', GLOB_ONLYDIR) ?: [];
             sort($directories);
 
             foreach ($directories as $directory) {
@@ -70,8 +69,8 @@ final class ExtensionDiscoveryService
      */
     private function loadFromDirectory(string $directory, string $manifestFile): ?DiscoveredExtension
     {
-        $manifestPath = $directory . DIRECTORY_SEPARATOR . $manifestFile;
-        $v2ManifestPath = $directory . DIRECTORY_SEPARATOR . self::MANIFEST_V2;
+        $manifestPath = $directory.DIRECTORY_SEPARATOR.$manifestFile;
+        $v2ManifestPath = $directory.DIRECTORY_SEPARATOR.self::MANIFEST_V2;
 
         if (is_file($manifestPath)) {
             return $this->loadPlugin($manifestPath, $directory);
@@ -88,8 +87,9 @@ final class ExtensionDiscoveryService
      * Топологическая сортировка по dependencies: зависимости загружаются
      * раньше зависимых (детерминированно, алфавитный порядок внутри уровня).
      *
-     * @param list<DiscoveredExtension> $plugins
+     * @param  list<DiscoveredExtension>  $plugins
      * @return list<DiscoveredExtension>
+     *
      * @throws PluginException при циклической зависимости
      */
     private function sortByDependencies(array $plugins): array
@@ -138,13 +138,13 @@ final class ExtensionDiscoveryService
     private function loadPlugin(string $manifestPath, string $directory): DiscoveredExtension
     {
         $raw = file_get_contents($manifestPath);
-        if (!is_string($raw) || trim($raw) === '') {
+        if (! is_string($raw) || trim($raw) === '') {
             throw new PluginException("Manifest {$manifestPath}: file is empty.");
         }
 
         /** @var mixed $decoded */
         $decoded = json_decode($raw, true);
-        if (!is_array($decoded)) {
+        if (! is_array($decoded)) {
             throw new PluginException("Manifest {$manifestPath}: invalid JSON.");
         }
 
@@ -154,10 +154,10 @@ final class ExtensionDiscoveryService
         $pluginId = (string) $decoded['id'];
         $routeFile = data_get($decoded, 'backend.routes.file');
         $routeFilePath = is_string($routeFile) && trim($routeFile) !== ''
-            ? $directory . DIRECTORY_SEPARATOR . ltrim($routeFile, '/\\')
-            : $directory . DIRECTORY_SEPARATOR . 'be/routes.php';
+            ? $directory.DIRECTORY_SEPARATOR.ltrim($routeFile, '/\\')
+            : $directory.DIRECTORY_SEPARATOR.'be/routes.php';
 
-        if (!is_file($routeFilePath)) {
+        if (! is_file($routeFilePath)) {
             $routeFilePath = null;
         }
 
@@ -217,13 +217,13 @@ final class ExtensionDiscoveryService
     private function loadExtensionV2(string $manifestPath, string $directory): DiscoveredExtension
     {
         $raw = file_get_contents($manifestPath);
-        if (!is_string($raw) || trim($raw) === '') {
+        if (! is_string($raw) || trim($raw) === '') {
             throw new PluginException("Manifest {$manifestPath}: file is empty.");
         }
 
         /** @var mixed $decoded */
         $decoded = json_decode($raw, true);
-        if (!is_array($decoded)) {
+        if (! is_array($decoded)) {
             throw new PluginException("Manifest {$manifestPath}: invalid JSON.");
         }
 
@@ -237,8 +237,8 @@ final class ExtensionDiscoveryService
         $contributes = $manifest->contributes;
 
         // Роуты v2 декларативны и всегда лежат в be/routes.php (Routes::for(...)).
-        $routeFilePath = $directory . DIRECTORY_SEPARATOR . 'be/routes.php';
-        if (!is_file($routeFilePath)) {
+        $routeFilePath = $directory.DIRECTORY_SEPARATOR.'be/routes.php';
+        if (! is_file($routeFilePath)) {
             $routeFilePath = null;
         }
 
@@ -246,7 +246,7 @@ final class ExtensionDiscoveryService
         $navigation = is_array($contributes['navigation'] ?? null) ? $contributes['navigation'] : [];
 
         $navSection = is_string($navigation['section'] ?? null) ? trim((string) $navigation['section']) : null;
-        if ($navSection !== null && $navSection !== '' && !in_array($navSection, ['content', 'system'], true)) {
+        if ($navSection !== null && $navSection !== '' && ! in_array($navSection, ['content', 'system'], true)) {
             throw new PluginException(
                 "Manifest {$manifestPath}: contributes.navigation.section '{$navSection}' is invalid; expected 'content' or 'system'.",
             );
@@ -294,13 +294,13 @@ final class ExtensionDiscoveryService
     }
 
     /**
-     * @param array<string, mixed> $manifest
+     * @param  array<string, mixed>  $manifest
      * @return array<string, string>
      */
     private function parseDependencies(array $manifest): array
     {
         $raw = $manifest['dependencies'] ?? null;
-        if (!is_array($raw)) {
+        if (! is_array($raw)) {
             return [];
         }
 
@@ -324,11 +324,11 @@ final class ExtensionDiscoveryService
         if ($mode === null) {
             return;
         }
-        if (!is_string($mode) || trim($mode) === '') {
+        if (! is_string($mode) || trim($mode) === '') {
             return;
         }
         $mode = trim($mode);
-        if (!in_array($mode, ['overlay', 'embedded'], true)) {
+        if (! in_array($mode, ['overlay', 'embedded'], true)) {
             throw new PluginException(
                 "Manifest {$manifestPath}: frontend.ui.mode '{$mode}' is invalid; expected 'overlay' or 'embedded'.",
             );
@@ -336,7 +336,7 @@ final class ExtensionDiscoveryService
     }
 
     /**
-     * @param array<string, mixed> $manifest
+     * @param  array<string, mixed>  $manifest
      */
     private function assertControllerAutoloadContract(array $manifest, string $manifestPath, string $directory): void
     {
@@ -346,12 +346,12 @@ final class ExtensionDiscoveryService
             return;
         }
 
-        if (!is_string($psr4Path) || trim($psr4Path) === '') {
+        if (! is_string($psr4Path) || trim($psr4Path) === '') {
             throw new PluginException("Manifest {$manifestPath}: backend.psr4Path must be non-empty string when provided.");
         }
 
-        $resolvedPath = $autoloadBase . '/' . ltrim(str_replace('\\', '/', $psr4Path), '/');
-        if (!is_dir($resolvedPath)) {
+        $resolvedPath = $autoloadBase.'/'.ltrim(str_replace('\\', '/', $psr4Path), '/');
+        if (! is_dir($resolvedPath)) {
             throw new PluginException("Manifest {$manifestPath}: backend.psr4Path '{$psr4Path}' does not exist.");
         }
     }

@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Extensions\Services;
 
 use Polymorph\Platform\Domain\AccessControl\Access\BuiltInRoleCatalog;
+use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
 use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\ExtensionCapabilityDefinition;
 use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\ExtensionRoleDefinition;
-use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 
 final class ExtensionAclManifestParser
 {
     /**
-     * @param array<string, mixed> $manifest
+     * @param  array<string, mixed>  $manifest
      */
     public function validate(array $manifest, string $manifestPath): void
     {
@@ -58,7 +58,7 @@ final class ExtensionAclManifestParser
     }
 
     /**
-     * @param array<string, mixed> $manifest
+     * @param  array<string, mixed>  $manifest
      * @return list<ExtensionCapabilityDefinition>
      */
     public function parseCapabilities(array $manifest, string $pluginId): array
@@ -99,7 +99,7 @@ final class ExtensionAclManifestParser
     }
 
     /**
-     * @param array<string, mixed> $manifest
+     * @param  array<string, mixed>  $manifest
      * @return list<string>
      */
     public function parseDefaultAdminRoles(array $manifest): array
@@ -124,7 +124,7 @@ final class ExtensionAclManifestParser
     }
 
     /**
-     * @param array<string, mixed> $manifest
+     * @param  array<string, mixed>  $manifest
      * @return list<ExtensionRoleDefinition>
      */
     public function parseRoles(array $manifest, string $pluginId): array
@@ -157,7 +157,7 @@ final class ExtensionAclManifestParser
     }
 
     /**
-     * @param array<string, mixed> $contributes
+     * @param  array<string, mixed>  $contributes
      * @return list<ExtensionCapabilityDefinition>
      */
     public function parseV2Capabilities(array $contributes, string $pluginId): array
@@ -172,7 +172,7 @@ final class ExtensionAclManifestParser
     }
 
     /**
-     * @param array<string, mixed> $contributes
+     * @param  array<string, mixed>  $contributes
      * @return list<string>
      */
     public function parseV2DefaultAdminRoles(array $contributes): array
@@ -192,7 +192,7 @@ final class ExtensionAclManifestParser
     }
 
     /**
-     * @param array<string, mixed> $contributes
+     * @param  array<string, mixed>  $contributes
      * @return list<ExtensionRoleDefinition>
      */
     public function parseV2Roles(array $contributes, string $pluginId): array
@@ -235,7 +235,7 @@ final class ExtensionAclManifestParser
         }
 
         if (! is_array($entry)) {
-            throw new PluginException('v2 capability must be a string or object, got ' . gettype($entry) . '.');
+            throw new PluginException('v2 capability must be a string or object, got '.gettype($entry).'.');
         }
 
         $resource = $this->assertExtResource(trim((string) ($entry['resource'] ?? '')), $pluginId);

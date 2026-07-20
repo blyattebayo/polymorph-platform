@@ -18,8 +18,8 @@ trait ThrowsErrors
     }
 
     /**
-     * @param array<string, mixed> $meta
-     * @param callable(JsonResponse):JsonResponse|null $responseConfigurator
+     * @param  array<string, mixed>  $meta
+     * @param  callable(JsonResponse):JsonResponse|null  $responseConfigurator
      */
     protected function throwError(
         ErrorCode $code,
@@ -41,8 +41,8 @@ trait ThrowsErrors
     }
 
     /**
-     * @param array<string, mixed> $meta
-     * @param array<string, string> $headers
+     * @param  array<string, mixed>  $meta
+     * @param  array<string, string>  $headers
      */
     protected function throwErrorWithHeaders(
         ErrorCode $code,
@@ -64,7 +64,7 @@ trait ThrowsErrors
     }
 
     /**
-     * @param array<string, mixed> $meta
+     * @param  array<string, mixed>  $meta
      */
     protected function unauthorized(?string $detail = null, array $meta = [], array $headers = []): never
     {
@@ -74,7 +74,7 @@ trait ThrowsErrors
     }
 
     /**
-     * @param array<string, mixed> $meta
+     * @param  array<string, mixed>  $meta
      */
     protected function forbidden(?string $detail = null, array $meta = []): never
     {
@@ -82,12 +82,10 @@ trait ThrowsErrors
     }
 
     /**
-     * @param array<string, mixed> $meta
+     * @param  array<string, mixed>  $meta
      */
     protected function internalError(string $detail, array $meta = []): never
     {
         $this->throwError(ErrorCode::INTERNAL_SERVER_ERROR, $detail, $meta);
     }
-
 }
-

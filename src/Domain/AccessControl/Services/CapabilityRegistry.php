@@ -4,19 +4,18 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Services;
 
+use InvalidArgumentException;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\CapabilityDefinitionProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\CapabilityDefinition;
-use InvalidArgumentException;
 
 final class CapabilityRegistry
 {
     /**
-     * @param iterable<CapabilityDefinitionProvider> $providers
+     * @param  iterable<CapabilityDefinitionProvider>  $providers
      */
     public function __construct(
         private readonly iterable $providers,
-    ) {
-    }
+    ) {}
 
     /**
      * @return list<CapabilityDefinition>

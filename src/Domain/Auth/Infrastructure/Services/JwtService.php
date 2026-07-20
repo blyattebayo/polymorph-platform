@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Services;
 
+use Carbon\CarbonImmutable;
+use Firebase\JWT\BeforeValidException;
+use Firebase\JWT\ExpiredException;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+use Firebase\JWT\SignatureInvalidException;
+use Illuminate\Support\Str;
 use Polymorph\Platform\Domain\Auth\Core\Exceptions\JwtConfigurationException;
 use Polymorph\Platform\Domain\Auth\Core\Exceptions\JwtVerificationException;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\JwtConfig;
-use Carbon\CarbonImmutable;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
-use Illuminate\Support\Str;
 
 /**
  * Service for issuing and verifying JWT access and refresh tokens.
@@ -22,7 +25,7 @@ final class JwtService
     private readonly JwtConfig $config;
 
     /**
-     * @param JwtConfig|array<string, mixed> $config
+     * @param  JwtConfig|array<string, mixed>  $config
      */
     public function __construct(JwtConfig|array $config)
     {
@@ -32,8 +35,8 @@ final class JwtService
     /**
      * Issue a new access token for the given user.
      *
-     * @param int|string $userId User identifier
-     * @param array $extra Additional claims to include in the payload
+     * @param  int|string  $userId  User identifier
+     * @param  array  $extra  Additional claims to include in the payload
      * @return string JWT token string
      */
     public function issueAccessToken(int|string $userId, array $extra = []): string
@@ -44,8 +47,8 @@ final class JwtService
     /**
      * Issue a new refresh token for the given user.
      *
-     * @param int|string $userId User identifier
-     * @param array $extra Additional claims to include in the payload
+     * @param  int|string  $userId  User identifier
+     * @param  array  $extra  Additional claims to include in the payload
      * @return string JWT token string
      */
     public function issueRefreshToken(int|string $userId, array $extra = []): string
@@ -56,11 +59,12 @@ final class JwtService
     /**
      * Encode a JWT with the specified parameters.
      *
-     * @param int|string $userId User identifier
-     * @param string $type Token type ('access' or 'refresh')
-     * @param int $ttl Time-to-live in seconds
-     * @param array $extra Additional claims
+     * @param  int|string  $userId  User identifier
+     * @param  string  $type  Token type ('access' or 'refresh')
+     * @param  int  $ttl  Time-to-live in seconds
+     * @param  array  $extra  Additional claims
      * @return string JWT token string
+     *
      * @throws RuntimeException If the secret key is not configured
      */
     public function encode(int|string $userId, string $type, int $ttl, array $extra = []): string
@@ -89,14 +93,15 @@ final class JwtService
     /**
      * Verify a JWT and return its claims.
      *
-     * @param string $jwt The JWT token to verify
-     * @param string|null $expectType Expected token type ('access' or 'refresh'), or null to skip type check
+     * @param  string  $jwt  The JWT token to verify
+     * @param  string|null  $expectType  Expected token type ('access' or 'refresh'), or null to skip type check
      * @return array{claims: array} Decoded claims
+     *
      * @throws JwtConfigurationException If the secret key is not configured
      * @throws JwtVerificationException If token type or issuer doesn't match expectations
-     * @throws \Firebase\JWT\ExpiredException If the token has expired
-     * @throws \Firebase\JWT\SignatureInvalidException If the signature is invalid
-     * @throws \Firebase\JWT\BeforeValidException If the token is not yet valid
+     * @throws ExpiredException If the token has expired
+     * @throws SignatureInvalidException If the signature is invalid
+     * @throws BeforeValidException If the token is not yet valid
      */
     public function verify(string $jwt, ?string $expectType = null): array
     {
@@ -129,6 +134,7 @@ final class JwtService
      * Get the JWT secret key from configuration.
      *
      * @return string Secret key
+     *
      * @throws JwtConfigurationException If the secret key is not configured
      */
     private function getSecret(): string
@@ -160,7 +166,7 @@ final class JwtService
     }
 
     /**
-     * @param array<string,mixed> $extra
+     * @param  array<string,mixed>  $extra
      * @return array<string,mixed>
      */
     private function filterExtraClaims(array $extra): array
@@ -201,4 +207,3 @@ final class JwtService
         return false;
     }
 }
-

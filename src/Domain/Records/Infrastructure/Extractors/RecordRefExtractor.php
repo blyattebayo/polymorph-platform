@@ -13,13 +13,12 @@ final class RecordRefExtractor
 {
     public function __construct(
         private readonly ?PathValueResolver $valueResolver = null,
-    ) {
-    }
+    ) {}
 
     /**
      * Extracts all referenced record ids from ref fields.
      *
-     * @param array<string, mixed> $recordData
+     * @param  array<string, mixed>  $recordData
      */
     public function extractRefRecordIds(array $recordData, array $refPaths): array
     {
@@ -42,7 +41,7 @@ final class RecordRefExtractor
      */
     private function extractRefsFromPath(array $data, string $path): array
     {
-        $value = ($this->valueResolver ?? new PathValueResolver())->get($data, $path);
+        $value = ($this->valueResolver ?? new PathValueResolver)->get($data, $path);
 
         if ($value === null) {
             return [];
@@ -70,7 +69,7 @@ final class RecordRefExtractor
     /**
      * Recursively collects numeric ids from nested arrays.
      *
-     * @param array<mixed> $value
+     * @param  array<mixed>  $value
      * @return array<int>
      */
     private function collectNumericIds(array $value): array
@@ -80,6 +79,7 @@ final class RecordRefExtractor
         foreach ($value as $item) {
             if (is_numeric($item)) {
                 $ids[] = (int) $item;
+
                 continue;
             }
 

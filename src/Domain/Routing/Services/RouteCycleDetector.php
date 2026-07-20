@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Services;
 
+use Illuminate\Support\Collection;
 use Polymorph\Platform\Domain\Routing\Core\Exceptions\CyclicDependencyException;
 use Polymorph\Platform\Domain\Routing\Core\Models\RouteNode;
-use Illuminate\Support\Collection;
 
 final class RouteCycleDetector
 {
@@ -41,8 +41,8 @@ final class RouteCycleDetector
     }
 
     /**
-     * @param array<int, array{id: int, parent_id?: int|null}> $nodes
-     * @param Collection<int, RouteNode> $existing
+     * @param  array<int, array{id: int, parent_id?: int|null}>  $nodes
+     * @param  Collection<int, RouteNode>  $existing
      *
      * @throws CyclicDependencyException
      */
@@ -68,7 +68,7 @@ final class RouteCycleDetector
     }
 
     /**
-     * @param array<int, int|null> $graph
+     * @param  array<int, int|null>  $graph
      *
      * @throws CyclicDependencyException
      */

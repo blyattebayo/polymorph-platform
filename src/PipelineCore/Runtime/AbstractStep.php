@@ -7,12 +7,11 @@ namespace Polymorph\Platform\PipelineCore\Runtime;
 abstract class AbstractStep implements Step
 {
     /**
-     * @param class-string<PipelineContext> $contextClass
+     * @param  class-string<PipelineContext>  $contextClass
      */
     public function __construct(
         private readonly string $contextClass,
-    ) {
-    }
+    ) {}
 
     public function contextClass(): string
     {

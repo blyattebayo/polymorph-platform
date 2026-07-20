@@ -15,9 +15,9 @@ final class AssignmentResource extends AdminJsonResource
         $assignment = $this->resource;
 
         return [
-            'id'        => (int) $assignment->id,
+            'id' => (int) $assignment->id,
             'policy_id' => (int) $assignment->policy_id,
-            'subject'   => (string) $assignment->subject,
+            'subject' => (string) $assignment->subject,
         ];
     }
 }

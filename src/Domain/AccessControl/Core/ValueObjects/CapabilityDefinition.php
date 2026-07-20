@@ -12,8 +12,7 @@ final readonly class CapabilityDefinition
         public string $resource,
         public string $action,
         public string $label,
-    ) {
-    }
+    ) {}
 
     public function key(): string
     {

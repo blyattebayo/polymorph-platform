@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Http\Resources;
 
+use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Routing\Core\Models\RouteNode;
 use Polymorph\Platform\Http\Resources\Admin\AdminJsonResource;
 
@@ -12,8 +13,6 @@ use Polymorph\Platform\Http\Resources\Admin\AdminJsonResource;
  *
  * Форматирует RouteNode для ответа API, включая связанные сущности
  * (parent, children) при их загрузке.
- *
- * @package Polymorph\Platform\Http\Resources\Admin
  */
 class RouteNodeResource extends AdminJsonResource
 {
@@ -27,7 +26,7 @@ class RouteNodeResource extends AdminJsonResource
      * - Связанные сущности (parent, children) при их загрузке
      * - Даты в ISO 8601 формате
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
+     * @param  Request  $request  HTTP запрос
      * @return array<string, mixed> Массив данных узла маршрута
      */
     public function toArray($request): array
@@ -69,4 +68,3 @@ class RouteNodeResource extends AdminJsonResource
         ];
     }
 }
-

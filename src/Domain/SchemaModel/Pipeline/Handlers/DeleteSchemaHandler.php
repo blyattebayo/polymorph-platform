@@ -33,5 +33,4 @@ final class DeleteSchemaHandler
             $operationId,
         );
     }
-
 }

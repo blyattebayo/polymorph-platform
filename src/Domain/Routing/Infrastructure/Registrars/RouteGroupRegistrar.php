@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Infrastructure\Registrars;
 
+use Illuminate\Support\Facades\Route;
+use Polymorph\Platform\Domain\Routing\Core\Models\RouteNode;
 use Polymorph\Platform\Domain\Routing\Core\ValueObjects\RouteNodeDefinition;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Support\Facades\Route;
 
 /**
  * Регистратор для GROUP узлов маршрутов.
@@ -28,7 +29,7 @@ class RouteGroupRegistrar implements RouteNodeRegistrarInterface
     /**
      * Зарегистрировать узел маршрута.
      *
-     * @param  \Polymorph\Platform\Domain\Routing\Core\Models\RouteNode  $node  Узел для регистрации
+     * @param  RouteNode  $node  Узел для регистрации
      */
     public function register(RouteNodeDefinition $node): void
     {

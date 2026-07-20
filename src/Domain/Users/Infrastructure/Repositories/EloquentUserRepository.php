@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Users\Infrastructure\Repositories;
 
+use Illuminate\Pagination\LengthAwarePaginator;
 use Polymorph\Platform\Domain\Users\Core\Contracts\UserRepository;
 use Polymorph\Platform\Domain\Users\Core\Exceptions\UserNotFoundException;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Eloquent реализация репозитория пользователей.
@@ -61,6 +61,7 @@ final class EloquentUserRepository implements UserRepository
     public function update(User $user, array $data): User
     {
         $user->update($data);
+
         return $user->fresh();
     }
 
@@ -71,8 +72,8 @@ final class EloquentUserRepository implements UserRepository
         if ($search !== null && $search !== '') {
             $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $search);
             $query->where(static function ($builder) use ($escaped): void {
-                $builder->where('name', 'like', '%' . $escaped . '%')
-                    ->orWhere('email', 'like', '%' . $escaped . '%');
+                $builder->where('name', 'like', '%'.$escaped.'%')
+                    ->orWhere('email', 'like', '%'.$escaped.'%');
             });
         }
 
@@ -88,5 +89,4 @@ final class EloquentUserRepository implements UserRepository
     {
         return User::where('email', strtolower($email))->exists();
     }
-
 }

@@ -31,4 +31,3 @@ enum ErrorCode: string
     case CSRF_TOKEN_MISMATCH = 'CSRF_TOKEN_MISMATCH';
 
 }
-

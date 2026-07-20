@@ -13,12 +13,10 @@ readonly class TextNode implements ASTNode
         public string $text,
         public int $start,
         public int $end
-    ) {
-    }
+    ) {}
 
     public function getSpan(): array
     {
         return [$this->start, $this->end];
     }
 }
-

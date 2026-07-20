@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Infrastructure\Repositories;
 
+use Illuminate\Support\Collection;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Loaders\PluginRouteLoader;
 use Polymorph\Platform\Domain\Routing\Services\Cache\RouteCache;
-use Illuminate\Support\Collection;
 
 /**
  * Репозиторий declarative-маршрутов плагинов.

@@ -11,10 +11,10 @@ use Polymorph\Platform\Domain\SchemaModel\Core\Exceptions\DuplicateFieldPathExce
 use Polymorph\Platform\Domain\SchemaModel\Core\Exceptions\InvalidParentFieldException;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
-use Polymorph\Platform\Domain\SchemaModelValidation\Contracts\SchemaDescriptorProviderInterface;
-use Polymorph\Platform\Domain\SchemaModelValidation\DslValidation\DslValidator;
 use Polymorph\Platform\Domain\SchemaModel\Pipeline\Data\CreateFieldData;
 use Polymorph\Platform\Domain\SchemaModel\Pipeline\Data\UpdateFieldData;
+use Polymorph\Platform\Domain\SchemaModelValidation\Contracts\SchemaDescriptorProviderInterface;
+use Polymorph\Platform\Domain\SchemaModelValidation\DslValidation\DslValidator;
 
 final class FieldMutationService implements FieldWriteService
 {
@@ -23,8 +23,7 @@ final class FieldMutationService implements FieldWriteService
         private readonly FieldPathCalculator $pathCalculator,
         private readonly SchemaDescriptorProviderInterface $schemaDescriptorProvider,
         private readonly DslValidator $dslValidator,
-    ) {
-    }
+    ) {}
 
     /**
      * @throws \DomainException
@@ -47,7 +46,7 @@ final class FieldMutationService implements FieldWriteService
         );
         if ($dslResult->hasErrors()) {
             throw new \DomainException(
-                'Field DSL validation failed: ' . ($dslResult->firstError() ?? 'Invalid validation_rules.'),
+                'Field DSL validation failed: '.($dslResult->firstError() ?? 'Invalid validation_rules.'),
             );
         }
 
@@ -117,7 +116,7 @@ final class FieldMutationService implements FieldWriteService
             );
             if ($dslResult->hasErrors()) {
                 throw new \DomainException(
-                    'Field DSL validation failed: ' . ($dslResult->firstError() ?? 'Invalid validation_rules.'),
+                    'Field DSL validation failed: '.($dslResult->firstError() ?? 'Invalid validation_rules.'),
                 );
             }
 
@@ -139,7 +138,7 @@ final class FieldMutationService implements FieldWriteService
         if ($newPath !== null && $newPath->toString() !== (string) $field->full_path && is_array($pathChanges)) {
             foreach ($pathChanges['descendants'] as $descendantId => $descendantPath) {
                 $descendant = $descendantsById[(int) $descendantId] ?? null;
-                if (!$descendant instanceof Field) {
+                if (! $descendant instanceof Field) {
                     continue;
                 }
 
@@ -191,7 +190,7 @@ final class FieldMutationService implements FieldWriteService
     private function resolveParentById(SchemaModel $schema, int $parentId): Field
     {
         $parent = $this->fieldRepository->find($parentId);
-        if (!$parent instanceof Field) {
+        if (! $parent instanceof Field) {
             throw new \DomainException('parent_id not found');
         }
 
@@ -205,7 +204,7 @@ final class FieldMutationService implements FieldWriteService
             );
         }
 
-        if (!$parent->type->isContainer()) {
+        if (! $parent->type->isContainer()) {
             throw new \DomainException(
                 InvalidParentFieldException::notContainer((int) $parent->id, $parent->type->value)->getMessage(),
             );

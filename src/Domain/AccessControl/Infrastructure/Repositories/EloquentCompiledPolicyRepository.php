@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Infrastructure\Repositories;
 
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\CompiledPolicyRepository;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\CompiledPolicy;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\CompiledPolicyData;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Collection;
 
 final class EloquentCompiledPolicyRepository implements CompiledPolicyRepository
 {

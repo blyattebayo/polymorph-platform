@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\Schema;
  * Хранит записи контента различных типов (record_definitions).
  * Включает индексы для оптимизации запросов опубликованных записей.
  */
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Выполнить миграцию.
      */

@@ -5,13 +5,13 @@ declare(strict_types=1);
 use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeKind;
 
 $children = [];
-$files = glob(__DIR__ . '/v1/*.php') ?: [];
+$files = glob(__DIR__.'/v1/*.php') ?: [];
 sort($files);
 
 foreach ($files as $file) {
     $chunk = require $file;
 
-    if (!is_array($chunk)) {
+    if (! is_array($chunk)) {
         continue;
     }
 

@@ -7,7 +7,7 @@ namespace Polymorph\Platform\PipelineCore\Runtime;
 final class StageResult
 {
     /**
-     * @param array<string, StepResult> $stepResults
+     * @param  array<string, StepResult>  $stepResults
      */
     public function __construct(
         public readonly Stage $stage,
@@ -17,7 +17,7 @@ final class StageResult
     ) {}
 
     /**
-     * @param array<string, StepResult> $stepResults
+     * @param  array<string, StepResult>  $stepResults
      */
     public static function succeeded(Stage $stage, array $stepResults = []): self
     {
@@ -35,7 +35,7 @@ final class StageResult
     }
 
     /**
-     * @param array<string, StepResult> $stepResults
+     * @param  array<string, StepResult>  $stepResults
      */
     public static function failed(Stage $stage, array $stepResults, StepResult $failedStep): self
     {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Polymorph\Platform\Domain\Records\Pipeline\Core;
 
 use Polymorph\Platform\Domain\Records\Core\Models\Record;

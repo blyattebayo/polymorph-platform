@@ -6,8 +6,8 @@ namespace Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefin
 
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionRepository;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Contexts\CreateRecordDefinitionContext;
-use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\AbstractStep;
+use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\StepResult;
 
 final class PersistCreatedRecordDefinitionStep extends AbstractStep
@@ -15,7 +15,8 @@ final class PersistCreatedRecordDefinitionStep extends AbstractStep
     public function __construct(
         private readonly RecordDefinitionRepository $recordDefinitionRepository,
     ) {
-        parent::__construct(CreateRecordDefinitionContext::class);}
+        parent::__construct(CreateRecordDefinitionContext::class);
+    }
 
     public function name(): string
     {
@@ -36,8 +37,6 @@ final class PersistCreatedRecordDefinitionStep extends AbstractStep
         ];
     }
 
-    
-
     public function run(PipelineContext $context): StepResult
     {
         /** @var CreateRecordDefinitionContext $context */
@@ -45,6 +44,4 @@ final class PersistCreatedRecordDefinitionStep extends AbstractStep
 
         return StepResult::success();
     }
-
-    
 }

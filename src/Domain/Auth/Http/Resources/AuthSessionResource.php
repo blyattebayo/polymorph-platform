@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Http\Resources;
 
-use Polymorph\Platform\Support\DateTime\Iso8601Formatter;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Polymorph\Platform\Support\DateTime\Iso8601Formatter;
 
 final class AuthSessionResource extends JsonResource
 {
     /**
-     * @param object $resource
+     * @param  object  $resource
      */
     public function __construct($resource)
     {

@@ -10,8 +10,6 @@ use Illuminate\Foundation\Http\FormRequest;
  * Request для главной страницы (/).
  *
  * Публичный запрос без валидации параметров.
- *
- * @package Polymorph\Platform\Http\Requests
  */
 final class HomeRequest extends FormRequest
 {
@@ -19,8 +17,6 @@ final class HomeRequest extends FormRequest
      * Определить, авторизован ли пользователь для выполнения запроса.
      *
      * Публичный запрос, доступен всем.
-     *
-     * @return bool
      */
     public function authorize(): bool
     {
@@ -37,5 +33,3 @@ final class HomeRequest extends FormRequest
         return [];
     }
 }
-
-

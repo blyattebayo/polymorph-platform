@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Eloquent модель для метаданных изображений (MediaImage).
@@ -20,10 +21,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $media_id Идентификатор связанного медиа-файла (уникален)
  * @property int $width Ширина изображения в пикселях
  * @property int $height Высота изображения в пикселях
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
- *
- * @property-read \Polymorph\Platform\Domain\Media\Core\Models\Media $media Связанный медиа-файл
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read Media $media Связанный медиа-файл
  */
 class MediaImage extends Model
 {
@@ -89,7 +89,7 @@ class MediaImage extends Model
     /**
      * Связь с медиа-файлом (один-к-одному).
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\Polymorph\Platform\Domain\Media\Core\Models\Media, \Polymorph\Platform\Domain\Media\Core\Models\MediaImage>
+     * @return BelongsTo<Media, MediaImage>
      */
     public function media(): BelongsTo
     {

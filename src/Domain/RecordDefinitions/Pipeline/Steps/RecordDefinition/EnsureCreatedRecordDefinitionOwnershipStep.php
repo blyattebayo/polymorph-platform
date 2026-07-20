@@ -35,7 +35,7 @@ final class EnsureCreatedRecordDefinitionOwnershipStep extends AbstractStep
     public function run(PipelineContext $context): StepResult
     {
         /** @var CreateRecordDefinitionContext $context */
-        if (!$context->createdRecordDefinition instanceof RecordDefinition) {
+        if (! $context->createdRecordDefinition instanceof RecordDefinition) {
             throw new \RuntimeException('RecordDefinition ownership step requires created record definition.');
         }
 

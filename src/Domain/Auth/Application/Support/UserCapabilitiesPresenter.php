@@ -16,8 +16,7 @@ final class UserCapabilitiesPresenter
 
     public function __construct(
         private readonly EffectiveCapabilityResolver $capabilities,
-    ) {
-    }
+    ) {}
 
     /**
      * @return list<string>

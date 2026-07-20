@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Console;
 
-use Polymorph\Platform\Domain\DataPlatform\StorageKey;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\DataPlatform\StorageKey;
 
 /**
  * Cutover-миграция данных расширения с V1-неймспейса на V2 (Stage 4).
@@ -33,10 +34,10 @@ final class MigrateLegacyExtensionDataCommand extends Command
             return self::FAILURE;
         }
 
-        $schemaFromPrefix = 'plugin__' . $id . '__';
+        $schemaFromPrefix = 'plugin__'.$id.'__';
         $schemaToPrefix = StorageKey::schemaPrefix($id); // ext__{id}__
-        $aclFromPrefix = 'plugin.' . $id . '.';
-        $aclToPrefix = 'ext.' . $id . '.';
+        $aclFromPrefix = 'plugin.'.$id.'.';
+        $aclToPrefix = 'ext.'.$id.'.';
 
         $schemas = $this->prefixedRows('schemas', 'code', $schemaFromPrefix);
         $policies = $this->prefixedRows('ac_policies', 'resource_pattern', $aclFromPrefix);
@@ -46,10 +47,10 @@ final class MigrateLegacyExtensionDataCommand extends Command
 
         if ($this->option('dry-run')) {
             foreach ($schemas as $row) {
-                $this->line("  schema #{$row->id}: {$row->code} → " . $this->reprefix((string) $row->code, $schemaFromPrefix, $schemaToPrefix));
+                $this->line("  schema #{$row->id}: {$row->code} → ".$this->reprefix((string) $row->code, $schemaFromPrefix, $schemaToPrefix));
             }
             foreach ($policies as $row) {
-                $this->line("  policy #{$row->id}: {$row->resource_pattern} → " . $this->reprefix((string) $row->resource_pattern, $aclFromPrefix, $aclToPrefix));
+                $this->line("  policy #{$row->id}: {$row->resource_pattern} → ".$this->reprefix((string) $row->resource_pattern, $aclFromPrefix, $aclToPrefix));
             }
             $this->comment('Dry-run: ничего не изменено.');
 
@@ -84,19 +85,19 @@ final class MigrateLegacyExtensionDataCommand extends Command
      * Строки таблицы, у которых $column начинается с $prefix (LIKE с экранированием
      * '_'/'%', т.к. в префиксах есть '_' — иначе over-match по jsonb-grammar).
      *
-     * @return \Illuminate\Support\Collection<int, \stdClass>
+     * @return Collection<int, \stdClass>
      */
-    private function prefixedRows(string $table, string $column, string $prefix): \Illuminate\Support\Collection
+    private function prefixedRows(string $table, string $column, string $prefix): Collection
     {
         $escaped = addcslashes($prefix, '%_\\');
 
         return DB::table($table)
-            ->where($column, 'like', $escaped . '%')
+            ->where($column, 'like', $escaped.'%')
             ->get(['id', $column]);
     }
 
     private function reprefix(string $value, string $from, string $to): string
     {
-        return str_starts_with($value, $from) ? $to . substr($value, strlen($from)) : $value;
+        return str_starts_with($value, $from) ? $to.substr($value, strlen($from)) : $value;
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Http\Requests;
 
-use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Http\Requests\ApiFormRequest;
 
 /**
@@ -15,8 +14,6 @@ use Polymorph\Platform\Http\Requests\ApiFormRequest;
  * - files.*: каждый файл должен соответствовать правилам (размер и MIME тип из конфига)
  * - title: опциональный заголовок для всех файлов (минимум 1, максимум 255 символов)
  * - alt: опциональный alt текст для всех файлов (минимум 1, максимум 255 символов)
- *
- * @package Polymorph\Platform\Http\Requests\Admin\Media
  */
 class BulkStoreMediaRequest extends ApiFormRequest
 {
@@ -24,8 +21,6 @@ class BulkStoreMediaRequest extends ApiFormRequest
      * Подготовить данные для валидации.
      *
      * Нормализует пустые строки в null для title и alt, чтобы они не проходили валидацию min:1.
-     *
-     * @return void
      */
     protected function prepareForValidation(): void
     {
@@ -67,7 +62,6 @@ class BulkStoreMediaRequest extends ApiFormRequest
         ];
     }
 
-
     /**
      * Получить кастомные сообщения об ошибках валидации.
      *
@@ -90,4 +84,3 @@ class BulkStoreMediaRequest extends ApiFormRequest
         return 'The bulk media upload payload failed validation constraints.';
     }
 }
-

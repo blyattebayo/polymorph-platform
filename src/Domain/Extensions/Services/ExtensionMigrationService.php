@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Services;
 
-use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
-use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
+use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
 
 final class ExtensionMigrationService
 {
@@ -31,7 +31,7 @@ final class ExtensionMigrationService
     public function runMigrations(DiscoveredExtension $plugin): void
     {
         $migrationPath = $this->resolveMigrationPath($plugin);
-        if ($migrationPath === null || !is_dir($migrationPath)) {
+        if ($migrationPath === null || ! is_dir($migrationPath)) {
             return;
         }
 
@@ -49,7 +49,7 @@ final class ExtensionMigrationService
                 "Plugin '%s' migrations failed with exit code %d.%s",
                 $plugin->id,
                 $exitCode,
-                $output !== '' ? ' Output: ' . $output : '',
+                $output !== '' ? ' Output: '.$output : '',
             ));
         }
     }
@@ -64,19 +64,19 @@ final class ExtensionMigrationService
         $escapedPrefix = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $prefix);
         $tables = DB::select(
             "SELECT tablename FROM pg_tables WHERE schemaname = current_schema() AND tablename LIKE ? ESCAPE '\\'",
-            [$escapedPrefix . '%'],
+            [$escapedPrefix.'%'],
         );
 
         foreach ($tables as $row) {
             $table = (string) $row->tablename;
-            DB::statement('DROP TABLE IF EXISTS "' . str_replace('"', '', $table) . '" CASCADE');
+            DB::statement('DROP TABLE IF EXISTS "'.str_replace('"', '', $table).'" CASCADE');
         }
 
         $migrationPath = $this->resolveMigrationPath($plugin);
         if ($migrationPath !== null && is_dir($migrationPath)) {
             $names = array_map(
                 static fn (string $file): string => basename($file, '.php'),
-                glob($migrationPath . DIRECTORY_SEPARATOR . '*.php') ?: [],
+                glob($migrationPath.DIRECTORY_SEPARATOR.'*.php') ?: [],
             );
 
             if ($names !== []) {
@@ -88,24 +88,24 @@ final class ExtensionMigrationService
     private function resolveMigrationPath(DiscoveredExtension $plugin): ?string
     {
         $manifest = json_decode((string) file_get_contents($plugin->manifestPath), true);
-        if (!is_array($manifest)) {
+        if (! is_array($manifest)) {
             return null;
         }
 
         $path = data_get($manifest, 'db.migrationsPath');
-        if (!is_string($path) || trim($path) === '') {
+        if (! is_string($path) || trim($path) === '') {
             $path = 'be/database/migrations';
         }
 
-        return dirname($plugin->manifestPath) . DIRECTORY_SEPARATOR . ltrim($path, '/\\');
+        return dirname($plugin->manifestPath).DIRECTORY_SEPARATOR.ltrim($path, '/\\');
     }
 
     private function assertMigrationPrefixes(DiscoveredExtension $plugin, string $migrationPath): void
     {
-        $files = glob($migrationPath . DIRECTORY_SEPARATOR . '*.php') ?: [];
+        $files = glob($migrationPath.DIRECTORY_SEPARATOR.'*.php') ?: [];
         foreach ($files as $file) {
             $content = file_get_contents($file);
-            if (!is_string($content)) {
+            if (! is_string($content)) {
                 continue;
             }
 
@@ -113,7 +113,7 @@ final class ExtensionMigrationService
             /** @var array<int, string> $tables */
             $tables = $matches[1] ?? [];
             foreach ($tables as $tableName) {
-                if (!str_starts_with($tableName, $plugin->tablePrefix)) {
+                if (! str_starts_with($tableName, $plugin->tablePrefix)) {
                     throw new PluginException("Migration '{$file}' creates table '{$tableName}' without prefix '{$plugin->tablePrefix}'.");
                 }
             }

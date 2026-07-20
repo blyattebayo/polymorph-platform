@@ -50,8 +50,8 @@ final class SaveSchemaWithFieldsContext implements LockableContext
 
         $schemaCode = trim((string) ($this->schemaPayload['code'] ?? ''));
         $resourceId = $schemaCode !== ''
-            ? 'create:' . $schemaCode
-            : 'create:' . $this->operationId;
+            ? 'create:'.$schemaCode
+            : 'create:'.$this->operationId;
 
         return new LockKey(
             resourceType: 'schema',

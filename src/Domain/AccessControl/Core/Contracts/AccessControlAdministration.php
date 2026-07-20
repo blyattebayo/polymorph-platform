@@ -12,17 +12,17 @@ use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 interface AccessControlAdministration
 {
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function createPolicy(array $data): Policy;
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function ensurePolicy(array $data): Policy;
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function updatePolicy(int $id, array $data): Policy;
 
@@ -34,7 +34,7 @@ interface AccessControlAdministration
      * с пересчётом доступа и аудитом, одной транзакцией. Идемпотентно.
      * Применять при удалении самого защищаемого объекта.
      *
-     * @param list<string> $resourcePatterns
+     * @param  list<string>  $resourcePatterns
      */
     public function revokeResource(
         array $resourcePatterns,
@@ -47,7 +47,7 @@ interface AccessControlAdministration
     public function unassign(int $policyId, int $assignmentId): void;
 
     /**
-     * @param list<int> $policyIds
+     * @param  list<int>  $policyIds
      */
     public function setSubjectPolicies(Subject $subject, array $policyIds): void;
 }

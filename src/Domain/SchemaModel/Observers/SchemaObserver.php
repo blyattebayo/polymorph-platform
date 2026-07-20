@@ -21,8 +21,7 @@ class SchemaObserver
 {
     public function __construct(
         private readonly SystemFieldSeeder $systemFieldSeeder,
-    ) {
-    }
+    ) {}
 
     public function created(SchemaModel $schema): void
     {

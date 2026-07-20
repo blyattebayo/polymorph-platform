@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\SdkBridge;
 
-use Polymorph\Platform\Domain\Extensions\SdkBridge\Contracts\ExtensionRegistryState;
 use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\Extensions\SdkBridge\Contracts\ExtensionRegistryState;
 
 final class DatabaseExtensionRegistryState implements ExtensionRegistryState
 {

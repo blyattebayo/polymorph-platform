@@ -14,8 +14,6 @@ use Polymorph\Platform\Http\Requests\ApiFormRequest;
  *
  * Валидирует параметры фильтрации, поиска, сортировки и пагинации
  * для списка медиа-файлов.
- *
- * @package Polymorph\Platform\Http\Requests\Admin\Media
  */
 class IndexMediaRequest extends ApiFormRequest
 {
@@ -26,14 +24,14 @@ class IndexMediaRequest extends ApiFormRequest
      * Получить правила валидации для запроса.
      *
      * Валидирует:
-    * - q: опциональный поисковый запрос (максимум 255 символов)
-    * - kind: опциональный тип медиа (image, video, audio, document)
-    * - mime: опциональный MIME тип (максимум 120 символов)
-    * - deleted: опциональный фильтр удалённых (with, only)
-    * - sort: опциональная сортировка (created_at, size_bytes, mime)
-    * - order: опциональный порядок (asc, desc)
-    * - page: опциональный номер страницы
-    * - per_page: опциональное количество на странице (1-100)
+     * - q: опциональный поисковый запрос (максимум 255 символов)
+     * - kind: опциональный тип медиа (image, video, audio, document)
+     * - mime: опциональный MIME тип (максимум 120 символов)
+     * - deleted: опциональный фильтр удалённых (with, only)
+     * - sort: опциональная сортировка (created_at, size_bytes, mime)
+     * - order: опциональный порядок (asc, desc)
+     * - page: опциональный номер страницы
+     * - per_page: опциональное количество на странице (1-100)
      *
      * @return array<string, mixed>
      */
@@ -41,7 +39,7 @@ class IndexMediaRequest extends ApiFormRequest
     {
         return array_merge($this->pageRules(), [
             'q' => 'nullable|string|max:255',
-            'kind' => 'nullable|string|in:' . implode(',', array_map(static fn (MediaKind $kind): string => $kind->value, MediaKind::cases())),
+            'kind' => 'nullable|string|in:'.implode(',', array_map(static fn (MediaKind $kind): string => $kind->value, MediaKind::cases())),
             'mime' => 'nullable|string|max:120',
             'deleted' => 'nullable|string|in:with,only',
             'sort' => 'nullable|string|in:created_at,size_bytes,mime',

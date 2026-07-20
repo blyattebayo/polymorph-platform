@@ -19,7 +19,7 @@ class ConstraintManager
     /**
      * Синхронизировать ограничения для поля.
      *
-     * @param array{allowed_record_definition_id?: int|null, allowed_mimes?: string[]|null} $constraints
+     * @param  array{allowed_record_definition_id?: int|null, allowed_mimes?: string[]|null}  $constraints
      */
     public function syncConstraints(Field $field, array $constraints): void
     {
@@ -39,7 +39,7 @@ class ConstraintManager
     }
 
     /**
-     * @param array{allowed_record_definition_id?: int|null} $constraints
+     * @param  array{allowed_record_definition_id?: int|null}  $constraints
      */
     private function syncRefConstraint(Field $field, array $constraints): void
     {
@@ -62,7 +62,7 @@ class ConstraintManager
     }
 
     /**
-     * @param array{allowed_mimes?: string[]|null} $constraints
+     * @param  array{allowed_mimes?: string[]|null}  $constraints
      */
     private function syncMediaConstraints(Field $field, array $constraints): void
     {

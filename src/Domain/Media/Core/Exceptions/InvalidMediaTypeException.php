@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Core\Exceptions;
 
-use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
+use InvalidArgumentException;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
+use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ErrorFactory;
 use Polymorph\Platform\Support\Errors\ErrorPayload;
-use InvalidArgumentException;
 
 /**
  * Исключение: недопустимый тип медиа
@@ -17,6 +17,7 @@ use InvalidArgumentException;
 class InvalidMediaTypeException extends InvalidArgumentException implements ErrorConvertible
 {
     private ?string $mimeType = null;
+
     private ?string $expectedKind = null;
 
     /**
@@ -25,13 +26,14 @@ class InvalidMediaTypeException extends InvalidArgumentException implements Erro
     public static function unsupportedMimeType(string $mimeType, ?array $allowedMimeTypes = null): self
     {
         $message = "Unsupported MIME type: '{$mimeType}'";
-        
+
         if ($allowedMimeTypes) {
-            $message .= '. Allowed types: ' . implode(', ', $allowedMimeTypes);
+            $message .= '. Allowed types: '.implode(', ', $allowedMimeTypes);
         }
 
         $exception = new self($message);
         $exception->mimeType = $mimeType;
+
         return $exception;
     }
 
@@ -44,6 +46,7 @@ class InvalidMediaTypeException extends InvalidArgumentException implements Erro
             "Media kind mismatch: expected '{$expected->value}', got '{$actual->value}'"
         );
         $exception->expectedKind = $expected->value;
+
         return $exception;
     }
 
@@ -61,7 +64,7 @@ class InvalidMediaTypeException extends InvalidArgumentException implements Erro
     public static function invalidExtension(string $extension, ?string $mimeType = null): self
     {
         $message = "Invalid file extension: '{$extension}'";
-        
+
         if ($mimeType) {
             $message .= " for MIME type '{$mimeType}'";
         }

@@ -17,4 +17,3 @@ trait ResolvesPageRequest
         return PageRequest::fromValidated($validated, $limits);
     }
 }
-

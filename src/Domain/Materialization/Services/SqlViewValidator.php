@@ -29,7 +29,7 @@ final class SqlViewValidator
         $this->assertSqlSupportedFilters($ast);
 
         foreach ($ast->children as $child) {
-            if (!$child instanceof ExpressionNode) {
+            if (! $child instanceof ExpressionNode) {
                 continue;
             }
 
@@ -40,13 +40,13 @@ final class SqlViewValidator
     private function assertSqlSupportedFilters(TemplateNode $ast): void
     {
         foreach ($ast->children as $child) {
-            if (!$child instanceof ExpressionNode) {
+            if (! $child instanceof ExpressionNode) {
                 continue;
             }
 
             foreach ($child->filters as $filter) {
                 $descriptor = $this->filterRegistry->get($filter->name);
-                if ($descriptor !== null && !$descriptor->supportsSql) {
+                if ($descriptor !== null && ! $descriptor->supportsSql) {
                     throw new ValidationException("Filter '{$filter->name}' is not supported by SQL engine");
                 }
             }
@@ -69,7 +69,7 @@ final class SqlViewValidator
 
             if ($segment instanceof RefNode) {
                 $field = $this->requireFieldMeta($schema, $segment->fieldId);
-                if (!$field->isRef()) {
+                if (! $field->isRef()) {
                     throw new ValidationException("ref({$segment->fieldId}) points to non-ref field");
                 }
 
@@ -86,12 +86,12 @@ final class SqlViewValidator
                 continue;
             }
 
-            if (!$segment instanceof FieldNode) {
+            if (! $segment instanceof FieldNode) {
                 throw new ValidationException('Unsupported path segment for SQL engine');
             }
 
             $isLast = $index === count($segments) - 1;
-            if (!$isLast) {
+            if (! $isLast) {
                 throw new ValidationException('Only ref() segments are allowed before terminal field()');
             }
 
@@ -109,7 +109,7 @@ final class SqlViewValidator
     }
 
     /**
-     * @param array<int, mixed> $segments
+     * @param  array<int, mixed>  $segments
      */
     private function countRefSegments(array $segments): int
     {
@@ -127,7 +127,7 @@ final class SqlViewValidator
     private function requireFieldMeta(SchemaSnapshot $schema, int $fieldId): SchemaFieldSnapshot
     {
         $field = $schema->fieldsById[$fieldId] ?? null;
-        if (!$field instanceof SchemaFieldSnapshot) {
+        if (! $field instanceof SchemaFieldSnapshot) {
             throw new ValidationException("Unknown field({$fieldId}) in template for record_definition {$schema->rootRecordDefinitionId}");
         }
 

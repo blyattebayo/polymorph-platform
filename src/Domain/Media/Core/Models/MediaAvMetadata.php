@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Eloquent модель для нормализованных AV-метаданных медиа (MediaAvMetadata).
@@ -23,10 +24,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $frame_count Количество кадров
  * @property string|null $video_codec Видео кодек
  * @property string|null $audio_codec Аудио кодек
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
- *
- * @property-read \Polymorph\Platform\Domain\Media\Core\Models\Media $media Связанный медиа-файл
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read Media $media Связанный медиа-файл
  */
 class MediaAvMetadata extends Model
 {
@@ -98,7 +98,7 @@ class MediaAvMetadata extends Model
     /**
      * Связанный медиа-файл.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\Polymorph\Platform\Domain\Media\Core\Models\Media, \Polymorph\Platform\Domain\Media\Core\Models\MediaAvMetadata>
+     * @return BelongsTo<Media, MediaAvMetadata>
      */
     public function media(): BelongsTo
     {

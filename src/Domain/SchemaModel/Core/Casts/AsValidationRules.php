@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Core\Casts;
 
-use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\ValidationRules;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
+use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\ValidationRules;
 
 /**
  * Eloquent Cast для автоматической конвертации ValidationRules в/из JSON.

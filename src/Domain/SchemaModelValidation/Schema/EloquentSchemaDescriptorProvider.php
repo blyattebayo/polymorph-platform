@@ -11,8 +11,7 @@ final class EloquentSchemaDescriptorProvider implements SchemaDescriptorProvider
 {
     public function __construct(
         private readonly SchemaDescriptorFactory $factory,
-    ) {
-    }
+    ) {}
 
     public function forSchemaId(int $schemaId): SchemaDescriptor
     {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Polymorph\Platform\Http\Middleware;
 
 use Closure;
@@ -15,8 +17,6 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Применяется только к публичным контентным маршрутам,
  * не затрагивает админку (/admin/*) и API (/api/*).
- *
- * @package Polymorph\Platform\Http\Middleware
  */
 class CanonicalUrl
 {
@@ -26,9 +26,8 @@ class CanonicalUrl
      * Нормализует путь (нижний регистр, без trailing slash) и выполняет
      * 301 редирект при необходимости. Сохраняет query string.
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
-     * @param \Closure $next Следующий middleware
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @param  Request  $request  HTTP запрос
+     * @param  Closure  $next  Следующий middleware
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -36,32 +35,32 @@ class CanonicalUrl
         $originalUri = $request->server('REQUEST_URI', '');
         $pathInfo = parse_url($originalUri, PHP_URL_PATH) ?: '';
         $path = trim($pathInfo, '/');
-        
+
         // Пропускаем системные пути (админка, API) - они не должны канонизироваться
         if ($this->isSystemPath($path)) {
             return $next($request);
         }
-        
+
         // Нормализуем путь: приводим к нижнему регистру и удаляем завершающий слэш
         $normalized = strtolower($path);
         $normalized = rtrim($normalized, '/');
-        
+
         // Проверяем также оригинальный путь на trailing slash
         $hasTrailingSlash = $pathInfo !== '/' && substr($pathInfo, -1) === '/';
         $needsRedirect = $path !== $normalized || $hasTrailingSlash;
-        
+
         // Если путь изменился (регистр или trailing slash), делаем 301 редирект
         if ($needsRedirect) {
-            $canonical = '/' . $normalized;
-            
+            $canonical = '/'.$normalized;
+
             // Сохраняем query string, если есть
             if ($request->getQueryString()) {
-                $canonical .= '?' . $request->getQueryString();
+                $canonical .= '?'.$request->getQueryString();
             }
-            
+
             return redirect($canonical, 301);
         }
-        
+
         return $next($request);
     }
 
@@ -70,17 +69,15 @@ class CanonicalUrl
      *
      * Системные пути не должны канонизироваться.
      *
-     * @param string $path Путь без ведущего '/'
-     * @return bool
+     * @param  string  $path  Путь без ведущего '/'
      */
     private function isSystemPath(string $path): bool
     {
         // Системные префиксы, которые не должны канонизироваться
         $systemPrefixes = ['admin', 'api', 'auth', 'login', 'logout', 'register'];
-        
+
         $firstSegment = strtolower(explode('/', $path)[0]);
-        
+
         return in_array($firstSegment, $systemPrefixes, true);
     }
 }
-

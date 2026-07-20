@@ -4,22 +4,20 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Console;
 
-use Polymorph\Platform\Domain\Routing\Services\Cache\RouteCache;
+use Illuminate\Console\Command;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Repositories\ClientRouteRepository;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Repositories\SystemRouteRepository;
-use Illuminate\Console\Command;
+use Polymorph\Platform\Domain\Routing\Services\Cache\RouteCache;
 
 /**
  * Команда для прогрева кэша динамических маршрутов.
  *
  * Загружает все деревья маршрутов (системные из конфигов и клиентские из БД)
  * и сохраняет их в кэш для ускорения последующих запросов.
- * 
+ *
  * Прогревает:
  * - Кэш системных роутов (SYSTEM и PLUGIN из конфигов)
  * - Кэш клиентских роутов (CLIENT из таблицы route_nodes)
- *
- * @package Polymorph\Platform\Domain\Routing\Console
  */
 class CacheRoutesCommand extends Command
 {
@@ -44,9 +42,9 @@ class CacheRoutesCommand extends Command
      * 1. SystemRouteRepository - системные и плагинные роуты из конфигов
      * 2. ClientRouteRepository - клиентские роуты из БД
      *
-     * @param \Polymorph\Platform\Domain\Routing\Infrastructure\Repositories\SystemRouteRepository $systemRepository Репозиторий системных роутов
-     * @param \Polymorph\Platform\Domain\Routing\Infrastructure\Repositories\ClientRouteRepository $clientRepository Репозиторий клиентских роутов
-     * @param \Polymorph\Platform\Domain\Routing\Services\Cache\RouteCache $routeCache Сервис кэширования
+     * @param  SystemRouteRepository  $systemRepository  Репозиторий системных роутов
+     * @param  ClientRouteRepository  $clientRepository  Репозиторий клиентских роутов
+     * @param  RouteCache  $routeCache  Сервис кэширования
      * @return int Код возврата (0 = успех, 1 = ошибка)
      */
     public function handle(
@@ -75,11 +73,11 @@ class CacheRoutesCommand extends Command
 
             $totalCount = $systemCount + $clientCount;
             $this->info("Cache warmed up successfully. Total: {$totalCount} route node(s).");
-            
+
             return self::SUCCESS;
         } catch (\Exception $e) {
             $this->error("Failed to warm up cache: {$e->getMessage()}");
-            
+
             return self::FAILURE;
         }
     }

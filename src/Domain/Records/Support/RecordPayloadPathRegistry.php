@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Support;
 
+use Polymorph\Platform\Domain\Records\Query\RecordFieldSqlExpression;
+
 /**
  * Канонический root key payload записи: API request/response, Laravel validation paths
  * и имя колонки Eloquent `records.data_json`.
  *
- * Для SQL-выражений по колонке используйте {@see \Polymorph\Platform\Domain\Records\Query\RecordFieldSqlExpression}.
+ * Для SQL-выражений по колонке используйте {@see RecordFieldSqlExpression}.
  */
 final class RecordPayloadPathRegistry
 {
@@ -20,12 +22,12 @@ final class RecordPayloadPathRegistry
             return self::ROOT_KEY;
         }
 
-        return self::ROOT_KEY . '.' . ltrim($suffix, '.');
+        return self::ROOT_KEY.'.'.ltrim($suffix, '.');
     }
 
     public static function dottedPrefix(): string
     {
-        return self::ROOT_KEY . '.';
+        return self::ROOT_KEY.'.';
     }
 
     public static function hasDottedPrefix(string $path): bool

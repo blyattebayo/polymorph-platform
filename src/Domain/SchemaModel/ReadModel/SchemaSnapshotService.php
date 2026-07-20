@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\ReadModel;
 
-use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
-use Polymorph\Platform\Domain\SchemaModel\ReadModel\Contracts\SchemaSnapshotServiceInterface;
-use Polymorph\Platform\Domain\SchemaModelValidation\FieldPathBuilder;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
+use Polymorph\Platform\Domain\SchemaModel\ReadModel\Contracts\SchemaSnapshotServiceInterface;
+use Polymorph\Platform\Domain\SchemaModelValidation\FieldPathBuilder;
 
 final class SchemaSnapshotService implements SchemaSnapshotServiceInterface
 {
@@ -17,8 +17,11 @@ final class SchemaSnapshotService implements SchemaSnapshotServiceInterface
     private array $snapshotCache = [];
 
     private bool $l2Enabled;
+
     private ?string $l2Store;
+
     private int $l2TtlSeconds;
+
     private string $l2Prefix;
 
     public function __construct(
@@ -84,7 +87,7 @@ final class SchemaSnapshotService implements SchemaSnapshotServiceInterface
                 'fields.full_path',
                 'fields.parent_id',
                 'record_definitions.id as record_definition_id',
-                'field_ref_constraints.allowed_record_definition_id'
+                'field_ref_constraints.allowed_record_definition_id',
             ])
             ->get();
 
@@ -125,7 +128,7 @@ final class SchemaSnapshotService implements SchemaSnapshotServiceInterface
                 continue;
             }
 
-            if (!isset($pathCardinalitiesBySchema[$schemaId])) {
+            if (! isset($pathCardinalitiesBySchema[$schemaId])) {
                 $pathCardinalitiesBySchema[$schemaId] = [];
             }
 
@@ -187,6 +190,7 @@ final class SchemaSnapshotService implements SchemaSnapshotServiceInterface
         if ($recordDefinitionId === null) {
             $this->snapshotCache = [];
             $this->bumpL2NamespaceVersion();
+
             return;
         }
 
@@ -223,12 +227,12 @@ final class SchemaSnapshotService implements SchemaSnapshotServiceInterface
 
     private function namespaceVersionKey(): string
     {
-        return $this->l2Prefix . 'ns_version';
+        return $this->l2Prefix.'ns_version';
     }
 
     private function currentL2NamespaceVersion(): int
     {
-        if (!$this->l2Enabled) {
+        if (! $this->l2Enabled) {
             return 1;
         }
 
@@ -245,7 +249,7 @@ final class SchemaSnapshotService implements SchemaSnapshotServiceInterface
 
     private function bumpL2NamespaceVersion(): void
     {
-        if (!$this->l2Enabled) {
+        if (! $this->l2Enabled) {
             return;
         }
 
@@ -256,17 +260,17 @@ final class SchemaSnapshotService implements SchemaSnapshotServiceInterface
 
     private function snapshotCacheKey(int $recordDefinitionId): string
     {
-        return $this->l2Prefix . 'v' . $this->currentL2NamespaceVersion() . ':record_definition:' . $recordDefinitionId;
+        return $this->l2Prefix.'v'.$this->currentL2NamespaceVersion().':record_definition:'.$recordDefinitionId;
     }
 
     private function getL2Snapshot(int $recordDefinitionId): ?SchemaSnapshot
     {
-        if (!$this->l2Enabled || $recordDefinitionId <= 0) {
+        if (! $this->l2Enabled || $recordDefinitionId <= 0) {
             return null;
         }
 
         $payload = $this->cacheRepository()->get($this->snapshotCacheKey($recordDefinitionId));
-        if (!is_array($payload)) {
+        if (! is_array($payload)) {
             return null;
         }
 
@@ -275,7 +279,7 @@ final class SchemaSnapshotService implements SchemaSnapshotServiceInterface
 
     private function putL2Snapshot(SchemaSnapshot $snapshot): void
     {
-        if (!$this->l2Enabled) {
+        if (! $this->l2Enabled) {
             return;
         }
 
@@ -288,7 +292,7 @@ final class SchemaSnapshotService implements SchemaSnapshotServiceInterface
 
     private function forgetL2Snapshot(int $recordDefinitionId): void
     {
-        if (!$this->l2Enabled || $recordDefinitionId <= 0) {
+        if (! $this->l2Enabled || $recordDefinitionId <= 0) {
             return;
         }
 
@@ -329,13 +333,13 @@ final class SchemaSnapshotService implements SchemaSnapshotServiceInterface
         $fullSchemaHash = (string) ($payload['full_schema_hash'] ?? '');
         $fieldsPayload = $payload['fields_by_id'] ?? null;
 
-        if ($rootRecordDefinitionId <= 0 || $fullSchemaHash === '' || !is_array($fieldsPayload)) {
+        if ($rootRecordDefinitionId <= 0 || $fullSchemaHash === '' || ! is_array($fieldsPayload)) {
             return null;
         }
 
         $fieldsById = [];
         foreach ($fieldsPayload as $fieldId => $fieldData) {
-            if (!is_array($fieldData)) {
+            if (! is_array($fieldData)) {
                 return null;
             }
 

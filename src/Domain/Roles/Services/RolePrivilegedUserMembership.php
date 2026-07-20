@@ -17,8 +17,7 @@ final class RolePrivilegedUserMembership implements PrivilegedUserMembership
     public function __construct(
         private readonly RoleRepository $roles,
         private readonly RoleAssignmentRepository $roleAssignments,
-    ) {
-    }
+    ) {}
 
     public function isSystemAdministrator(int $userId): bool
     {

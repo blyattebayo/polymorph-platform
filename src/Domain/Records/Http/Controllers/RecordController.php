@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Polymorph\Platform\Domain\Records\Core\Contracts\RecordRepository;
 use Polymorph\Platform\Domain\Records\Http\Requests\HydrateRecordsRequest;
-use Polymorph\Platform\Domain\Records\Http\Requests\ListRecordsRequest;
+use Polymorph\Platform\Domain\Records\Http\Requests\IndexRecordsRequest;
 use Polymorph\Platform\Domain\Records\Http\Requests\StoreRecordRequest;
 use Polymorph\Platform\Domain\Records\Http\Requests\UpdateRecordRequest;
 use Polymorph\Platform\Domain\Records\Services\RecordReader;
@@ -17,10 +19,8 @@ use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ThrowsErrors;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
 
-class RecordController extends Controller
+final class RecordController extends Controller
 {
     use ThrowsErrors;
 
@@ -30,7 +30,7 @@ class RecordController extends Controller
         private readonly RecordWriteOrchestrationService $recordWriteOrchestrationService,
     ) {}
 
-    public function index(ListRecordsRequest $request, UserIdentity $actor): JsonResponse
+    public function index(IndexRecordsRequest $request, UserIdentity $actor): JsonResponse
     {
         $recordDefinitionId = (int) $request->validated('record_definition_id');
         $result = $this->recordReader->listForDefinition(
@@ -38,6 +38,7 @@ class RecordController extends Controller
             $recordDefinitionId,
             $request->pageRequest(),
         );
+
         return PaginatedJsonResponse::from($result);
     }
 
@@ -114,4 +115,3 @@ class RecordController extends Controller
         ]);
     }
 }
-

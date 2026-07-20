@@ -37,8 +37,8 @@ final class ExtensionAutoloadService
             return;
         }
 
-        foreach (glob($root . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) ?: [] as $pluginBase) {
-            $autoloadPath = $pluginBase . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
+        foreach (glob($root.DIRECTORY_SEPARATOR.'*', GLOB_ONLYDIR) ?: [] as $pluginBase) {
+            $autoloadPath = $pluginBase.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'autoload.php';
             if (is_file($autoloadPath)) {
                 require_once $autoloadPath;
             }
@@ -53,7 +53,7 @@ final class ExtensionAutoloadService
         }
 
         $pluginNamespace = $parts[1];
-        $relativeClass = implode(DIRECTORY_SEPARATOR, array_slice($parts, 2)) . '.php';
+        $relativeClass = implode(DIRECTORY_SEPARATOR, array_slice($parts, 2)).'.php';
         $pluginId = $this->toSnakeCase($pluginNamespace);
         $root = rtrim((string) config('plugins.root_path'), '/\\');
 
@@ -61,9 +61,9 @@ final class ExtensionAutoloadService
             return null;
         }
 
-        $pluginBase = $root . DIRECTORY_SEPARATOR . $pluginId;
+        $pluginBase = $root.DIRECTORY_SEPARATOR.$pluginId;
 
-        return $pluginBase . DIRECTORY_SEPARATOR . 'be' . DIRECTORY_SEPARATOR . $relativeClass;
+        return $pluginBase.DIRECTORY_SEPARATOR.'be'.DIRECTORY_SEPARATOR.$relativeClass;
     }
 
     private function toSnakeCase(string $value): string

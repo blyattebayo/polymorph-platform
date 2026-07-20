@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Pipeline\Steps\Combined;
 
-use Polymorph\Platform\Domain\SchemaModel\Services\ConstraintManager;
 use Polymorph\Platform\Domain\SchemaModel\Pipeline\Contexts\SaveSchemaWithFieldsContext;
+use Polymorph\Platform\Domain\SchemaModel\Services\ConstraintManager;
 use Polymorph\Platform\PipelineCore\Runtime\AbstractStep;
 use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\StepResult;
@@ -39,7 +39,6 @@ final class SyncFieldsConstraintsStep extends AbstractStep
     public function run(PipelineContext $context): StepResult
     {
         /** @var SaveSchemaWithFieldsContext $context */
-
         foreach ($context->fieldsForConstraintSync as $constraintItem) {
             $this->constraintManager->syncConstraints($constraintItem['field'], $constraintItem['constraints'] ?? []);
         }

@@ -7,10 +7,10 @@ namespace Polymorph\Platform\Domain\Extensions\Core\ValueObjects;
 final readonly class DiscoveredExtension
 {
     /**
-     * @param list<ExtensionCapabilityDefinition> $capabilityDefinitions
-     * @param list<string> $defaultAdminRoles
-     * @param list<ExtensionRoleDefinition> $pluginRoles роли, объявленные расширением
-     * @param array<string, string> $dependencies extensionId => semver range
+     * @param  list<ExtensionCapabilityDefinition>  $capabilityDefinitions
+     * @param  list<string>  $defaultAdminRoles
+     * @param  list<ExtensionRoleDefinition>  $pluginRoles  роли, объявленные расширением
+     * @param  array<string, string>  $dependencies  extensionId => semver range
      */
     public function __construct(
         public string $id,
@@ -30,6 +30,5 @@ final readonly class DiscoveredExtension
         public ?string $frontendNavSection,
         public array $dependencies = [],
         public array $pluginRoles = [],
-    ) {
-    }
+    ) {}
 }

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Http;
 
+use Illuminate\Http\JsonResponse;
 use Polymorph\Platform\Support\Errors\ErrorCode as CoreErrorCode;
 use Polymorph\Platform\Support\Errors\ErrorFactory;
 use Polymorph\Platform\Support\Errors\ErrorPayload;
-use Illuminate\Http\JsonResponse;
 use Polymorph\Sdk\Errors\ErrorCode as SdkErrorCode;
 use Polymorph\Sdk\Errors\ExtensionError;
 use Polymorph\Sdk\Http\Reply;
@@ -39,9 +39,7 @@ final class ReplyRenderer
         SdkErrorCode::INTERNAL_ERROR->value => CoreErrorCode::INTERNAL_SERVER_ERROR,
     ];
 
-    public function __construct(private readonly ErrorFactory $errors)
-    {
-    }
+    public function __construct(private readonly ErrorFactory $errors) {}
 
     public function render(Reply $reply): JsonResponse
     {

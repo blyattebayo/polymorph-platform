@@ -24,7 +24,7 @@ final class ErrorCatalog
     private array $types;
 
     /**
-     * @param array<string, ErrorType> $types
+     * @param  array<string, ErrorType>  $types
      */
     private function __construct(array $types)
     {
@@ -32,7 +32,7 @@ final class ErrorCatalog
     }
 
     /**
-     * @param array<string, ErrorTypeConfig> $config
+     * @param  array<string, ErrorTypeConfig>  $config
      */
     public static function fromConfig(array $config): self
     {
@@ -80,4 +80,3 @@ final class ErrorCatalog
         return ErrorCode::from($code);
     }
 }
-

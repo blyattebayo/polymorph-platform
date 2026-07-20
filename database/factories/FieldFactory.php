@@ -2,14 +2,14 @@
 
 namespace Database\Factories;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\Cardinality;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
-use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Polymorph\Platform\Domain\SchemaModel\Core\Models\Field>
+ * @extends Factory<Field>
  */
 class FieldFactory extends Factory
 {
@@ -100,7 +100,7 @@ class FieldFactory extends Factory
     {
         return $this->state(function (array $attributes) use ($parent): array {
             $name = (string) $attributes['name'];
-            $fullPath = $parent->full_path . '.' . $name;
+            $fullPath = $parent->full_path.'.'.$name;
 
             return [
                 'parent_id' => $parent->id,

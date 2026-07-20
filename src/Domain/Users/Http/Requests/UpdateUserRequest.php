@@ -19,7 +19,7 @@ final class UpdateUserRequest extends ApiFormRequest
         return [
             'name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'email' => ValidationRules::email(required: false),
-            'status' => ['sometimes', new ValidUserStatusRule()],
+            'status' => ['sometimes', new ValidUserStatusRule],
             'role_ids' => ['sometimes', 'array', app(AssignableRoleIdsRule::class)],
             'role_ids.*' => ['integer', 'min:1'],
         ];

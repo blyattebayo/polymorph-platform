@@ -12,6 +12,5 @@ final readonly class RegisterSessionCommand
         public ?string $name,
         public ?string $ip,
         public ?string $userAgent,
-    ) {
-    }
+    ) {}
 }

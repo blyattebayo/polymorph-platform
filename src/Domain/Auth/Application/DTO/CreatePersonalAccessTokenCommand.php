@@ -11,6 +11,5 @@ final readonly class CreatePersonalAccessTokenCommand
         public string $name,
         public int $createdByUserId,
         public ?string $ttl = null,
-    ) {
-    }
+    ) {}
 }

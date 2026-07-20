@@ -61,7 +61,7 @@ final class NormalizeSchemaDataStep extends AbstractStep
             );
         } catch (\InvalidArgumentException $exception) {
             return StepResult::failure(
-                error: 'Schema normalization failed: ' . $exception->getMessage(),
+                error: 'Schema normalization failed: '.$exception->getMessage(),
             );
         }
 

@@ -10,22 +10,19 @@ use Polymorph\Platform\Domain\Media\Core\Models\Media;
 
 /**
  * Query для поиска медиа по ID.
- * 
- * Часть CQRS паттерна - операция только чтения.
  *
- * @package Polymorph\Platform\Domain\Media\Queries
+ * Часть CQRS паттерна - операция только чтения.
  */
 final readonly class FindMediaByIdQuery
 {
     public function __construct(
         private MediaRepository $repository
-    ) {
-    }
+    ) {}
 
     /**
      * Найти медиа по ID.
      *
-     * @param string $id ULID медиа
+     * @param  string  $id  ULID медиа
      * @return Media|null Найденная запись или null
      */
     public function execute(string $id): ?Media
@@ -36,8 +33,9 @@ final readonly class FindMediaByIdQuery
     /**
      * Найти медиа по ID или выбросить исключение.
      *
-     * @param string $id ULID медиа
+     * @param  string  $id  ULID медиа
      * @return Media Найденная запись
+     *
      * @throws MediaNotFoundException Если медиа не найдено
      */
     public function executeOrFail(string $id): Media

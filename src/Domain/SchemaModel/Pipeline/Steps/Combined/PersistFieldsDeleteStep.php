@@ -41,7 +41,6 @@ final class PersistFieldsDeleteStep extends AbstractStep
     public function run(PipelineContext $context): StepResult
     {
         /** @var SaveSchemaWithFieldsContext $context */
-
         $schema = $context->schema();
         if ($schema === null) {
             return StepResult::failure('Schema is not available for fields delete');
@@ -49,7 +48,7 @@ final class PersistFieldsDeleteStep extends AbstractStep
 
         foreach ($context->fieldsDelete as $fieldIdRaw) {
             $field = $this->fieldRepository->find((int) $fieldIdRaw);
-            if (!$field instanceof Field) {
+            if (! $field instanceof Field) {
                 return StepResult::failure(sprintf('Field %d is not found in target schema', (int) $fieldIdRaw));
             }
 

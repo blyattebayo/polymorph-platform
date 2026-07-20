@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeActionType;
 use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeKind;
 use Polymorph\Platform\Domain\Routing\Core\Models\RouteNode;
-use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * Р¤Р°Р±СЂРёРєР° РґР»СЏ РјРѕРґРµР»Рё RouteNode.
@@ -48,8 +48,6 @@ class RouteNodeFactory extends Factory
 
     /**
      * РЈРєР°Р·Р°С‚СЊ, С‡С‚Рѕ СѓР·РµР» СЏРІР»СЏРµС‚СЃСЏ РіСЂСѓРїРїРѕР№.
-     *
-     * @return static
      */
     public function group(): static
     {
@@ -64,8 +62,6 @@ class RouteNodeFactory extends Factory
 
     /**
      * РЈРєР°Р·Р°С‚СЊ, С‡С‚Рѕ СѓР·РµР» СЏРІР»СЏРµС‚СЃСЏ РјР°СЂС€СЂСѓС‚РѕРј.
-     *
-     * @return static
      */
     public function route(): static
     {
@@ -82,8 +78,7 @@ class RouteNodeFactory extends Factory
     /**
      * РЈРєР°Р·Р°С‚СЊ СЂРѕРґРёС‚РµР»СЊСЃРєРёР№ СѓР·РµР».
      *
-     * @param \Polymorph\Platform\Domain\Routing\Core\Models\RouteNode $parent Р РѕРґРёС‚РµР»СЊСЃРєРёР№ СѓР·РµР»
-     * @return static
+     * @param  RouteNode  $parent  Р РѕРґРёС‚РµР»СЊСЃРєРёР№ СѓР·РµР»
      */
     public function withParent(RouteNode $parent): static
     {
@@ -94,8 +89,6 @@ class RouteNodeFactory extends Factory
 
     /**
      * РЈРєР°Р·Р°С‚СЊ, С‡С‚Рѕ СѓР·РµР» РІРєР»СЋС‡С‘РЅ.
-     *
-     * @return static
      */
     public function enabled(): static
     {
@@ -106,8 +99,6 @@ class RouteNodeFactory extends Factory
 
     /**
      * РЈРєР°Р·Р°С‚СЊ, С‡С‚Рѕ СѓР·РµР» РІС‹РєР»СЋС‡РµРЅ.
-     *
-     * @return static
      */
     public function disabled(): static
     {

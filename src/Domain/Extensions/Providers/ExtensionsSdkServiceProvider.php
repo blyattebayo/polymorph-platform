@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Providers;
 
-use Polymorph\Platform\Domain\Extensions\Http\ReplyAwareControllerDispatcher;
+use Illuminate\Routing\Contracts\ControllerDispatcher;
+use Illuminate\Support\ServiceProvider;
 use Polymorph\Platform\Domain\Extensions\HostExtensionServices;
+use Polymorph\Platform\Domain\Extensions\Http\ReplyAwareControllerDispatcher;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\Contracts\ExtensionRegistryState;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\DatabaseExtensionRegistryState;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkActorDirectory;
@@ -15,7 +17,7 @@ use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkLogger;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkRedactor;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkRequestAuthenticator;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkValidationConstraints;
-use Illuminate\Support\ServiceProvider;
+use Polymorph\Platform\Domain\Extensions\SdkBridge\TrustedOrDatabaseExtensionRegistryState;
 use Polymorph\Sdk\Access\AccessGrants;
 use Polymorph\Sdk\Contracts\ExtensionState;
 use Polymorph\Sdk\Data\DefinitionRegistry;
@@ -59,7 +61,7 @@ final class ExtensionsSdkServiceProvider extends ServiceProvider
     {
         // Trusted (withPlugins) plugins report as always-enabled; others fall through to the DB
         // (ADR 0006 Стадия 4). DatabaseExtensionRegistryState stays resolvable for the decorator.
-        $this->app->singleton(ExtensionRegistryState::class, \Polymorph\Platform\Domain\Extensions\SdkBridge\TrustedOrDatabaseExtensionRegistryState::class);
+        $this->app->singleton(ExtensionRegistryState::class, TrustedOrDatabaseExtensionRegistryState::class);
 
         foreach (self::SDK_CONTRACT_BINDINGS as $contract => $adapter) {
             $this->app->singleton($contract, $adapter);
@@ -67,7 +69,7 @@ final class ExtensionsSdkServiceProvider extends ServiceProvider
 
         $guard = static function (string $contract): never {
             throw new \LogicException(
-                "{$contract} is extension-scoped: resolve it via ExtensionServices->...(\$context) " .
+                "{$contract} is extension-scoped: resolve it via ExtensionServices->...(\$context) ".
                 '(in an extension use $this->records()/$this->definitions()/$this->grants()).',
             );
         };
@@ -80,7 +82,7 @@ final class ExtensionsSdkServiceProvider extends ServiceProvider
         // HTTP-ответ. Глобальный биндинг ControllerDispatcher, но эффект только на
         // возврат типа Reply — контроллеры ядра не затрагиваются.
         $this->app->singleton(
-            \Illuminate\Routing\Contracts\ControllerDispatcher::class,
+            ControllerDispatcher::class,
             ReplyAwareControllerDispatcher::class,
         );
     }

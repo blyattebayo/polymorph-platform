@@ -11,7 +11,7 @@ namespace Polymorph\Platform\Domain\Routing\Core\Contracts;
 final readonly class PluginRouteSet
 {
     /**
-     * @param list<array<string, mixed>> $config
+     * @param  list<array<string, mixed>>  $config
      */
     public function __construct(
         public string $pluginId,

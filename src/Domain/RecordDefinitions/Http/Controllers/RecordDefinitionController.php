@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\RecordDefinitions\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionRepository;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Exceptions\RecordDefinitionNotFoundErrorFactory;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
-use Polymorph\Platform\Domain\RecordDefinitions\Http\Requests\CreateRecordDefinitionRequest;
 use Polymorph\Platform\Domain\RecordDefinitions\Http\Requests\IndexRecordDefinitionsRequest;
+use Polymorph\Platform\Domain\RecordDefinitions\Http\Requests\StoreRecordDefinitionRequest;
 use Polymorph\Platform\Domain\RecordDefinitions\Http\Requests\UpdateRecordDefinitionRequest;
 use Polymorph\Platform\Domain\RecordDefinitions\Http\Resources\RecordDefinitionResource;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Commands\CreateRecordDefinitionCommand;
@@ -19,22 +22,18 @@ use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Handlers\DeleteRecordDe
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Handlers\UpdateRecordDefinitionHandler;
 use Polymorph\Platform\Http\Controllers\Controller;
 use Polymorph\Platform\Http\Pagination\V2\PaginatedJsonResponse;
+use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
 use Polymorph\Platform\Infrastructure\Pagination\V2\LaravelPaginatorAdapter;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwnershipService;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceType;
 use Polymorph\Platform\Support\Errors\ErrorFactory;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 
 /**
  * Контроллер для управления типами записей (RecordDefinition) в админ-панели.
  *
  * Предоставляет CRUD операции для типов записей: создание, чтение, обновление, удаление.
- *
- * @package Polymorph\Platform\Domain\RecordDefinitions\Http\Controllers
  */
-class RecordDefinitionController extends Controller
+final class RecordDefinitionController extends Controller
 {
     public function __construct(
         private readonly CreateRecordDefinitionHandler $createRecordDefinitionHandler,
@@ -44,11 +43,9 @@ class RecordDefinitionController extends Controller
         private readonly ErrorFactory $errorFactory,
         private readonly LaravelPaginatorAdapter $paginatorAdapter,
         private readonly ResourceOwnershipService $ownershipService,
-    ) {
-    }
+    ) {}
 
-
-    public function store(CreateRecordDefinitionRequest $request): JsonResponse
+    public function store(StoreRecordDefinitionRequest $request): JsonResponse
     {
         $recordDefinition = $this->createRecordDefinitionHandler->handle(new CreateRecordDefinitionCommand(
             payload: $request->toData(),
@@ -101,7 +98,7 @@ class RecordDefinitionController extends Controller
             force: $force,
         ));
 
-        return response()->noContent();
+        return AdminResponse::noContent();
     }
 
     private function resolveRecordDefinition(int $id): RecordDefinition

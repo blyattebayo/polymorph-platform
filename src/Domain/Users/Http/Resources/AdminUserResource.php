@@ -12,7 +12,7 @@ final class AdminUserResource extends AdminJsonResource
     public static $wrap = null;
 
     /**
-     * @param array<int, array<string, mixed>> $roles
+     * @param  array<int, array<string, mixed>>  $roles
      */
     public function __construct(User $resource, private readonly array $roles = [])
     {

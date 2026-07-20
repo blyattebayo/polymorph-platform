@@ -12,8 +12,6 @@ use Illuminate\Support\Facades\Cache;
  *
  * Предоставляет методы для кэширования и инвалидации дерева маршрутов.
  * Использует версионирование ключей для возможности инвалидации при изменении схемы.
- *
- * @package Polymorph\Platform\Domain\Routing\Services\Cache
  */
 class RouteCache
 {
@@ -51,7 +49,7 @@ class RouteCache
         ]);
         $base = rtrim((string) config('routing.base_path', base_path('routes')), '/');
         $files = array_map(
-            static fn (string $file): string => $base . '/' . ltrim($file, '/'),
+            static fn (string $file): string => $base.'/'.ltrim($file, '/'),
             $routeFiles,
         );
 
@@ -59,7 +57,7 @@ class RouteCache
 
         foreach ($files as $file) {
             $mtime = is_file($file) ? (string) (filemtime($file) ?: 0) : '0';
-            $parts[] = $file . ':' . $mtime;
+            $parts[] = $file.':'.$mtime;
         }
 
         return substr(sha1(implode('|', $parts)), 0, 12);
@@ -120,8 +118,8 @@ class RouteCache
      * из boot() и уронил бы весь app (в т.ч. саму миграцию, которая создаёт таблицу — курица/яйцо).
      * Загрузчики дерева — чистые чтения (идемпотентны), поэтому повторный вызов callback безопасен.
      *
-     * @param callable(): \Illuminate\Support\Collection<int, mixed> $callback
-     * @return \Illuminate\Support\Collection<int, mixed>
+     * @param  callable(): Collection<int, mixed>  $callback
+     * @return Collection<int, mixed>
      */
     private function rememberGuarded(string $key, callable $callback): Collection
     {
@@ -135,36 +133,39 @@ class RouteCache
     /**
      * Получить дерево декларативных маршрутов из кэша или выполнить callback.
      *
-     * @param callable(): \Illuminate\Support\Collection<int, mixed> $callback Callback для получения дерева
-     * @return \Illuminate\Support\Collection<int, mixed> Дерево декларативных маршрутов
+     * @param  callable(): Collection<int, mixed>  $callback  Callback для получения дерева
+     * @return Collection<int, mixed> Дерево декларативных маршрутов
      */
     public function rememberSystemTree(callable $callback): Collection
     {
         $key = $this->getSystemCacheKey();
+
         return $this->rememberGuarded($key, $callback);
     }
 
     /**
      * Получить дерево динамических маршрутов из кэша или выполнить callback.
      *
-     * @param callable(): \Illuminate\Support\Collection<int, mixed> $callback Callback для получения дерева
-     * @return \Illuminate\Support\Collection<int, mixed> Дерево динамических маршрутов
+     * @param  callable(): Collection<int, mixed>  $callback  Callback для получения дерева
+     * @return Collection<int, mixed> Дерево динамических маршрутов
      */
     public function rememberClientTree(bool $enabledOnly, callable $callback): Collection
     {
         $key = $this->getClientCacheKey($enabledOnly);
+
         return $this->rememberGuarded($key, $callback);
     }
 
     /**
      * Получить дерево declarative-маршрутов плагинов из кэша или callback.
      *
-     * @param callable(): \Illuminate\Support\Collection<int, mixed> $callback
-     * @return \Illuminate\Support\Collection<int, mixed>
+     * @param  callable(): Collection<int, mixed>  $callback
+     * @return Collection<int, mixed>
      */
     public function rememberPluginTree(string $fingerprint, callable $callback): Collection
     {
         $key = $this->getPluginCacheKey($fingerprint);
+
         return $this->rememberGuarded($key, $callback);
     }
 
@@ -176,8 +177,6 @@ class RouteCache
      * Записи plugin_tree и system_tree версионируются по fingerprint
      * (mtime файлов), поэтому ротируются сами; здесь снимаем текущие ключи
      * на случай явного `route:clear`.
-     *
-     * @return void
      */
     public function forgetTree(): void
     {
@@ -190,8 +189,6 @@ class RouteCache
      *
      * Динамический кэш — единственный без fingerprint, поэтому требует явной
      * инвалидации (вызывается из RouteNodeObserver при изменениях route_nodes).
-     *
-     * @return void
      */
     public function forgetClientTree(): void
     {

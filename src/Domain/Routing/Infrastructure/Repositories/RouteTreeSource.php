@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Infrastructure\Repositories;
 
-use Polymorph\Platform\Domain\Routing\Core\ValueObjects\RouteNodeDefinition;
 use Illuminate\Support\Collection;
+use Polymorph\Platform\Domain\Routing\Core\ValueObjects\RouteNodeDefinition;
 
 /**
  * Источник дерева маршрутов для объединения в общий роутер.

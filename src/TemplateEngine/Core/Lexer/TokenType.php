@@ -27,4 +27,3 @@ enum TokenType: string
     case COMMA = 'COMMA';                // ,
     case EOF = 'EOF';
 }
-

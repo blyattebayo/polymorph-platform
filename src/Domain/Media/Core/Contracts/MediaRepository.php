@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Core\Contracts;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Polymorph\Platform\Domain\Media\Core\Collections\MediaCollection;
+use Polymorph\Platform\Domain\Media\Core\Exceptions\MediaNotFoundException;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaQuery;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Репозиторий для работы с медиа-файлами
@@ -22,7 +24,7 @@ interface MediaRepository
     /**
      * Найти медиа по ID или выбросить исключение
      *
-     * @throws \Polymorph\Platform\Domain\Media\Core\Exceptions\MediaNotFoundException
+     * @throws MediaNotFoundException
      */
     public function findOrFail(string $id): Media;
 
@@ -65,10 +67,10 @@ interface MediaRepository
     /**
      * Обновить медиа по ID (включая мягко удаленные)
      *
-     * @param string $id ULID медиа
-     * @param array<string, mixed> $attributes Поля для обновления (title, alt)
-     * @return Media
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     * @param  string  $id  ULID медиа
+     * @param  array<string, mixed>  $attributes  Поля для обновления (title, alt)
+     *
+     * @throws ModelNotFoundException
      */
     public function updateById(string $id, array $attributes): Media;
 
@@ -100,21 +102,21 @@ interface MediaRepository
     /**
      * Получить медиа по массиву ID
      *
-     * @param array<int, string> $ids
+     * @param  array<int, string>  $ids
      */
     public function findMany(array $ids): MediaCollection;
 
     /**
      * Получить только мягко удалённые медиа по массиву ID.
      *
-     * @param array<int, string> $ids
+     * @param  array<int, string>  $ids
      */
     public function findManyTrashed(array $ids): MediaCollection;
 
     /**
      * Получить медиа по массиву ID, включая мягко удалённые.
      *
-     * @param array<int, string> $ids
+     * @param  array<int, string>  $ids
      */
     public function findManyWithTrashed(array $ids): MediaCollection;
 
@@ -126,7 +128,7 @@ interface MediaRepository
     /**
      * Мягкое удаление медиа по массиву ID
      *
-     * @param array<int, string> $ids
+     * @param  array<int, string>  $ids
      * @return int Количество удаленных записей
      */
     public function deleteMany(array $ids): int;
@@ -134,7 +136,7 @@ interface MediaRepository
     /**
      * Полное удаление медиа по массиву ID
      *
-     * @param array<int, string> $ids
+     * @param  array<int, string>  $ids
      * @return int Количество удаленных записей
      */
     public function forceDeleteMany(array $ids): int;
@@ -142,7 +144,7 @@ interface MediaRepository
     /**
      * Восстановить медиа по массиву ID
      *
-     * @param array<int, string> $ids
+     * @param  array<int, string>  $ids
      * @return int Количество восстановленных записей
      */
     public function restoreMany(array $ids): int;

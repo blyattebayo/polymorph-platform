@@ -59,7 +59,7 @@ final class ExtensionFrontendManifestService
 
         $separator = str_contains($bundle, '?') ? '&' : '?';
 
-        return $bundle . $separator . 'v=' . rawurlencode($version);
+        return $bundle.$separator.'v='.rawurlencode($version);
     }
 
     /**

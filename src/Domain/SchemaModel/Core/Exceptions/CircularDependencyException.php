@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Core\Exceptions;
 
+use LogicException;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ErrorFactory;
 use Polymorph\Platform\Support\Errors\ErrorPayload;
-use LogicException;
 
 /**
  * Исключение при обнаружении циклической зависимости в иерархии полей.
@@ -20,7 +20,7 @@ class CircularDependencyException extends LogicException implements ErrorConvert
         private readonly int $parentId,
     ) {
         parent::__construct(
-            "Обнаружена циклическая зависимость: поле #{$fieldId} не может иметь " .
+            "Обнаружена циклическая зависимость: поле #{$fieldId} не может иметь ".
             "родителем #{$parentId}, так как это создаст цикл в иерархии."
         );
     }

@@ -32,6 +32,7 @@ final class PlatformServiceProvider extends ServiceProvider
         Domain\Extensions\Providers\ExtensionsServiceProvider::class,
         Domain\Extensions\Providers\ExtensionsSdkServiceProvider::class,
         Domain\Routing\Providers\RoutingServiceProvider::class,
+        Admin\Providers\AdminServiceProvider::class,
         Domain\SchemaModel\Providers\SchemaServiceProvider::class,
         Domain\SchemaModelValidation\Providers\SchemaModelValidationServiceProvider::class,
         Domain\RecordDefinitions\Providers\RecordDefinitionServiceProvider::class,
@@ -45,51 +46,78 @@ final class PlatformServiceProvider extends ServiceProvider
     ];
 
     /**
-     * Platform config files (config key = file basename). The 11 host-owned configs
-     * (app, auth, cache, cors, database, filesystems, logging, mail, queue, services,
-     * session) stay in the host and are NOT merged here.
+     * Config files that live in the package's config/ directory but are NOT merged
+     * into the config repository.
+     *
+     * 'errors' stores exception-builder Closures as values, which are not
+     * var_export-serializable — merging it would make `php artisan config:cache` /
+     * `optimize` throw Closure::__set_state(). AppServiceProvider loads that file
+     * directly instead, so the app stays fully config-cacheable.
      *
      * @var array<int, string>
      */
-    private const CONFIG_KEYS = [
-        'dynamic-routes',
-        // NB: 'errors' is intentionally NOT merged into config(). config/errors.php stores
-        // exception-builder Closures as values, which are not var_export-serializable — merging
-        // them into the config repository would make `php artisan config:cache` / `optimize` throw
-        // Closure::__set_state(). AppServiceProvider loads that file directly instead, so the app
-        // stays fully config-cacheable. See AppServiceProvider::register().
-        'jwt',
-        'materialization',
-        'media',
-        'pat',
-        'plugins',
-        'records',
-        'routing',
-        'secret_redaction',
-        'security',
-        'validation_constraints',
-    ];
+    private const UNMERGED_CONFIGS = ['errors'];
 
     public function register(): void
     {
-        foreach (self::CONFIG_KEYS as $key) {
-            $this->mergeConfigFrom(__DIR__ . "/../config/{$key}.php", $key);
-        }
+        $this->mergePlatformConfigs();
 
         foreach (self::PROVIDERS as $provider) {
             $this->app->register($provider);
         }
     }
 
+    /**
+     * Merge every config file shipped in the package (config key = file basename),
+     * except the UNMERGED_CONFIGS exceptions. The 11 host-owned configs (app, auth,
+     * cache, cors, database, filesystems, logging, mail, queue, services, session)
+     * live in the host and are not present here.
+     */
+    private function mergePlatformConfigs(): void
+    {
+        foreach (glob(__DIR__.'/../config/*.php') ?: [] as $file) {
+            $key = basename($file, '.php');
+
+            if (! in_array($key, self::UNMERGED_CONFIGS, true)) {
+                $this->mergeConfigFrom($file, $key);
+            }
+        }
+    }
+
     public function boot(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
-        $this->loadTranslationsFrom(__DIR__ . '/../lang', 'polymorph');
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'polymorph');
+        $this->registerViews();
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../config' => config_path(),
+                __DIR__.'/../config' => config_path(),
             ], 'polymorph-config');
         }
+    }
+
+    /**
+     * Register the platform's Blade views (errors, public site, layouts, page
+     * templates) so a thin host renders web routes out of the box.
+     *
+     * They are added to the DEFAULT namespace's search path — not a `polymorph::`
+     * hint — so existing bare view names (view('home.default'), view('errors.404'),
+     * content route_nodes with a VIEW action, page templates) resolve with zero
+     * controller changes. The package path is appended AFTER config('view.paths'),
+     * so a host that publishes its own views (resource_path('views'), searched
+     * first) transparently overrides the package.
+     */
+    private function registerViews(): void
+    {
+        $viewsPath = __DIR__.'/../resources/views';
+
+        $this->callAfterResolving('view.finder', static function ($finder) use ($viewsPath): void {
+            $finder->addLocation($viewsPath);
+        });
+
+        $this->publishes([
+            $viewsPath => resource_path('views'),
+        ], 'polymorph-views');
     }
 }

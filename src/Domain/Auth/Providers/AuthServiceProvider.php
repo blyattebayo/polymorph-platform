@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Providers;
 
+use Firebase\JWT\JWT;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\ServiceProvider;
 use Polymorph\Platform\Domain\Auth\Application\Support\AuthenticatedCredentialResolver;
 use Polymorph\Platform\Domain\Auth\Application\Support\UserCapabilitiesPresenter;
 use Polymorph\Platform\Domain\Auth\Console\PruneAuthSessionsCommand;
@@ -18,8 +24,8 @@ use Polymorph\Platform\Domain\Auth\Events\UserLoggedIn;
 use Polymorph\Platform\Domain\Auth\Events\UserLoggedOut;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Guard\ApiGuard;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Notifications\LaravelEmailVerificationNotifier;
-use Polymorph\Platform\Domain\Auth\Infrastructure\Persistence\EloquentPersonalAccessTokenRepository;
-use Polymorph\Platform\Domain\Auth\Infrastructure\Persistence\EloquentRefreshSessionRepository;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Repositories\EloquentPersonalAccessTokenRepository;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Repositories\EloquentRefreshSessionRepository;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\AccessTokenDenylist;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\CompositeCredentialAuthenticator;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\JwtCredentialAuthenticator;
@@ -30,11 +36,6 @@ use Polymorph\Platform\Domain\Auth\Infrastructure\Services\RequestCredentialAuth
 use Polymorph\Platform\Domain\Auth\Listeners\LogAuthEvent;
 use Polymorph\Platform\Domain\Auth\Listeners\LogPersonalAccessTokenEvent;
 use Polymorph\Platform\Domain\Users\Core\Contracts\UserSessionRevoker;
-use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -63,7 +64,7 @@ class AuthServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        \Firebase\JWT\JWT::$leeway = (int) config('jwt.leeway', 5);
+        JWT::$leeway = (int) config('jwt.leeway', 5);
 
         $this->registerApiGuard();
         $this->registerEventListeners();
@@ -81,8 +82,8 @@ class AuthServiceProvider extends ServiceProvider
             $base = (string) config('auth.password_reset.redirect_to', '/');
             $separator = str_contains($base, '?') ? '&' : '?';
 
-            return url($base . $separator . 'token=' . $token
-                . '&email=' . urlencode((string) $notifiable->getEmailForPasswordReset()));
+            return url($base.$separator.'token='.$token
+                .'&email='.urlencode((string) $notifiable->getEmailForPasswordReset()));
         });
     }
 

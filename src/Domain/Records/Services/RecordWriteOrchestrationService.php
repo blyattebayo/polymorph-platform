@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Services;
 
+use Illuminate\Support\Str;
+use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionRepository;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use Polymorph\Platform\Domain\Records\Core\Contracts\RecordRepository;
-use Polymorph\Platform\Domain\Records\Pipeline\Core\RecordSnapshot;
 use Polymorph\Platform\Domain\Records\Pipeline\Commands\CreateRecordCommand;
 use Polymorph\Platform\Domain\Records\Pipeline\Commands\DeleteRecordCommand;
 use Polymorph\Platform\Domain\Records\Pipeline\Commands\RestoreRecordCommand;
 use Polymorph\Platform\Domain\Records\Pipeline\Commands\UpdateRecordCommand;
+use Polymorph\Platform\Domain\Records\Pipeline\Core\RecordSnapshot;
 use Polymorph\Platform\Domain\Records\Pipeline\Handlers\CreateRecordHandler;
 use Polymorph\Platform\Domain\Records\Pipeline\Handlers\DeleteRecordHandler;
 use Polymorph\Platform\Domain\Records\Pipeline\Handlers\RestoreRecordHandler;
 use Polymorph\Platform\Domain\Records\Pipeline\Handlers\UpdateRecordHandler;
-use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionRepository;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ThrowsErrors;
-use Illuminate\Support\Str;
 
 final class RecordWriteOrchestrationService
 {
@@ -33,11 +33,10 @@ final class RecordWriteOrchestrationService
         private readonly RecordWriteAccessService $recordWriteAccessService,
         private readonly RecordRepository $recordRepository,
         private readonly RecordDefinitionRepository $recordDefinitionRepository,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string,mixed> $dataJson
+     * @param  array<string,mixed>  $dataJson
      */
     public function create(int $recordDefinitionId, array $dataJson, UserIdentity $actor): RecordSnapshot
     {
@@ -62,7 +61,7 @@ final class RecordWriteOrchestrationService
     }
 
     /**
-     * @param array<string,mixed> $dataJson
+     * @param  array<string,mixed>  $dataJson
      */
     public function update(int $recordId, array $dataJson, UserIdentity $actor): RecordSnapshot
     {
@@ -109,6 +108,7 @@ final class RecordWriteOrchestrationService
     public function restore(int $recordId, UserIdentity $actor): RecordSnapshot
     {
         $operationId = (string) Str::uuid();
+
         return $this->restoreRecordHandler->handle(new RestoreRecordCommand(
             $recordId,
             $actor->userId(),

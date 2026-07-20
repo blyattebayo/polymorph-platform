@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Console;
 
-use Polymorph\Platform\Domain\Extensions\Services\ExtensionManager;
 use Illuminate\Console\Command;
+use Polymorph\Platform\Domain\Extensions\Services\ExtensionManager;
 
 final class PluginsListCommand extends Command
 {
     protected $signature = 'plugins:list {--sync : Sync manifests before listing}';
+
     protected $description = 'List plugins and their lifecycle status.';
 
     public function handle(ExtensionManager $pluginManager): int

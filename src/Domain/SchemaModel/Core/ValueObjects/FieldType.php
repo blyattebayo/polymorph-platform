@@ -6,7 +6,7 @@ namespace Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects;
 
 /**
  * Enum для типов полей.
- * 
+ *
  * Строгая типизация вместо строк, интеллектуальная поддержка в IDE.
  */
 enum FieldType: string
@@ -26,7 +26,7 @@ enum FieldType: string
      */
     public function requiresConstraints(): bool
     {
-        return match($this) {
+        return match ($this) {
             self::REF, self::MEDIA => true,
             default => false,
         };

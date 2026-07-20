@@ -7,5 +7,6 @@ namespace Polymorph\Platform\Domain\Roles\Access;
 final class RolesCapabilities
 {
     public const READ = 'role.read';
+
     public const LIFECYCLE = 'role.lifecycle';
 }

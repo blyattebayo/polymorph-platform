@@ -15,8 +15,7 @@ final class RoleAssignmentUserRoleManager implements UserRoleManager
     public function __construct(
         private readonly UserRoleAssignmentGuard $assignmentGuard,
         private readonly RoleAssignmentRepository $roleAssignments,
-    ) {
-    }
+    ) {}
 
     public function assertAssignable(array $roleIds): void
     {

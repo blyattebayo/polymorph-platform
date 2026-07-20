@@ -9,9 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class AdminResponse
 {
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     public static function noContent(int $status = Response::HTTP_NO_CONTENT): Response
     {
@@ -33,4 +31,3 @@ final class AdminResponse
         return $response;
     }
 }
-

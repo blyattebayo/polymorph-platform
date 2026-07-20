@@ -31,21 +31,22 @@ class EloquentFieldRepository implements FieldRepository
     public function create(array $data): Field
     {
         // Calculate full_path if not provided
-        if (!isset($data['full_path'])) {
+        if (! isset($data['full_path'])) {
             if (isset($data['parent_id']) && $data['parent_id'] !== null) {
                 $parent = $this->find($data['parent_id']);
-                $data['full_path'] = $parent->full_path . '.' . $data['name'];
+                $data['full_path'] = $parent->full_path.'.'.$data['name'];
             } else {
                 $data['full_path'] = $data['name'];
             }
         }
-        
+
         return Field::create($data);
     }
 
     public function update(Field $field, array $data): Field
     {
         $field->update($data);
+
         return $field->fresh();
     }
 
@@ -56,7 +57,7 @@ class EloquentFieldRepository implements FieldRepository
         foreach ($descendants as $descendant) {
             $descendant->delete();
         }
-        
+
         $field->delete();
     }
 
@@ -76,12 +77,11 @@ class EloquentFieldRepository implements FieldRepository
     public function getAllDescendants(Field $field): FieldCollection
     {
         $path = $field->full_path;
-        
+
         return Field::query()
             ->where('schema_id', $field->schema_id)
             ->where('full_path', 'like', "{$path}.%")
             ->orderBy('full_path')
             ->get();
     }
-
 }

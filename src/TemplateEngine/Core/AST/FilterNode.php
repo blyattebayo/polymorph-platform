@@ -10,20 +10,17 @@ namespace Polymorph\Platform\TemplateEngine\Core\AST;
 readonly class FilterNode implements ASTNode
 {
     /**
-     * @param string $name
-     * @param array<int|string> $args
+     * @param  array<int|string>  $args
      */
     public function __construct(
         public string $name,
         public array $args,
         public int $start,
         public int $end
-    ) {
-    }
+    ) {}
 
     public function getSpan(): array
     {
         return [$this->start, $this->end];
     }
 }
-

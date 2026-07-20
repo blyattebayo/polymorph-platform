@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Providers;
 
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\ServiceProvider;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
+use Intervention\Image\ImageManager;
+use Polymorph\Platform\Domain\Media\Access\MediaCapabilityProvider;
 use Polymorph\Platform\Domain\Media\Actions\CalculateChecksumAction;
 use Polymorph\Platform\Domain\Media\Actions\CreateMediaRecordAction;
 use Polymorph\Platform\Domain\Media\Actions\DeleteMediaFileAction;
@@ -49,12 +56,6 @@ use Polymorph\Platform\Domain\Media\Services\Metadata\Plugins\MediainfoMediaMeta
 use Polymorph\Platform\Domain\Media\Services\Metadata\Plugins\MediaMetadataPlugin;
 use Polymorph\Platform\Domain\Media\Services\OnDemandVariantService;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Contracts\Cache\Repository as CacheRepository;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\ServiceProvider;
-use Intervention\Image\Drivers\Gd\Driver as GdDriver;
-use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
-use Intervention\Image\ImageManager;
 
 /**
  * Service Provider для Media Domain
@@ -87,7 +88,7 @@ class MediaServiceProvider extends ServiceProvider
         $this->registerEventListeners();
         $this->validateConfiguration();
 
-        $this->app->tag([\Polymorph\Platform\Domain\Media\Access\MediaCapabilityProvider::class], 'access.capability_providers');
+        $this->app->tag([MediaCapabilityProvider::class], 'access.capability_providers');
     }
 
     /**

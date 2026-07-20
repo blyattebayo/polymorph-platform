@@ -11,6 +11,5 @@ final readonly class ExtensionCapabilityDefinition
         public string $action,
         public string $label,
         public string $scope,
-    ) {
-    }
+    ) {}
 }

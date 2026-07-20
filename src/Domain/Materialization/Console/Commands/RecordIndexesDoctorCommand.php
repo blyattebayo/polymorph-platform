@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Materialization\Console\Commands;
 
-use Polymorph\Platform\Domain\Materialization\Services\RecordIndexMaterializer;
 use Illuminate\Console\Command;
+use Polymorph\Platform\Domain\Materialization\Services\RecordIndexMaterializer;
 
 /**
  * Аудит partial-индексов records: ищет невалидные (недостроенные/битые) индексы
@@ -32,7 +32,7 @@ final class RecordIndexesDoctorCommand extends Command
             $this->line("  - {$name} (record_definition_id={$definitionId})");
         }
 
-        if (!$this->option('repair')) {
+        if (! $this->option('repair')) {
             $this->line('Run with --repair to drop and rebuild them.');
 
             return self::FAILURE;

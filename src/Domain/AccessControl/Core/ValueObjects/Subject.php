@@ -10,13 +10,13 @@ use Polymorph\Platform\Support\Validation\ValidationConstraints;
 final readonly class Subject
 {
     private const TYPE_USER = 'user';
+
     private const TYPE_ROLE = 'role';
 
     private function __construct(
         private string $type,
         private string $identifier,
-    ) {
-    }
+    ) {}
 
     public static function user(int $id): self
     {
@@ -37,7 +37,7 @@ final readonly class Subject
         $normalizedType = strtolower(trim($type));
         $normalizedIdentifier = trim($identifier);
 
-        if (!ValidationConstraints::slug()->matches($normalizedType)) {
+        if (! ValidationConstraints::slug()->matches($normalizedType)) {
             throw new InvalidArgumentException('Subject type must be a lowercase identifier.');
         }
 
@@ -57,7 +57,7 @@ final readonly class Subject
             $normalizedIdentifier = (string) (int) $normalizedIdentifier;
         }
 
-        if ($normalizedType === self::TYPE_ROLE && !ValidationConstraints::roleCode()->matches($normalizedIdentifier)) {
+        if ($normalizedType === self::TYPE_ROLE && ! ValidationConstraints::roleCode()->matches($normalizedIdentifier)) {
             throw new InvalidArgumentException('Role code is invalid.');
         }
 
@@ -96,6 +96,6 @@ final readonly class Subject
 
     public function __toString(): string
     {
-        return $this->type . ':' . $this->identifier;
+        return $this->type.':'.$this->identifier;
     }
 }

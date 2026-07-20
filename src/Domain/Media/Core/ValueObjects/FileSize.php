@@ -85,18 +85,18 @@ final readonly class FileSize
     public function toHumanReadable(): string
     {
         if ($this->bytes < 1024) {
-            return $this->bytes . ' B';
+            return $this->bytes.' B';
         }
 
         if ($this->bytes < 1024 * 1024) {
-            return $this->toKB() . ' KB';
+            return $this->toKB().' KB';
         }
 
         if ($this->bytes < 1024 * 1024 * 1024) {
-            return $this->toMB() . ' MB';
+            return $this->toMB().' MB';
         }
 
-        return $this->toGB() . ' GB';
+        return $this->toGB().' GB';
     }
 
     /**

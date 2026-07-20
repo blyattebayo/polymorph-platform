@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition;
 
+use Illuminate\Support\Facades\Event;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionRepository;
 use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionForceDeleting;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Contexts\DeleteRecordDefinitionContext;
-use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\AbstractStep;
+use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\StepResult;
-use Illuminate\Support\Facades\Event;
 
 final class PersistDeletedRecordDefinitionStep extends AbstractStep
 {
     public function __construct(
         private readonly RecordDefinitionRepository $recordDefinitionRepository,
     ) {
-        parent::__construct(DeleteRecordDefinitionContext::class);}
+        parent::__construct(DeleteRecordDefinitionContext::class);
+    }
 
     public function name(): string
     {
@@ -32,8 +33,6 @@ final class PersistDeletedRecordDefinitionStep extends AbstractStep
         ];
     }
 
-    
-
     public function run(PipelineContext $context): StepResult
     {
         /** @var DeleteRecordDefinitionContext $context */
@@ -46,6 +45,4 @@ final class PersistDeletedRecordDefinitionStep extends AbstractStep
 
         return StepResult::success();
     }
-
-    
 }

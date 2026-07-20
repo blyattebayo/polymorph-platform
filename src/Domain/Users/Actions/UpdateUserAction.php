@@ -16,8 +16,7 @@ final readonly class UpdateUserAction
 {
     public function __construct(
         private UserRepository $userRepository
-    ) {
-    }
+    ) {}
 
     /**
      * Обновить данные пользователя.
@@ -28,6 +27,7 @@ final readonly class UpdateUserAction
      *     status?: string,
      *     email_verified_at?: \DateTimeInterface|null
      * } $data
+     *
      * @throws UserAlreadyExistsException
      */
     public function execute(User $user, array $data): User
@@ -41,14 +41,14 @@ final readonly class UpdateUserAction
         // Если обновляется email, проверить уникальность
         if (isset($data['email'])) {
             $newEmail = Email::fromString($data['email']);
-            
+
             // Проверить, что новый email не используется другим пользователем
             if ($newEmail->toString() !== $user->email) {
                 if ($this->userRepository->existsByEmail($newEmail->toString())) {
                     throw UserAlreadyExistsException::withEmail($newEmail->toString());
                 }
             }
-            
+
             $data['email'] = $newEmail->toString();
         }
 

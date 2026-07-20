@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\RecordDefinitions\Infrastructure\Repositories;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionRepository;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Eloquent реализация репозитория RecordDefinition.
@@ -39,6 +39,7 @@ class EloquentRecordDefinitionRepository implements RecordDefinitionRepository
     public function update(RecordDefinition $recordDefinition, array $data): RecordDefinition
     {
         $recordDefinition->update($data);
+
         return $recordDefinition->fresh(['schema', 'ownership']);
     }
 

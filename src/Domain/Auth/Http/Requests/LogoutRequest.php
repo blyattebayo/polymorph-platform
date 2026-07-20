@@ -10,8 +10,6 @@ use Illuminate\Foundation\Http\FormRequest;
  * Request для выхода из системы.
  *
  * Валидирует опциональный параметр 'all' для отзыва всех refresh токенов.
- *
- * @package Polymorph\Platform\Domain\Auth\Http\Requests
  */
 final class LogoutRequest extends FormRequest
 {
@@ -19,8 +17,6 @@ final class LogoutRequest extends FormRequest
      * Определить, авторизован ли пользователь для выполнения запроса.
      *
      * Требует аутентификации через middleware маршрута.
-     *
-     * @return bool
      */
     public function authorize(): bool
     {

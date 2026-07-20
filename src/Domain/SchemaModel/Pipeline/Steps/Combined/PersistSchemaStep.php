@@ -40,7 +40,6 @@ final class PersistSchemaStep extends AbstractStep
     public function run(PipelineContext $context): StepResult
     {
         /** @var SaveSchemaWithFieldsContext $context */
-
         $context->savedSchema = $context->existingSchema === null
             ? $this->schemaRepository->create($context->schemaPayload)
             : $this->schemaRepository->update($context->existingSchema, $context->schemaPayload);

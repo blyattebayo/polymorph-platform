@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Core\Contracts;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Policy;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\PolicyData;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface PolicyRepository
 {
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      */
     public function paginate(array $filters, PageRequest $pagination): LengthAwarePaginator;
 
@@ -29,7 +29,7 @@ interface PolicyRepository
     public function delete(Policy $policy): void;
 
     /**
-     * @param list<int> $ids
+     * @param  list<int>  $ids
      * @return list<int>
      */
     public function existingIds(array $ids): array;
@@ -37,7 +37,7 @@ interface PolicyRepository
     /**
      * Идентификаторы политик с точным resource_pattern из набора (фильтр по action/effect).
      *
-     * @param list<string> $resourcePatterns
+     * @param  list<string>  $resourcePatterns
      * @return list<int>
      */
     public function idsForResources(array $resourcePatterns, string $action, string $effect): array;

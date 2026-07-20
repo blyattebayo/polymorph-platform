@@ -13,6 +13,5 @@ final class RouteNodeCreated
 {
     public function __construct(
         public readonly RouteNode $node,
-    ) {
-    }
+    ) {}
 }

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Infrastructure\Services;
 
+use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Storage;
 use Polymorph\Platform\Domain\Media\Core\Contracts\StorageResolver as StorageResolverContract;
 use Polymorph\Platform\Domain\Media\Core\Exceptions\MediaStorageException;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
-use Illuminate\Contracts\Filesystem\Filesystem;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Реализация резолвера дисков хранения для медиа
@@ -25,6 +25,7 @@ final class StorageResolver implements StorageResolverContract
     public function resolveDisk(MediaKind $kind): Filesystem
     {
         $diskName = $this->resolveDiskName($kind);
+
         return $this->getDisk($diskName);
     }
 

@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\RecordDefinitions\Core\Models;
 
 use Database\Factories\RecordDefinitionFactory;
-use Polymorph\Platform\SharedKernel\Ownership\ResourceOwnership;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
+use Polymorph\Platform\Domain\Records\Core\Models\Record;
+use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
+use Polymorph\Platform\SharedKernel\Ownership\ResourceOwnership;
 
 /**
  * Eloquent model for record definitions.
@@ -17,10 +22,10 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $id
  * @property string $name
  * @property int|null $schema_id
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \Polymorph\Platform\Domain\Records\Core\Models\Record> $records
- * @property-read \Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel|null $schema
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read Collection<int, Record> $records
+ * @property-read SchemaModel|null $schema
  */
 class RecordDefinition extends Model
 {
@@ -40,21 +45,21 @@ class RecordDefinition extends Model
     /**
      * Records that belong to this definition.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\Polymorph\Platform\Domain\Records\Core\Models\Record, \Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition>
+     * @return HasMany<Record, RecordDefinition>
      */
     public function records()
     {
-        return $this->hasMany(\Polymorph\Platform\Domain\Records\Core\Models\Record::class);
+        return $this->hasMany(Record::class);
     }
 
     /**
      * Schema assigned to this record definition.
      *
-     * @return BelongsTo<\Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel, RecordDefinition>
+     * @return BelongsTo<SchemaModel, RecordDefinition>
      */
     public function schema(): BelongsTo
     {
-        return $this->belongsTo(\Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel::class);
+        return $this->belongsTo(SchemaModel::class);
     }
 
     public function ownership(): HasOne
@@ -73,8 +78,6 @@ class RecordDefinition extends Model
 
     /**
      * Create a new factory instance for the model.
-     *
-     * @return \Database\Factories\RecordDefinitionFactory
      */
     protected static function newFactory(): RecordDefinitionFactory
     {

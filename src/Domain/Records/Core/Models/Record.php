@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Core\Models;
 
-use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use Database\Factories\RecordFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
+use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use RuntimeException;
 
 /**
@@ -22,12 +23,11 @@ use RuntimeException;
  * @property int $record_definition_id ID типа записи
  * @property array<string, mixed>|null $data_json Произвольные структурированные данные контента
  * @property int $author_id ID автора записи
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at Дата мягкого удаления
- *
- * @property-read \Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition $recordDefinition Тип записи
- * @property-read \Illuminate\Database\Eloquent\Model $author Автор записи
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at Дата мягкого удаления
+ * @property-read RecordDefinition $recordDefinition Тип записи
+ * @property-read Model $author Автор записи
  */
 class Record extends Model
 {
@@ -61,7 +61,7 @@ class Record extends Model
     /**
      * Связь с автором записи.
      *
-     * @return BelongsTo<\Illuminate\Database\Eloquent\Model, Record>
+     * @return BelongsTo<Model, Record>
      */
     public function author(): BelongsTo
     {
@@ -90,4 +90,3 @@ class Record extends Model
         return RecordFactory::new();
     }
 }
-

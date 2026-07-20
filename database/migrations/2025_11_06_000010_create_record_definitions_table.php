@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\Schema;
  * Хранит типы записей (например, 'article', 'page', 'post').
  * Каждый тип может быть связан с schema, определяющей структуру Record.
  */
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Выполнить миграцию.
      */

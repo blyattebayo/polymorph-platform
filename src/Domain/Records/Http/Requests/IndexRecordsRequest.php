@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Http\Requests;
 
-use Polymorph\Platform\Http\Requests\AuthenticatedRequest;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Polymorph\Platform\Http\Pagination\V2\Concerns\HasPageRules;
 use Polymorph\Platform\Http\Pagination\V2\Concerns\ResolvesPageRequest;
+use Polymorph\Platform\Http\Requests\AuthenticatedRequest;
 
-final class ListRecordsRequest extends AuthenticatedRequest
+final class IndexRecordsRequest extends AuthenticatedRequest
 {
     use HasPageRules;
     use ResolvesPageRequest;
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

@@ -2,11 +2,11 @@
 
 namespace Database\Factories;
 
-use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition>
+ * @extends Factory<RecordDefinition>
  */
 class RecordDefinitionFactory extends Factory
 {
@@ -29,4 +29,3 @@ class RecordDefinitionFactory extends Factory
         ];
     }
 }
-

@@ -16,8 +16,7 @@ final class PolicyCompiler implements PolicyCompilationService
     public function __construct(
         private readonly AssignmentRepository $assignments,
         private readonly CompiledPolicyRepository $compiledPolicies,
-    ) {
-    }
+    ) {}
 
     public function recompileSubject(Subject $subject): void
     {

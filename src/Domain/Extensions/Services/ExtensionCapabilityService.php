@@ -14,8 +14,7 @@ final class ExtensionCapabilityService
 {
     public function __construct(
         private readonly AccessControlAdministration $adminService,
-    ) {
-    }
+    ) {}
 
     public function ensureDefaultPolicies(DiscoveredExtension $plugin): void
     {

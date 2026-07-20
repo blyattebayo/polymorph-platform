@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Observers;
 
+use Illuminate\Support\Facades\Event;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Domain\Media\Events\MediaDeleted;
 use Polymorph\Platform\Domain\Media\Events\MediaForceDeleted;
 use Polymorph\Platform\Domain\Media\Events\MediaRestored;
 use Polymorph\Platform\Domain\Media\Events\MediaUpdated;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
-use Illuminate\Support\Facades\Event;
 
 /**
  * Observer для модели Media
@@ -73,7 +73,7 @@ class MediaObserver
     public function deleted(Media $media): void
     {
         // Отправка domain события
-        /** @var \Polymorph\Platform\Domain\Media\Core\Models\Media $media */
+        /** @var Media $media */
         Event::dispatch(new MediaDeleted($media));
 
         $this->logger->event('media.soft_deleted', [

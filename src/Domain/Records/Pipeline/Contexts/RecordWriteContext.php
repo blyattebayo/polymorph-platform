@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Polymorph\Platform\Domain\Records\Pipeline\Contexts;
 
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
@@ -17,11 +19,17 @@ use Polymorph\Platform\PipelineCore\Runtime\LockableContext;
 final class RecordWriteContext implements LockableContext
 {
     private ?Record $record = null;
+
     private ?RecordDefinition $recordDefinition = null;
+
     private ?RecordSnapshot $snapshotBefore = null;
+
     private ?RecordSnapshot $snapshotAfter = null;
+
     private ?RecordChangeSet $changeSet = null;
+
     private readonly array $pendingPayload;
+
     private ?array $normalizedPayload = null;
 
     public function __construct(
@@ -42,7 +50,7 @@ final class RecordWriteContext implements LockableContext
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public function setNormalizedPayload(array $payload): void
     {
@@ -153,7 +161,7 @@ final class RecordWriteContext implements LockableContext
     {
         $resourceId = $this->recordId?->value !== null
             ? (string) $this->recordId->value
-            : 'create:' . $this->operationId;
+            : 'create:'.$this->operationId;
 
         return new LockKey(
             resourceType: 'record',

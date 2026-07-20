@@ -51,24 +51,27 @@ final class SaveMenuRequest extends FormRequest
     }
 
     /**
-     * @param array<int, mixed> $nodes
+     * @param  array<int, mixed>  $nodes
      */
     private function validateDepth(Validator $validator, array $nodes, int $depth): void
     {
         if ($depth > self::MAX_DEPTH) {
-            $validator->errors()->add('tree', 'Menu nesting exceeds maximum depth of ' . self::MAX_DEPTH . '.');
+            $validator->errors()->add('tree', 'Menu nesting exceeds maximum depth of '.self::MAX_DEPTH.'.');
+
             return;
         }
 
         foreach ($nodes as $index => $node) {
-            if (!is_array($node)) {
+            if (! is_array($node)) {
                 $validator->errors()->add("tree.{$index}", 'Menu item must be an object.');
+
                 continue;
             }
 
             $children = $node['children'] ?? null;
-            if ($children !== null && !is_array($children)) {
+            if ($children !== null && ! is_array($children)) {
                 $validator->errors()->add("tree.{$index}.children", 'Children must be an array.');
+
                 continue;
             }
 

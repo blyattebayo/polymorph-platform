@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModelValidation\Rules;
 
-use Polymorph\Platform\Domain\SchemaModelValidation\Rules\Support\ScopedPathResolver;
 use Closure;
 use Illuminate\Contracts\Validation\DataAwareRule;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Polymorph\Platform\Domain\SchemaModelValidation\Dsl\DslOperator;
+use Polymorph\Platform\Domain\SchemaModelValidation\Rules\Support\ScopedPathResolver;
 
-final class CollectionQuantifier implements ValidationRule, DataAwareRule
+final class CollectionQuantifier implements DataAwareRule, ValidationRule
 {
     /**
      * @var array<string, mixed>
@@ -26,7 +27,7 @@ final class CollectionQuantifier implements ValidationRule, DataAwareRule
     ) {}
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function setData(array $data): static
     {
@@ -72,7 +73,7 @@ final class CollectionQuantifier implements ValidationRule, DataAwareRule
     }
 
     /**
-     * @param array<string, mixed> $item
+     * @param  array<string, mixed>  $item
      */
     private function resolveOperand(string $attribute, string $index, array $item, string $operand): mixed
     {
@@ -80,21 +81,13 @@ final class CollectionQuantifier implements ValidationRule, DataAwareRule
             return data_get($item, ltrim(substr($operand, strlen('$self.')), '.'));
         }
 
-        $resolvedPath = ScopedPathResolver::resolve($attribute . '.' . $index, $operand);
+        $resolvedPath = ScopedPathResolver::resolve($attribute.'.'.$index, $operand);
 
         return data_get($this->data, $resolvedPath);
     }
 
     private function evaluate(mixed $left, mixed $right): bool
     {
-        return match ($this->operator) {
-            '==' => $left == $right,
-            '!=' => $left != $right,
-            '>' => $left > $right,
-            '<' => $left < $right,
-            '>=' => $left >= $right,
-            '<=' => $left <= $right,
-            default => false,
-        };
+        return DslOperator::tryFrom($this->operator)?->evaluate($left, $right) ?? false;
     }
 }

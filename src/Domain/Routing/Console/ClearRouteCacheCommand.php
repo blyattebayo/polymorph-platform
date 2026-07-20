@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Console;
 
-use Polymorph\Platform\Domain\Routing\Services\Cache\RouteCache;
 use Illuminate\Console\Command;
+use Polymorph\Platform\Domain\Routing\Services\Cache\RouteCache;
 
 /**
  * Команда для очистки кэша динамических маршрутов.
  *
  * Удаляет закэшированное дерево маршрутов, что приведёт к перезагрузке
  * данных из базы данных при следующем запросе.
- *
- * @package Polymorph\Platform\Domain\Routing\Console
  */
 class ClearRouteCacheCommand extends Command
 {
@@ -36,7 +34,7 @@ class ClearRouteCacheCommand extends Command
      *
      * Очищает кэш дерева маршрутов через RouteCache.
      *
-     * @param \Polymorph\Platform\Domain\Routing\Services\Cache\RouteCache $cache Сервис кэширования маршрутов
+     * @param  RouteCache  $cache  Сервис кэширования маршрутов
      * @return int Код возврата (0 = успех, 1 = ошибка)
      */
     public function handle(RouteCache $cache): int

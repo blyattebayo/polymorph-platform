@@ -13,9 +13,9 @@ final readonly class ListOwnAuthSessions
     ) {}
 
     /**
-     * @param int|null $currentSessionId Значение claim `sid` access-токена запроса.
-     *                                   Текущей помечается активная сессия той же семьи:
-     *                                   sid мог указывать на уже ротированную строку.
+     * @param  int|null  $currentSessionId  Значение claim `sid` access-токена запроса.
+     *                                      Текущей помечается активная сессия той же семьи:
+     *                                      sid мог указывать на уже ротированную строку.
      * @return list<object>
      */
     public function execute(int $userId, ?int $currentSessionId = null): array

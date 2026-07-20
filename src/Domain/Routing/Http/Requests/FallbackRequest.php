@@ -11,8 +11,6 @@ use Illuminate\Foundation\Http\FormRequest;
  *
  * Обрабатывает все запросы, которые не совпали с другими маршрутами.
  * Публичный запрос без валидации параметров.
- *
- * @package Polymorph\Platform\Http\Requests
  */
 final class FallbackRequest extends FormRequest
 {
@@ -20,8 +18,6 @@ final class FallbackRequest extends FormRequest
      * Определить, авторизован ли пользователь для выполнения запроса.
      *
      * Публичный запрос, доступен всем.
-     *
-     * @return bool
      */
     public function authorize(): bool
     {

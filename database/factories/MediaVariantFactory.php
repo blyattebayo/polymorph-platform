@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaVariantStatus;
-use Polymorph\Platform\Domain\Media\Core\Models\Media;
-use Polymorph\Platform\Domain\Media\Core\Models\MediaVariant;
-use Database\Factories\MediaFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Polymorph\Platform\Domain\Media\Core\Models\MediaVariant;
+use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaVariantStatus;
 
 /**
  * Фабрика для создания записей MediaVariant.
@@ -75,8 +73,7 @@ class MediaVariantFactory extends Factory
     /**
      * Указать статус варианта.
      *
-     * @param \Polymorph\Platform\Domain\Media\MediaVariantStatus $status Статус
-     * @return static
+     * @param  \Polymorph\Platform\Domain\Media\MediaVariantStatus  $status  Статус
      */
     public function withStatus(MediaVariantStatus $status): static
     {
@@ -88,8 +85,7 @@ class MediaVariantFactory extends Factory
     /**
      * Установить размеры в зависимости от типа варианта.
      *
-     * @param string $name Название варианта (thumbnail, medium, large, original)
-     * @return static
+     * @param  string  $name  Название варианта (thumbnail, medium, large, original)
      */
     public function forVariantType(string $name): static
     {
@@ -110,8 +106,6 @@ class MediaVariantFactory extends Factory
 
     /**
      * Создать вариант типа thumbnail.
-     *
-     * @return static
      */
     public function thumbnail(): static
     {
@@ -120,8 +114,6 @@ class MediaVariantFactory extends Factory
 
     /**
      * Создать вариант типа medium.
-     *
-     * @return static
      */
     public function medium(): static
     {
@@ -130,8 +122,6 @@ class MediaVariantFactory extends Factory
 
     /**
      * Создать вариант типа large.
-     *
-     * @return static
      */
     public function large(): static
     {
@@ -140,8 +130,6 @@ class MediaVariantFactory extends Factory
 
     /**
      * Создать вариант в статусе Queued (в очереди на обработку).
-     *
-     * @return static
      */
     public function queued(): static
     {
@@ -154,8 +142,6 @@ class MediaVariantFactory extends Factory
 
     /**
      * Создать вариант в статусе Processing (обрабатывается).
-     *
-     * @return static
      */
     public function processing(): static
     {
@@ -169,8 +155,7 @@ class MediaVariantFactory extends Factory
     /**
      * Создать вариант в статусе Failed (ошибка).
      *
-     * @param string|null $errorMessage Сообщение об ошибке
-     * @return static
+     * @param  string|null  $errorMessage  Сообщение об ошибке
      */
     public function failed(?string $errorMessage = null): static
     {
@@ -182,4 +167,3 @@ class MediaVariantFactory extends Factory
         ]);
     }
 }
-

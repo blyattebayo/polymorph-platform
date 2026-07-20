@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Core\ValueObjects;
 
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\ActionRegistry;
 use InvalidArgumentException;
+use Polymorph\Platform\Domain\AccessControl\Core\Contracts\ActionRegistry;
 
 final readonly class PolicyData
 {
     /**
-     * @param array<string, mixed>|null $metadata
+     * @param  array<string, mixed>|null  $metadata
      */
     public function __construct(
         public string $resourcePattern,
@@ -20,11 +20,10 @@ final readonly class PolicyData
         public bool $isActive,
         public ?array $metadata,
         public string $matcherHash,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public static function fromInput(array $payload, ?ActionRegistry $actionRegistry = null): self
     {

@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Arr;
 use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\SchemaRepository;
 use Polymorph\Platform\Domain\SchemaModel\Core\Exceptions\SchemaNotFoundException;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
-use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
 use Polymorph\Platform\Domain\SchemaModel\Http\Requests\BulkDeleteSchemasRequest;
-use Polymorph\Platform\Domain\SchemaModel\Http\Requests\IndexSchemaRequest;
+use Polymorph\Platform\Domain\SchemaModel\Http\Requests\IndexSchemasRequest;
 use Polymorph\Platform\Domain\SchemaModel\Http\Requests\StoreSchemaRequest;
 use Polymorph\Platform\Domain\SchemaModel\Http\Requests\UpdateSchemaRequest;
 use Polymorph\Platform\Domain\SchemaModel\Http\Resources\BulkDeleteSchemasResource;
@@ -25,15 +28,11 @@ use Polymorph\Platform\Infrastructure\Pagination\V2\LaravelPaginatorAdapter;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwnershipService;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceType;
 use Polymorph\Platform\Support\Errors\ThrowsErrors;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
-use Illuminate\Support\Arr;
 
 /**
  * Контроллер для управления схемами.
  */
-class SchemaController extends Controller
+final class SchemaController extends Controller
 {
     use ThrowsErrors;
 
@@ -44,13 +43,12 @@ class SchemaController extends Controller
         private readonly SchemaRepository $repository,
         private readonly LaravelPaginatorAdapter $paginatorAdapter,
         private readonly ResourceOwnershipService $ownershipService,
-    ) {
-    }
+    ) {}
 
     /**
      * Получить список всех схем.
      */
-    public function index(IndexSchemaRequest $request): JsonResponse
+    public function index(IndexSchemasRequest $request): JsonResponse
     {
         $result = $this->paginatorAdapter
             ->toPageResult($this->repository->search($request->filters(), $request->pageRequest()))
@@ -90,8 +88,8 @@ class SchemaController extends Controller
     public function show(int $id): SchemaResource
     {
         $schema = $this->repository->find($id);
-        
-        if (!$schema) {
+
+        if (! $schema) {
             throw SchemaNotFoundException::byId($id);
         }
 
@@ -107,8 +105,8 @@ class SchemaController extends Controller
     public function tree(Request $request, int $id): JsonResponse
     {
         $schema = $this->repository->find($id);
-        
-        if (!$schema) {
+
+        if (! $schema) {
             throw SchemaNotFoundException::byId($id);
         }
 
@@ -132,8 +130,8 @@ class SchemaController extends Controller
     public function update(UpdateSchemaRequest $request, int $id): SchemaResource
     {
         $schema = $this->repository->find($id);
-        
-        if (!$schema) {
+
+        if (! $schema) {
             throw SchemaNotFoundException::byId($id);
         }
 
@@ -160,8 +158,8 @@ class SchemaController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $schema = $this->repository->find($id);
-        
-        if (!$schema) {
+
+        if (! $schema) {
             throw SchemaNotFoundException::byId($id);
         }
 
@@ -189,15 +187,15 @@ class SchemaController extends Controller
     public function usage(int $id): JsonResponse
     {
         $schema = $this->repository->find($id);
-        
-        if (!$schema) {
+
+        if (! $schema) {
             throw SchemaNotFoundException::byId($id);
         }
 
         return response()->json($this->repository->getUsageInfo($schema)->toUsageResponse());
     }
 
-    private function serializeSchema(SchemaModel $schema, IndexSchemaRequest $request): array
+    private function serializeSchema(SchemaModel $schema, IndexSchemasRequest $request): array
     {
         $this->requireOwnership($schema);
 

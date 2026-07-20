@@ -17,7 +17,7 @@ final readonly class Email
     private function __construct(
         private string $value
     ) {
-        if (!$this->isValid($value)) {
+        if (! $this->isValid($value)) {
             throw new InvalidEmailException($value);
         }
     }

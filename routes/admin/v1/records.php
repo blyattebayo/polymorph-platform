@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use Polymorph\Platform\Domain\Records\Access\RecordsCapabilities;
-use Polymorph\Platform\Http\Middleware\RequireCapability;
-use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeActionType;
 use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeKind;
+use Polymorph\Platform\Http\Middleware\RequireCapability;
+use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 
 return [
     [

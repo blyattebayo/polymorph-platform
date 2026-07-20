@@ -7,8 +7,8 @@ namespace Polymorph\Platform\Domain\TableConfig\Services;
 final class TableConfigMergeService
 {
     /**
-     * @param array<string, mixed> $base
-     * @param array<string, mixed> $override
+     * @param  array<string, mixed>  $base
+     * @param  array<string, mixed>  $override
      * @return array<string, mixed>
      */
     public function merge(array $base, array $override): array

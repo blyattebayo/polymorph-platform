@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Http\Resources\Media;
 
-use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Illuminate\Http\Request;
+use Polymorph\Platform\Domain\Media\Core\Models\Media;
 
 /**
  * API Resource для видео (Media).
@@ -15,8 +15,6 @@ use Illuminate\Http\Request;
  *
  * Требует загруженную связь `avMetadata` для получения AV-метаданных.
  * Все AV-поля опциональны (могут быть null).
- *
- * @package Polymorph\Platform\Http\Resources\Media
  */
 class MediaVideoResource extends BaseMediaResource
 {
@@ -26,7 +24,7 @@ class MediaVideoResource extends BaseMediaResource
      * Включает базовые поля и специфичные для видео:
      * duration_ms, bitrate_kbps, frame_rate, frame_count, video_codec, audio_codec.
      *
-     * @param \Illuminate\Http\Request $request HTTP запрос
+     * @param  Request  $request  HTTP запрос
      * @return array<string, mixed> Массив с полями видео
      */
     public function toArray($request): array
@@ -53,4 +51,3 @@ class MediaVideoResource extends BaseMediaResource
         ]);
     }
 }
-

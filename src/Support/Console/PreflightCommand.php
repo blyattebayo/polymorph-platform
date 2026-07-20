@@ -46,19 +46,19 @@ final class PreflightCommand extends Command
         }
 
         foreach ($this->warnings as $w) {
-            $this->warn('[warn] ' . $w);
+            $this->warn('[warn] '.$w);
         }
         foreach ($this->errors as $e) {
-            $this->error('[fail] ' . $e);
+            $this->error('[fail] '.$e);
         }
 
         if ($this->errors !== []) {
-            $this->error('Preflight FAILED: ' . count($this->errors) . ' проблем(ы).');
+            $this->error('Preflight FAILED: '.count($this->errors).' проблем(ы).');
 
             return self::FAILURE;
         }
 
-        $this->info('Preflight OK' . ($this->warnings !== [] ? ' (с предупреждениями)' : '') . '.');
+        $this->info('Preflight OK'.($this->warnings !== [] ? ' (с предупреждениями)' : '').'.');
 
         return self::SUCCESS;
     }
@@ -114,7 +114,7 @@ final class PreflightCommand extends Command
         try {
             DB::connection()->getPdo();
         } catch (\Throwable $exception) {
-            $this->errors[] = 'БД недоступна: ' . $exception->getMessage();
+            $this->errors[] = 'БД недоступна: '.$exception->getMessage();
 
             return;
         }
@@ -137,7 +137,7 @@ final class PreflightCommand extends Command
                     $this->errors[] = "Нет таблицы '{$table}' — прогони миграции (php artisan migrate --force).";
                 }
             } catch (\Throwable $exception) {
-                $this->warnings[] = "Не удалось проверить таблицу '{$table}': " . $exception->getMessage();
+                $this->warnings[] = "Не удалось проверить таблицу '{$table}': ".$exception->getMessage();
             }
         }
     }
