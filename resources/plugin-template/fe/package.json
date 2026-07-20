@@ -1,0 +1,28 @@
+{
+  "name": "__PLUGIN_SCOPE__",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5179 --strictPort",
+    "build": "tsc && vite build",
+    "build:watch": "vite build --watch",
+    "preview": "vite preview --port 5179 --strictPort",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@polymorph/plugin-sdk": "file:../../../polymorph-core/fe/sdk",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-router-dom": "^7.9.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
+    "jsdom": "^29.1.1",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.7",
+    "vitest": "^4.1.7"
+  }
+}

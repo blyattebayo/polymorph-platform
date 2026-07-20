@@ -1,0 +1,72 @@
+<?php
+
+namespace Database\Factories;
+
+use Polymorph\Platform\Domain\AccessControl\Access\BuiltInRoleCatalog;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Polymorph\Platform\Domain\Users\Core\Models\User>
+ */
+class UserFactory extends Factory
+{
+    /**
+     * The name of the factory's corresponding model.
+     *
+    * @var class-string<\Polymorph\Platform\Domain\Users\Core\Models\User>
+     */
+    protected $model = User::class;
+
+    /**
+     * The current password being used by the factory.
+     */
+    protected static ?string $password;
+
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'name' => fake()->name(),
+            'email' => fake()->unique()->safeEmail(),
+            'email_verified_at' => now(),
+            'password' => static::$password ??= Hash::make('password'),
+            'remember_token' => Str::random(10),
+        ];
+    }
+
+    /**
+     * Indicate that the model's email address should be unverified.
+     */
+    public function unverified(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Indicate that the user has the system administrator role.
+     */
+    public function systemAdmin(): static
+    {
+        return $this->afterCreating(function (User $user): void {
+            $adminRoleId = (int) (DB::table('roles')->where('code', BuiltInRoleCatalog::ROLE_SYSTEM_ADMIN)->value('id') ?? 0);
+            if ($adminRoleId <= 0) {
+                return;
+            }
+
+            DB::table('user_role_assignments')->updateOrInsert(
+                ['user_id' => (int) $user->id, 'role_id' => $adminRoleId],
+                ['updated_at' => now(), 'created_at' => now()],
+            );
+        });
+    }
+}
