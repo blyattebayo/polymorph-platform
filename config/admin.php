@@ -15,4 +15,21 @@ return [
     |
     */
     'path' => env('ADMIN_PATH', 'admin'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Seeded administrator account
+    |--------------------------------------------------------------------------
+    |
+    | Credentials used by Polymorph\Platform\Database\Seeders\AdminUserSeeder
+    | (part of PlatformSeeder). Env-driven so `php artisan db:seed` gives a
+    | working admin out of the box. The defaults are for LOCAL/DEMO only —
+    | the seeder prints a loud warning when the default password is in use.
+    |
+    */
+    'seed' => [
+        'email' => env('ADMIN_EMAIL', 'admin@example.com'),
+        'password' => env('ADMIN_PASSWORD', 'admin123'),
+        'name' => env('ADMIN_NAME', 'Administrator'),
+    ],
 ];
