@@ -1,4 +1,4 @@
-# polymorph/platform
+# blyattebayo/polymorph
 
 The Polymorph platform core, packaged as a Composer library (ADR 0006). A thin host
 application consumes it from the package registry and boots a full headless CMS —

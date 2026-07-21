@@ -1,14 +1,25 @@
 {
-    "name": "polymorph/platform",
-    "description": "Polymorph platform core — the framework package extracted from the host application (ADR 0006).",
+    "name": "blyattebayo/polymorph",
+    "description": "Polymorph platform core: schema-driven CMS/records framework for Laravel with a bundled admin SPA, access control, media pipeline, and a plugin SDK surface.",
     "type": "library",
-    "license": "proprietary",
+    "license": "MIT",
+    "keywords": ["laravel", "cms", "platform", "admin", "records", "schema", "plugins"],
+    "homepage": "https://github.com/blyattebayo/polymorph",
+    "support": {
+        "issues": "https://github.com/blyattebayo/polymorph/issues",
+        "source": "https://github.com/blyattebayo/polymorph"
+    },
+    "authors": [
+        {
+            "name": "blyattebayo"
+        }
+    ],
     "version": "1.2.3",
     "require": {
         "php": "^8.2",
         "laravel/framework": "^12.0",
-        "polymorph/sdk": "^2.1",
-        "polymorph/sdk-laravel": "^2.1",
+        "blyattebayo/polymorph-sdk": "^2.1",
+        "blyattebayo/polymorph-sdk-laravel": "^2.1",
         "firebase/php-jwt": "^7.0",
         "intervention/image": "3.7",
         "james-heinrich/getid3": "^1.9"

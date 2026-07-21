@@ -22,7 +22,7 @@ final class AdminShellController
 
         if (! is_array($entry) || ! isset($entry['file'])) {
             return new Response(
-                "Admin UI is unavailable: this polymorph/platform build does not include the admin bundle (resources/admin/dist).\n",
+                "Admin UI is unavailable: this blyattebayo/polymorph build does not include the admin bundle (resources/admin/dist).\n",
                 Response::HTTP_SERVICE_UNAVAILABLE,
                 ['Content-Type' => 'text/plain; charset=UTF-8'],
             );

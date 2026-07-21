@@ -2,7 +2,7 @@
 #
 # Rebuild the admin SPA and embed its artifact into the platform package.
 #
-# The compiled bundle ships INSIDE polymorph/platform (resources/admin/dist) and is
+# The compiled bundle ships INSIDE blyattebayo/polymorph (resources/admin/dist) and is
 # served by Admin\Http\AdminAssetController, so a thin host gets a working admin panel
 # straight after `composer require` — no host-side Node build, no publish step.
 #

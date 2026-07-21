@@ -5,7 +5,7 @@
     "license": "proprietary",
     "require": {
         "php": "^8.2",
-        "polymorph/sdk": "^2.0"
+        "blyattebayo/polymorph-sdk": "^2.0"
     },
     "autoload": {
         "psr-4": {
@@ -18,8 +18,8 @@
         }
     },
     "require-dev": {
-        "polymorph/sdk-laravel": "^2.0",
-        "polymorph/plugin-test-kit": "^2.0"
+        "blyattebayo/polymorph-sdk-laravel": "^2.0",
+        "blyattebayo/polymorph-plugin-test-kit": "^2.0"
     },
     "repositories": [
         {

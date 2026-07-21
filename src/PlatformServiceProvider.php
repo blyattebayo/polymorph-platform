@@ -7,7 +7,7 @@ namespace Polymorph\Platform;
 use Illuminate\Support\ServiceProvider;
 
 /**
- * The heart of the polymorph/platform package: registers the platform's domain service
+ * The heart of the blyattebayo/polymorph package: registers the platform's domain service
  * providers (in dependency order), merges the 12 platform config files, and loads the
  * package's migrations + translations. Auto-discovered via composer extra.laravel.providers,
  * so the thin host's bootstrap/providers.php is empty (ADR 0006 §4.2).
