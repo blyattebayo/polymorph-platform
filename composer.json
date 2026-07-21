@@ -3,7 +3,7 @@
     "description": "Polymorph platform core — the framework package extracted from the host application (ADR 0006).",
     "type": "library",
     "license": "proprietary",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "require": {
         "php": "^8.2",
         "laravel/framework": "^12.0",

@@ -18,6 +18,7 @@ FE_DIR="$(cd "$PLATFORM_DIR/../../fe" && pwd)"    # <repo>/fe
 DEST_ROOT="$PLATFORM_DIR/resources/admin"
 
 echo "==> Building admin SPA in $FE_DIR"
+rm -rf "$FE_DIR/dist"
 ( cd "$FE_DIR" && npm ci && npm run build )
 
 echo "==> Embedding dist into $DEST_ROOT/dist"
