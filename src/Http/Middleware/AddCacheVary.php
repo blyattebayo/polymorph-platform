@@ -42,7 +42,11 @@ final class AddCacheVary
                 $varyHeaders[] = 'Cookie';
             }
 
-            $response->header('Vary', implode(', ', $varyHeaders));
+            // Use the ResponseHeaderBag directly: Response::header() only exists on
+            // Illuminate\Http\Response, not on Symfony BinaryFileResponse (returned by
+            // response()->file(), e.g. MediaPreviewController serving a local disk).
+            // headers->set() is available on every HttpFoundation response type.
+            $response->headers->set('Vary', implode(', ', $varyHeaders));
         }
 
         return $response;
