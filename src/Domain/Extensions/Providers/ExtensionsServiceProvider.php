@@ -23,7 +23,6 @@ use Polymorph\Platform\Domain\Extensions\Services\ExtensionMigrationService;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionRegistryService;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionRouteConstraints;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionRouteService;
-use Polymorph\Platform\Domain\Extensions\Trusted\TrustedExtensionSource;
 use Polymorph\Platform\Domain\Records\Events\RecordDeleted;
 use Polymorph\Platform\Domain\Routing\Core\Contracts\PluginRouteCatalog;
 use Polymorph\Platform\Support\Logging\Contracts\SecretRedactor;
@@ -33,7 +32,6 @@ final class ExtensionsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(TrustedExtensionSource::class);
         $this->app->singleton(ExtensionAclManifestParser::class);
         $this->app->singleton(ExtensionManifestValidator::class);
         $this->app->singleton(ExtensionDiscoveryService::class);

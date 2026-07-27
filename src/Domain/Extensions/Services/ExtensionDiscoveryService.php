@@ -7,7 +7,6 @@ namespace Polymorph\Platform\Domain\Extensions\Services;
 use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
 use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
 use Polymorph\Platform\Domain\Extensions\Manifest\ManifestV2Validator;
-use Polymorph\Platform\Domain\Extensions\Trusted\TrustedExtensionSource;
 
 final class ExtensionDiscoveryService
 {
@@ -18,7 +17,6 @@ final class ExtensionDiscoveryService
         private readonly ExtensionManifestValidator $validator,
         private readonly ExtensionAclManifestParser $aclManifestParser,
         private readonly ManifestV2Validator $manifestV2Validator,
-        private readonly TrustedExtensionSource $trusted,
     ) {}
 
     /**
@@ -46,16 +44,6 @@ final class ExtensionDiscoveryService
                 if ($plugin !== null) {
                     $plugins[] = $plugin;
                 }
-            }
-        }
-
-        // Доверенные плагины (Composer-пакеты, withPlugins). Обрабатываются ВСЕГДА, даже если
-        // root_path пуст; добавляются ПОСЛЕ drop-in, поэтому при совпадении id имеют приоритет
-        // (sortByDependencies дедуплицирует по id — последний побеждает). ADR 0006 Стадия 4.
-        foreach ($this->trusted->directories() as $directory) {
-            $plugin = $this->loadFromDirectory($directory, $manifestFile);
-            if ($plugin !== null) {
-                $plugins[] = $plugin;
             }
         }
 

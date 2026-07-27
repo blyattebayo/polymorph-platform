@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
 use Polymorph\Platform\Domain\Extensions\Core\Models\ExtensionRegistry;
 use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
-use Polymorph\Platform\Domain\Extensions\Trusted\TrustedExtensionSource;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\HttpErrorException;
@@ -28,7 +27,6 @@ final class ExtensionManager
         private readonly ExtensionMigrationService $migrationService,
         private readonly Application $app,
         private readonly AppLogger $logger,
-        private readonly TrustedExtensionSource $trusted,
     ) {}
 
     /**
@@ -38,52 +36,9 @@ final class ExtensionManager
     {
         $plugins = $this->discoveryService->discoverAll();
 
-        // Trusted (withPlugins) plugins are Composer-shipped and always-on — they get NO
-        // plugins_registry row / admin toggle (ADR 0006 Стадия 4). Still returned for listing.
-        $syncable = array_values(array_filter(
-            $plugins,
-            fn (DiscoveredExtension $p): bool => ! $this->trusted->isTrusted($p->id),
-        ));
-        $this->registryService->syncDiscoveredPlugins($syncable);
+        $this->registryService->syncDiscoveredPlugins($plugins);
 
         return $plugins;
-    }
-
-    /**
-     * Идемпотентно провижинит все доверенные (withPlugins) плагины: миграции + ACL + onEnable-сидинг,
-     * БЕЗ строки в plugins_registry (они always-on). Точка вызова — `plugins:sync-trusted` на деплое
-     * (рядом с `migrate --force`). Безопасно гонять на каждом деплое (все шаги updateOrCreate/ensure).
-     *
-     * @return list<string> id провиженных расширений
-     */
-    public function provisionAllTrusted(): array
-    {
-        $provisioned = [];
-
-        foreach ($this->discoveryService->discoverAll() as $plugin) {
-            if (! $this->trusted->isTrusted($plugin->id)) {
-                continue;
-            }
-            $this->provisionTrusted($plugin);
-            $provisioned[] = $plugin->id;
-        }
-
-        return $provisioned;
-    }
-
-    /**
-     * Побочки enable() для доверенного плагина, но БЕЗ markEnabled/already-enabled-гарда/DB-строки.
-     * Транзакция как в enable(): миграции (DDL) + ACL + lifecycle hook откатываются вместе.
-     */
-    public function provisionTrusted(DiscoveredExtension $plugin): void
-    {
-        DB::transaction(function () use ($plugin): void {
-            $this->migrationService->runMigrations($plugin);
-            $this->capabilityService->ensureDefaultPolicies($plugin);
-            $this->capabilityService->assignDefaultPluginAdminPolicy($plugin);
-            $this->capabilityService->ensurePluginRoles($plugin);
-            $this->fireLifecycleHook($plugin, 'firePluginEnabled');
-        });
     }
 
     public function enable(string $pluginId): ExtensionRegistry

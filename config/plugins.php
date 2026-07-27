@@ -51,13 +51,6 @@ return [
 
     'manifest_file' => 'plugin.json',
 
-    // Доверенные плагины, поставляемые как Composer-пакеты (в vendor/), а не рантайм-drop-in
-    // (ADR 0006 Стадия 4). Список FQCN их ExtensionProvider'ов — это host-овый `withPlugins([...])`.
-    // Они always-on: грузятся из vendor, считаются enabled без строки в plugins_registry и не
-    // управляются admin enable/disable. Побочки (миграции/ACL/onEnable) — идемпотентно через
-    // `php artisan plugins:sync-trusted` на деплое. Host переопределяет этот ключ своим config/plugins.php.
-    'trusted' => [],
-
     'allowed_admin_prefix_template' => 'api/v1/admin/plugins/%s',
     'allowed_api_prefix_template' => 'api/v1/plugins/%s',
     'allowed_web_prefix_template' => 'plugins/%s',

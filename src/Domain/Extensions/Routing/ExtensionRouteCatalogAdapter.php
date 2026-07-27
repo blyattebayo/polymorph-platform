@@ -7,7 +7,6 @@ namespace Polymorph\Platform\Domain\Extensions\Routing;
 use Polymorph\Platform\Domain\Extensions\Core\Models\ExtensionRegistry;
 use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionDiscoveryService;
-use Polymorph\Platform\Domain\Extensions\Trusted\TrustedExtensionSource;
 use Polymorph\Platform\Domain\Routing\Core\Contracts\PluginRouteCatalog;
 use Polymorph\Platform\Domain\Routing\Core\Contracts\PluginRouteSet;
 
@@ -15,7 +14,6 @@ final class ExtensionRouteCatalogAdapter implements PluginRouteCatalog
 {
     public function __construct(
         private readonly ExtensionDiscoveryService $discovery,
-        private readonly TrustedExtensionSource $trusted,
     ) {}
 
     /**
@@ -107,13 +105,6 @@ final class ExtensionRouteCatalogAdapter implements PluginRouteCatalog
             if (is_string($id)) {
                 $map[$id] = true;
             }
-        }
-
-        // Trusted (withPlugins) plugins have no DB registry row but are always enabled — this
-        // adapter reads the ExtensionRegistry model directly, bypassing ExtensionRegistryState,
-        // so their route sets would otherwise be missing (ADR 0006 Стадия 4).
-        foreach ($this->trusted->ids() as $trustedId) {
-            $map[$trustedId] = true;
         }
 
         return $map;

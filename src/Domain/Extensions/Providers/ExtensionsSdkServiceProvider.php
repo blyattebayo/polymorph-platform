@@ -17,7 +17,6 @@ use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkLogger;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkRedactor;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkRequestAuthenticator;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkValidationConstraints;
-use Polymorph\Platform\Domain\Extensions\SdkBridge\TrustedOrDatabaseExtensionRegistryState;
 use Polymorph\Sdk\Access\AccessGrants;
 use Polymorph\Sdk\Contracts\ExtensionState;
 use Polymorph\Sdk\Data\DefinitionRegistry;
@@ -59,9 +58,7 @@ final class ExtensionsSdkServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        // Trusted (withPlugins) plugins report as always-enabled; others fall through to the DB
-        // (ADR 0006 Стадия 4). DatabaseExtensionRegistryState stays resolvable for the decorator.
-        $this->app->singleton(ExtensionRegistryState::class, TrustedOrDatabaseExtensionRegistryState::class);
+        $this->app->singleton(ExtensionRegistryState::class, DatabaseExtensionRegistryState::class);
 
         foreach (self::SDK_CONTRACT_BINDINGS as $contract => $adapter) {
             $this->app->singleton($contract, $adapter);

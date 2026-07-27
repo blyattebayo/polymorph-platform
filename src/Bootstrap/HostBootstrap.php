@@ -20,7 +20,6 @@ use Polymorph\Platform\Domain\Extensions\Console\PluginsListCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsUninstallCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsUpdateCommand;
 use Polymorph\Platform\Domain\Extensions\Console\ScaffoldPluginCommand;
-use Polymorph\Platform\Domain\Extensions\Console\SyncTrustedExtensionsCommand;
 use Polymorph\Platform\Domain\Extensions\Http\ReplyRenderer;
 use Polymorph\Platform\Domain\Routing\Console\CacheRoutesCommand;
 use Polymorph\Platform\Domain\Routing\Console\ClearRouteCacheCommand;
@@ -72,7 +71,6 @@ final class HostBootstrap
             PluginsDeployCommand::class,
             ScaffoldPluginCommand::class,
             MigrateLegacyExtensionDataCommand::class,
-            SyncTrustedExtensionsCommand::class,
         ];
     }
 
