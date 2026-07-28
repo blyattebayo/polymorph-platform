@@ -20,17 +20,30 @@ class RouteCache
     /**
      * Получить ключ кэша для декларативных маршрутов.
      *
-     * Формат: {prefix}:declarative_tree:v{version}
+     * Формат: {prefix}:system_tree:v{version}:{fingerprint}:{scope}
      *
+     * @param  bool  $enabledOnly  Дерево только включённых узлов
      * @return string Ключ кэша
      */
-    private function getSystemCacheKey(): string
+    private function getSystemCacheKey(bool $enabledOnly): string
     {
         $prefix = config('dynamic-routes.cache_key_prefix', 'dynamic_routes');
         $version = self::CACHE_VERSION;
         $fingerprint = $this->systemFilesFingerprint();
+        $scope = $this->scope($enabledOnly);
 
-        return "{$prefix}:system_tree:{$version}:{$fingerprint}";
+        return "{$prefix}:system_tree:{$version}:{$fingerprint}:{$scope}";
+    }
+
+    /**
+     * Суффикс ключа, разделяющий полное и отфильтрованное дерево.
+     *
+     * Без него getTree() и getEnabledTree() писали РАЗНЫЕ данные под ОДИН ключ,
+     * и результат зависел от того, кто прогрел кэш первым.
+     */
+    private function scope(bool $enabledOnly): string
+    {
+        return $enabledOnly ? 'enabled' : 'all';
     }
 
     /**
@@ -74,7 +87,7 @@ class RouteCache
     {
         $prefix = config('dynamic-routes.cache_key_prefix', 'dynamic_routes');
         $version = self::CACHE_VERSION;
-        $scope = $enabledOnly ? 'enabled' : 'all';
+        $scope = $this->scope($enabledOnly);
 
         return "{$prefix}:client_tree:{$version}:{$scope}";
     }
@@ -90,12 +103,13 @@ class RouteCache
      *
      * @return string Ключ кэша
      */
-    private function getPluginCacheKey(string $fingerprint): string
+    private function getPluginCacheKey(string $fingerprint, bool $enabledOnly): string
     {
         $prefix = config('dynamic-routes.cache_key_prefix', 'dynamic_routes');
         $version = self::CACHE_VERSION;
+        $scope = $this->scope($enabledOnly);
 
-        return "{$prefix}:plugin_tree:{$version}:{$fingerprint}";
+        return "{$prefix}:plugin_tree:{$version}:{$fingerprint}:{$scope}";
     }
 
     /**
@@ -136,11 +150,9 @@ class RouteCache
      * @param  callable(): Collection<int, mixed>  $callback  Callback для получения дерева
      * @return Collection<int, mixed> Дерево декларативных маршрутов
      */
-    public function rememberSystemTree(callable $callback): Collection
+    public function rememberSystemTree(bool $enabledOnly, callable $callback): Collection
     {
-        $key = $this->getSystemCacheKey();
-
-        return $this->rememberGuarded($key, $callback);
+        return $this->rememberGuarded($this->getSystemCacheKey($enabledOnly), $callback);
     }
 
     /**
@@ -162,11 +174,9 @@ class RouteCache
      * @param  callable(): Collection<int, mixed>  $callback
      * @return Collection<int, mixed>
      */
-    public function rememberPluginTree(string $fingerprint, callable $callback): Collection
+    public function rememberPluginTree(string $fingerprint, bool $enabledOnly, callable $callback): Collection
     {
-        $key = $this->getPluginCacheKey($fingerprint);
-
-        return $this->rememberGuarded($key, $callback);
+        return $this->rememberGuarded($this->getPluginCacheKey($fingerprint, $enabledOnly), $callback);
     }
 
     /**
@@ -180,7 +190,8 @@ class RouteCache
      */
     public function forgetTree(): void
     {
-        Cache::forget($this->getSystemCacheKey());
+        Cache::forget($this->getSystemCacheKey(true));
+        Cache::forget($this->getSystemCacheKey(false));
         $this->forgetClientTree();
     }
 

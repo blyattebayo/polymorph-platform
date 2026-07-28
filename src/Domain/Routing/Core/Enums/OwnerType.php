@@ -63,21 +63,24 @@ enum OwnerType: string
     }
 
     /**
-     * Разобрать композитное значение owner.
+     * Определить тип владельца по значению поля owner.
      *
-     * @param  string  $owner  Значение поля owner
-     * @return array{type: self, id: string|null} Тип и ID владельца
+     * Возвращает null для нераспознанного значения вместо \ValueError: owner
+     * читается на пути регистрации маршрутов в boot(), и одна мусорная строка
+     * в route_nodes (сидер, ручной SQL, миграция) не должна ронять приложение.
+     * Вызывающий сам решает, что делать с неизвестным владельцем.
      *
-     * @example OwnerType::parse('system') в†’ ['type' => SYSTEM, 'id' => null]
-     * @example OwnerType::parse('plugin:blog') в†’ ['type' => PLUGIN, 'id' => 'blog']
+     * @param  string|null  $owner  Значение поля owner ('system', 'plugin:blog', 'client')
+     *
+     * @example OwnerType::typeFrom('plugin:blog') → PLUGIN
+     * @example OwnerType::typeFrom('bogus') → null
      */
-    public static function parse(string $owner): array
+    public static function typeFrom(?string $owner): ?self
     {
-        $parts = explode(':', $owner, 2);
+        if ($owner === null) {
+            return null;
+        }
 
-        return [
-            'type' => self::from($parts[0]),
-            'id' => $parts[1] ?? null,
-        ];
+        return self::tryFrom(explode(':', $owner, 2)[0]);
     }
 }

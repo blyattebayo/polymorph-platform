@@ -9,29 +9,19 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Polymorph\Platform\Domain\Routing\Access\RoutingCapabilityProvider;
 use Polymorph\Platform\Domain\Routing\Core\Contracts\PluginRouteCatalog;
-use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeActionType;
 use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeKind;
 use Polymorph\Platform\Domain\Routing\Core\Models\RouteNode;
 use Polymorph\Platform\Domain\Routing\Events\RouteNodeCreated;
 use Polymorph\Platform\Domain\Routing\Events\RouteNodeDeleted;
 use Polymorph\Platform\Domain\Routing\Events\RouteNodeUpdated;
 use Polymorph\Platform\Domain\Routing\Http\Controllers\FallbackController;
-use Polymorph\Platform\Domain\Routing\Infrastructure\Builders\RouteGroupNodeBuilder;
-use Polymorph\Platform\Domain\Routing\Infrastructure\Builders\RouteNodeBuilderFactory;
-use Polymorph\Platform\Domain\Routing\Infrastructure\Builders\RouteRouteNodeBuilder;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Loaders\PluginRouteLoader;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Loaders\RouteDefinitionLoader;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Loaders\SystemRouteLoader;
-use Polymorph\Platform\Domain\Routing\Infrastructure\Registrars\RouteGroupRegistrar;
-use Polymorph\Platform\Domain\Routing\Infrastructure\Registrars\RouteNodeRegistrarFactory;
-use Polymorph\Platform\Domain\Routing\Infrastructure\Registrars\RouteRouteRegistrar;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Repositories\ClientRouteRepository;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Repositories\PluginRouteRepository;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Repositories\SystemRouteRepository;
-use Polymorph\Platform\Domain\Routing\Infrastructure\Resolvers\ActionResolverFactory;
-use Polymorph\Platform\Domain\Routing\Infrastructure\Resolvers\ControllerActionResolver;
-use Polymorph\Platform\Domain\Routing\Infrastructure\Resolvers\RedirectActionResolver;
-use Polymorph\Platform\Domain\Routing\Infrastructure\Resolvers\ViewActionResolver;
+use Polymorph\Platform\Domain\Routing\Infrastructure\Resolvers\RouteActionResolver;
 use Polymorph\Platform\Domain\Routing\Infrastructure\RouteRegistrar;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Validators\GroupNodeValidator;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Validators\RouteNodeValidator;
@@ -108,26 +98,15 @@ class RoutingServiceProvider extends ServiceProvider
             );
         });
 
-        // 5. Билдеры узлов маршрутов (stateless, переиспользуемые)
+        // 5. Резолвер действий маршрутов (stateless, зависимости автовайрятся)
 
-        $this->app->singleton(RouteGroupNodeBuilder::class);
-        $this->app->singleton(RouteRouteNodeBuilder::class);
+        $this->app->singleton(RouteActionResolver::class);
 
-        // 6. Резолверы действий маршрутов (stateless, переиспользуемые)
-
-        $this->app->singleton(ViewActionResolver::class);
-        $this->app->singleton(RedirectActionResolver::class);
-        $this->app->singleton(ControllerActionResolver::class);
-
-        // 7. Фабрики узлов маршрутов (композиция стратегий вынесена в метод)
-        $this->registerNodeFactories();
-
-        // 8. Загрузчики маршрутов (теперь доступны как отдельные сервисы)
+        // 6. Загрузчики маршрутов
 
         $this->app->singleton(RouteDefinitionLoader::class, function ($app) {
             return new RouteDefinitionLoader(
                 $app->make(RouteValidator::class),
-                $app->make(RouteNodeBuilderFactory::class),
                 $app->make(AppLogger::class),
             );
         });
@@ -146,7 +125,7 @@ class RoutingServiceProvider extends ServiceProvider
             );
         });
 
-        // 9. Репозитории
+        // 7. Репозитории
 
         $this->app->singleton(ClientRouteRepository::class, function ($app) {
             return new ClientRouteRepository(
@@ -169,7 +148,7 @@ class RoutingServiceProvider extends ServiceProvider
             );
         });
 
-        // 10. Сервисы высокого уровня
+        // 8. Сервисы высокого уровня
 
         $this->app->singleton(MergedRouteTreeService::class, function ($app) {
             // Список источников дерева (RouteTreeSource). Порядок не влияет на
@@ -181,72 +160,16 @@ class RoutingServiceProvider extends ServiceProvider
             ]);
         });
 
-        $this->app->singleton(RouteRegistrar::class, function ($app) {
-            return new RouteRegistrar(
-                $app->make(MergedRouteTreeService::class),
-                $app->make(RouteNodeRegistrarFactory::class)
-            );
-        });
+        // RouteRegistrar собирается автовайрингом: все три его зависимости
+        // (MergedRouteTreeService, RouteActionResolver, AppLogger) — синглтоны.
+        $this->app->singleton(RouteRegistrar::class);
 
-        // 11. Интерфейсы
+        // 9. Интерфейсы
 
         $this->app->singleton(
             RouteNodeServiceInterface::class,
             RouteNodeService::class
         );
-    }
-
-    /**
-     * Регистрация фабрик узлов маршрутов вместе с их стратегиями
-     * (билдеры/резолверы/регистраторы). Вынесено из register() для читаемости —
-     * композиция стратегий в одном месте, register() остаётся обзором биндингов.
-     */
-    private function registerNodeFactories(): void
-    {
-        // RouteNodeBuilderFactory — с внедрёнными билдерами
-        $this->app->singleton(RouteNodeBuilderFactory::class, function ($app) {
-            $factory = new RouteNodeBuilderFactory($app->make(AppLogger::class));
-            $factory->register(
-                RouteNodeKind::GROUP,
-                $app->make(RouteGroupNodeBuilder::class)
-            );
-            $factory->register(
-                RouteNodeKind::ROUTE,
-                $app->make(RouteRouteNodeBuilder::class)
-            );
-
-            return $factory;
-        });
-
-        // ActionResolverFactory — с внедрёнными резолверами
-        $this->app->singleton(ActionResolverFactory::class, function ($app) {
-            $factory = new ActionResolverFactory($app->make(AppLogger::class));
-            $factory->setResolvers([
-                RouteNodeActionType::VIEW->value => $app->make(ViewActionResolver::class),
-                RouteNodeActionType::REDIRECT->value => $app->make(RedirectActionResolver::class),
-                RouteNodeActionType::CONTROLLER->value => $app->make(ControllerActionResolver::class),
-            ]);
-
-            return $factory;
-        });
-
-        // RouteNodeRegistrarFactory — с рекурсивными зависимостями
-        $this->app->singleton(RouteNodeRegistrarFactory::class, function ($app) {
-            $factory = new RouteNodeRegistrarFactory($app->make(AppLogger::class));
-
-            // RouteGroupRegistrar требует ссылку на саму фабрику (рекурсия)
-            $groupRegistrar = new RouteGroupRegistrar($app->make(AppLogger::class), $factory);
-            $factory->register(RouteNodeKind::GROUP, $groupRegistrar);
-
-            // RouteRouteRegistrar требует ActionResolverFactory
-            $routeRegistrar = new RouteRouteRegistrar(
-                $app->make(AppLogger::class),
-                $app->make(ActionResolverFactory::class),
-            );
-            $factory->register(RouteNodeKind::ROUTE, $routeRegistrar);
-
-            return $factory;
-        });
     }
 
     /**
@@ -268,8 +191,19 @@ class RoutingServiceProvider extends ServiceProvider
         // Порядок загрузки роутов (детерминированный):
         // 1) Core в†’ 2) Public API в†’ 3) Admin API в†’ 4) Content в†’ 5) Dynamic Routes в†’ 6) Fallback
 
+        // Если маршруты закэшированы (php artisan route:cache), Laravel поднимает
+        // их из файла кэша сам. Повторная регистрация продублировала бы дерево,
+        // поэтому весь блок ниже пропускается.
+        //
+        // ВАЖНО: route:cache замораживает и клиентские маршруты из route_nodes —
+        // после правок в админке нужен route:clear. См. docs/adr/0005.
+        if ($this->app->routesAreCached()) {
+            $this->app->tag([RoutingCapabilityProvider::class], 'access.capability_providers');
+
+            return;
+        }
+
         // 1-5) Декларативные и динамические маршруты
-        // Регистрируются через единый DynamicRouteRegistrar::register()
         // Деревья source-репозиториев объединяются через MergedRouteTreeService.
         // Порядок: декларативные (web_core.php → api.php → api_admin.php) → динамические из БД
         $this->registerAllRoutes();
@@ -294,13 +228,22 @@ class RoutingServiceProvider extends ServiceProvider
     /**
      * Зарегистрировать все маршруты (декларативные и динамические).
      *
-     * Использует RouteRegistrar сервис для регистрации всех маршрутов.
      * Порядок регистрации: декларативные → динамические из БД.
-     * При ошибке регистрации логирует, но не прерывает загрузку приложения.
+     *
+     * При ошибке логирует и продолжает загрузку приложения: сборка дерева
+     * читает БД и файлы плагинов, и единственная битая запись не должна делать
+     * недоступным всё приложение, включая админку, из которой её чинят.
+     * Fallback регистрируется вызывающим в любом случае, поэтому непокрытые
+     * пути отдают структурированный 404, а не пустой роутер.
      */
     private function registerAllRoutes(): void
     {
-        $routeRegistrar = $this->app->make(RouteRegistrar::class);
-        $routeRegistrar->registerAllRoutes();
+        try {
+            $this->app->make(RouteRegistrar::class)->registerAllRoutes();
+        } catch (\Throwable $exception) {
+            $this->app->make(AppLogger::class)->error('routing.registration_failed', [
+                'exception' => $exception->getMessage(),
+            ]);
+        }
     }
 }

@@ -26,26 +26,15 @@ final class MergedRouteTreeService
         private readonly iterable $sources,
     ) {}
 
-    public function getTree(): Collection
-    {
-        return $this->mergeAndSort(static fn (RouteTreeSource $source): Collection => $source->getTree());
-    }
-
-    public function getEnabledTree(): Collection
-    {
-        return $this->mergeAndSort(static fn (RouteTreeSource $source): Collection => $source->getEnabledTree());
-    }
-
     /**
-     * Собрать деревья всех источников и отсортировать по приоритету владельца.
-     *
-     * @param  callable(RouteTreeSource): Collection  $extract
+     * Собрать включённые деревья всех источников и отсортировать
+     * по приоритету владельца.
      */
-    private function mergeAndSort(callable $extract): Collection
+    public function getEnabledTree(): Collection
     {
         $merged = new Collection;
         foreach ($this->sources as $source) {
-            $merged = $merged->concat($extract($source));
+            $merged = $merged->concat($source->getEnabledTree());
         }
 
         return $merged
@@ -58,11 +47,8 @@ final class MergedRouteTreeService
 
     private function priority(RouteNodeDefinition $node): int
     {
-        $ownerType = $node->owner
-            ? OwnerType::parse($node->owner)['type']
-            : OwnerType::CLIENT;
-
-        return match ($ownerType) {
+        // Нераспознанный owner не роняет boot(), а уезжает в конец очереди.
+        return match ($node->owner === null ? OwnerType::CLIENT : OwnerType::typeFrom($node->owner)) {
             OwnerType::SYSTEM => 1,
             OwnerType::PLUGIN => 2,
             OwnerType::CLIENT => 3,

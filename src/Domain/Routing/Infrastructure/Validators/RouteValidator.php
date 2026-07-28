@@ -64,31 +64,27 @@ final class RouteValidator
     /**
      * Построить общие правила валидации для всех типов узлов.
      *
+     * Store и update отличаются только «головой» правила, поэтому обе версии
+     * строятся из одного описания: $req — обязательное поле, $opt — необязательное.
+     *
+     * Полей owner/readonly здесь намеренно нет: владение определяет ядро
+     * (client для админ-CRUD, system/plugin проставляется загрузчиками через
+     * RouteNodeDefinition::withOwnership), а не тело запроса. Раньше произвольная
+     * строка в owner доходила до OwnerType::parse и роняла boot() целиком.
+     *
      * @param  bool  $isUpdate  true для обновления, false для создания
      * @return array<string, array<mixed>>
      */
     private function buildCommonRules(bool $isUpdate): array
     {
-        $kindRule = Rule::in($this->registry->getSupportedKinds());
-
-        if ($isUpdate) {
-            return [
-                'kind' => ['sometimes', 'required', 'string', $kindRule],
-                'parent_id' => ['sometimes', 'nullable', 'integer', 'exists:route_nodes,id'],
-                'enabled' => ['sometimes', 'required', 'boolean'],
-                'sort_order' => ['sometimes', 'required', 'integer'],
-                'owner' => ['sometimes', 'required', 'string', 'max:255'],
-                'readonly' => ['sometimes', 'required', 'boolean'],
-            ];
-        }
+        $req = $isUpdate ? ['sometimes', 'required'] : ['required'];
+        $opt = $isUpdate ? ['sometimes', 'required'] : ['sometimes'];
 
         return [
-            'kind' => ['required', 'string', $kindRule],
-            'parent_id' => ['nullable', 'integer', 'exists:route_nodes,id'],
-            'enabled' => ['sometimes', 'boolean'],
-            'sort_order' => ['sometimes', 'integer'],
-            'owner' => ['sometimes', 'string', 'max:255'],
-            'readonly' => ['sometimes', 'boolean'],
+            'kind' => [...$req, 'string', Rule::in($this->registry->getSupportedKinds())],
+            'parent_id' => [...($isUpdate ? ['sometimes'] : []), 'nullable', 'integer', 'exists:route_nodes,id'],
+            'enabled' => [...$opt, 'boolean'],
+            'sort_order' => [...$opt, 'integer'],
         ];
     }
 }

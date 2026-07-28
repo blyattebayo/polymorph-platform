@@ -18,19 +18,16 @@ final class SystemRouteRepository implements RouteTreeSource
     public function getTree(): Collection
     {
         return $this->cache->rememberSystemTree(
-            fn () => $this->loader->loadAll()
+            enabledOnly: false,
+            callback: fn () => $this->loader->loadAll()
         );
     }
 
     public function getEnabledTree(): Collection
     {
         return $this->cache->rememberSystemTree(
-            fn () => $this->loader->loadAll()->filter(fn ($node) => $node->enabled)
+            enabledOnly: true,
+            callback: fn () => $this->loader->loadAll()->filter(fn ($node) => $node->enabled)->values()
         );
-    }
-
-    public function loadFresh(): Collection
-    {
-        return $this->loader->loadAll();
     }
 }

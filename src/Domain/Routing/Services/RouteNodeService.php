@@ -46,8 +46,12 @@ class RouteNodeService implements RouteNodeServiceInterface
         // 4. Проверка существования контроллера/view (опционально)
         $this->validateActionTarget($validated);
 
-        // 5. Установка owner (если не передан, default = CLIENT)
-        $validated['owner'] ??= OwnerType::CLIENT->value;
+        // 4a. sort_order у клиентских узлов неотрицателен (колонка unsigned).
+        $this->validateSortOrder($validated['sort_order'] ?? null);
+
+        // 5. Владение не приходит из запроса: всё, что создано через админ-CRUD,
+        //    по определению client. system/plugin живут только в памяти.
+        $validated['owner'] = OwnerType::CLIENT->value;
 
         // 6. Автоматически устанавливаем created_by
         $validated['created_by_user_id'] = $this->currentActorId();
@@ -105,6 +109,12 @@ class RouteNodeService implements RouteNodeServiceInterface
             $this->validateNameUniqueness($validated['name'], $id);
         }
 
+        // Те же инварианты, что и при создании: без этого PUT был дырой, через
+        // которую whitelist контроллеров и reserved prefixes обходились целиком.
+        $this->validateReservedPrefixes($validated);
+        $this->validateActionTarget($this->effectiveActionData($validated, $node));
+        $this->validateSortOrder($validated['sort_order'] ?? null);
+
         // Автоматически устанавливаем updated_by
         $validated['updated_by_user_id'] = $this->currentActorId();
 
@@ -155,19 +165,15 @@ class RouteNodeService implements RouteNodeServiceInterface
             }
 
             // Только CLIENT узлы можно переупорядочивать
-            $ownerType = OwnerType::parse($node->owner)['type'];
+            $ownerType = OwnerType::typeFrom($node->owner);
             if ($ownerType !== OwnerType::CLIENT) {
+                $label = $ownerType?->value ?? 'unknown';
                 throw new \InvalidArgumentException(
-                    "Cannot reorder {$ownerType->value} nodes. Only CLIENT nodes can be reordered."
+                    "Cannot reorder {$label} nodes. Only CLIENT nodes can be reordered."
                 );
             }
 
-            // Запретить sort_order < 0
-            if (isset($nodeData['sort_order']) && $nodeData['sort_order'] < 0) {
-                throw ValidationException::withMessages([
-                    'sort_order' => ['sort_order must be >= 0 for CLIENT nodes. Negative values are reserved for SYSTEM/PLUGIN.'],
-                ]);
-            }
+            $this->validateSortOrder($nodeData['sort_order'] ?? null);
 
             // Readonly нельзя переупорядочивать
             if ($node->readonly) {
@@ -242,15 +248,36 @@ class RouteNodeService implements RouteNodeServiceInterface
             throw new RouteNodeConflictException("Route name '{$name}' already exists in database");
         }
 
-        // Проверка в системных (декларативных) маршрутах
-        $declarativeNames = $this->systemRepository->getTree()
-            ->pluck('name')
-            ->filter()
-            ->unique();
-
-        if ($declarativeNames->contains($name)) {
+        // Проверка в системных (декларативных) маршрутах.
+        // Имена живут на листьях, а корни дерева — группы без имени, поэтому
+        // pluck по корням не находил НИЧЕГО и проверка была тихим no-op.
+        if (in_array($name, $this->declarativeRouteNames(), true)) {
             throw new RouteNodeConflictException("Route name '{$name}' already exists in declarative routes");
         }
+    }
+
+    /**
+     * Собрать имена всех декларативных маршрутов, включая вложенные в группы.
+     *
+     * @return list<string>
+     */
+    private function declarativeRouteNames(): array
+    {
+        $names = [];
+
+        $walk = static function (iterable $nodes) use (&$walk, &$names): void {
+            foreach ($nodes as $node) {
+                if ($node->name !== null) {
+                    $names[] = $node->name;
+                }
+
+                $walk($node->children);
+            }
+        };
+
+        $walk($this->systemRepository->getTree());
+
+        return $names;
     }
 
     /**
@@ -271,6 +298,40 @@ class RouteNodeService implements RouteNodeServiceInterface
         if (in_array($prefix, $reserved)) {
             throw ValidationException::withMessages([
                 'prefix' => ["The prefix '{$prefix}' is reserved and cannot be used."],
+            ]);
+        }
+    }
+
+    /**
+     * Собрать действие узла с учётом того, что PUT может менять action_meta,
+     * не трогая action_type (и наоборот) — проверять надо итоговую пару.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function effectiveActionData(array $validated, RouteNode $node): array
+    {
+        return [
+            'action_type' => array_key_exists('action_type', $validated)
+                ? $validated['action_type']
+                : $node->action_type?->value,
+            'action_meta' => array_key_exists('action_meta', $validated)
+                ? $validated['action_meta']
+                : ($node->action_meta ?? []),
+        ];
+    }
+
+    /**
+     * Клиентские узлы не могут иметь отрицательный sort_order: колонка unsigned,
+     * а отрицательный диапазон зарезервирован за SYSTEM/PLUGIN.
+     *
+     * @throws ValidationException
+     */
+    private function validateSortOrder(mixed $sortOrder): void
+    {
+        if ($sortOrder !== null && (int) $sortOrder < 0) {
+            throw ValidationException::withMessages([
+                'sort_order' => ['sort_order must be >= 0 for CLIENT nodes. Negative values are reserved for SYSTEM/PLUGIN.'],
             ]);
         }
     }

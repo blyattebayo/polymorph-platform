@@ -6,6 +6,7 @@ namespace Polymorph\Platform\Domain\Routing\Console;
 
 use Illuminate\Console\Command;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Repositories\ClientRouteRepository;
+use Polymorph\Platform\Domain\Routing\Infrastructure\Repositories\PluginRouteRepository;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Repositories\SystemRouteRepository;
 use Polymorph\Platform\Domain\Routing\Services\Cache\RouteCache;
 
@@ -38,17 +39,14 @@ class CacheRoutesCommand extends Command
     /**
      * Выполнить консольную команду.
      *
-     * Прогревает кэш для обоих репозиториев:
-     * 1. SystemRouteRepository - системные и плагинные роуты из конфигов
-     * 2. ClientRouteRepository - клиентские роуты из БД
+     * Прогревает кэш всех трёх источников дерева: system (файлы),
+     * plugin (declarative из плагинов) и client (таблица route_nodes).
      *
-     * @param  SystemRouteRepository  $systemRepository  Репозиторий системных роутов
-     * @param  ClientRouteRepository  $clientRepository  Репозиторий клиентских роутов
-     * @param  RouteCache  $routeCache  Сервис кэширования
      * @return int Код возврата (0 = успех, 1 = ошибка)
      */
     public function handle(
         SystemRouteRepository $systemRepository,
+        PluginRouteRepository $pluginRepository,
         ClientRouteRepository $clientRepository,
         RouteCache $routeCache,
     ): int {
@@ -56,26 +54,29 @@ class CacheRoutesCommand extends Command
 
         try {
             // Сначала очищаем весь кэш для принудительного обновления
-            $this->info('  в†’ Clearing existing cache...');
+            $this->info('  -> Clearing existing cache...');
             $routeCache->forgetTree();
 
-            // Прогрев кэша системных роутов (SYSTEM + PLUGIN)
-            $this->info('  в†’ Loading system routes...');
-            $systemTree = $systemRepository->getTree();
-            $systemCount = $systemTree->count();
-            $this->info("  ✓ System routes cached: {$systemCount} node(s)");
+            // Греем ИМЕННО enabled-деревья: на боевом пути регистрации читаются
+            // они (MergedRouteTreeService::getEnabledTree), и у них отдельные
+            // ключи кэша. Прогрев полного дерева оставил бы рантайм холодным.
+            $total = 0;
 
-            // Прогрев кэша клиентских роутов (CLIENT)
-            $this->info('  в†’ Loading client routes...');
-            $clientTree = $clientRepository->getTree();
-            $clientCount = $clientTree->count();
-            $this->info("  ✓ Client routes cached: {$clientCount} node(s)");
+            foreach ([
+                'system' => $systemRepository,
+                'plugin' => $pluginRepository,
+                'client' => $clientRepository,
+            ] as $label => $repository) {
+                $this->info("  -> Loading {$label} routes...");
+                $count = $repository->getEnabledTree()->count();
+                $total += $count;
+                $this->info("  OK {$label} routes cached: {$count} node(s)");
+            }
 
-            $totalCount = $systemCount + $clientCount;
-            $this->info("Cache warmed up successfully. Total: {$totalCount} route node(s).");
+            $this->info("Cache warmed up successfully. Total: {$total} route node(s).");
 
             return self::SUCCESS;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->error("Failed to warm up cache: {$e->getMessage()}");
 
             return self::FAILURE;

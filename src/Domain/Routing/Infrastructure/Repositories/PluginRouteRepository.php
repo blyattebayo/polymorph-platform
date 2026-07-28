@@ -26,7 +26,8 @@ final class PluginRouteRepository implements RouteTreeSource
     {
         return $this->cache->rememberPluginTree(
             $this->loader->fingerprint(),
-            fn () => $this->loader->loadAll(),
+            enabledOnly: false,
+            callback: fn () => $this->loader->loadAll(),
         );
     }
 
@@ -36,7 +37,8 @@ final class PluginRouteRepository implements RouteTreeSource
         // с enabled=true, но фильтруем для симметрии с другими репозиториями.
         return $this->cache->rememberPluginTree(
             $this->loader->fingerprint(),
-            fn () => $this->loader->loadAll()->filter(fn ($node) => $node->enabled),
+            enabledOnly: true,
+            callback: fn () => $this->loader->loadAll()->filter(fn ($node) => $node->enabled)->values(),
         );
     }
 
