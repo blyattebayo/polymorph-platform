@@ -38,11 +38,17 @@ final class RouteNodeController extends Controller
      * Включает только роуты с owner type CLIENT.
      * Используется для отображения маршрутов в UI с поддержкой последовательной загрузки узлов.
      *
+     * По умолчанию отдаёт и выключенные узлы: это управляющий экран, и без них
+     * выключенный маршрут исчезал из админки навсегда — включить его обратно
+     * через UI было невозможно. Поле `enabled` есть в ресурсе.
+     *
      * @group Admin • Routes
      *
      * @name List client routes
      *
      * @authenticated
+     *
+     * @queryParam enabled_only boolean Вернуть только включённые узлы. Example: 1
      *
      * @response status=200 {
      *   "data": [
@@ -79,9 +85,11 @@ final class RouteNodeController extends Controller
      *   "code": "UNAUTHORIZED"
      * }
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $allNodes = $this->routeNodeService->getTree(enabledOnly: true);
+        $allNodes = $this->routeNodeService->getTree(
+            enabledOnly: $request->boolean('enabled_only'),
+        );
 
         return RouteNodeResource::collection($allNodes)->response();
     }

@@ -82,7 +82,15 @@ final class RouteValidator
 
         return [
             'kind' => [...$req, 'string', Rule::in($this->registry->getSupportedKinds())],
-            'parent_id' => [...($isUpdate ? ['sometimes'] : []), 'nullable', 'integer', 'exists:route_nodes,id'],
+            // whereNull('deleted_at'): без этого родителем можно было назначить
+            // мягко удалённый узел — такое поддерево не грузится репозиторием,
+            // то есть ребёнок молча исчезал из дерева.
+            'parent_id' => [
+                ...($isUpdate ? ['sometimes'] : []),
+                'nullable',
+                'integer',
+                Rule::exists('route_nodes', 'id')->whereNull('deleted_at'),
+            ],
             'enabled' => [...$opt, 'boolean'],
             'sort_order' => [...$opt, 'integer'],
         ];

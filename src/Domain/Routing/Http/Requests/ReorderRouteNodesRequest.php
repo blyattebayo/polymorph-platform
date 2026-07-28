@@ -42,15 +42,17 @@ class ReorderRouteNodesRequest extends FormRequest
     {
         return [
             'nodes' => 'required|array|min:1',
+            // whereNull('deleted_at'): мягко удалённые узлы не участвуют
+            // ни как перемещаемые, ни как родители.
             'nodes.*.id' => [
                 'required',
                 'integer',
-                Rule::exists('route_nodes', 'id'),
+                Rule::exists('route_nodes', 'id')->whereNull('deleted_at'),
             ],
             'nodes.*.parent_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('route_nodes', 'id'),
+                Rule::exists('route_nodes', 'id')->whereNull('deleted_at'),
             ],
             'nodes.*.sort_order' => [
                 'nullable',

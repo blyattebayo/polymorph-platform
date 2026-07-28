@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Routing\Services;
 
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -57,14 +58,14 @@ class RouteNodeService implements RouteNodeServiceInterface
         $validated['created_by_user_id'] = $this->currentActorId();
 
         // 7. Создание в транзакции
-        return DB::transaction(function () use ($validated) {
+        return $this->asNameConflict($validated['name'] ?? null, fn (): RouteNode => DB::transaction(function () use ($validated) {
             $node = RouteNode::create($validated);
 
             // Кэш инвалидируется через Observer; логирование — листенер на событии.
             event(new RouteNodeCreated($node));
 
             return $node->load(['parent', 'children']);
-        });
+        }));
     }
 
     public function getById(int $id): RouteNode
@@ -101,6 +102,7 @@ class RouteNodeService implements RouteNodeServiceInterface
 
         // Очистка полей при изменении kind
         if (isset($validated['kind']) && $validated['kind'] !== $node->kind->value) {
+            $this->assertKindChangeIsComplete($validated, $node);
             $validated = $this->cleanFieldsOnKindChange($validated, $node);
         }
 
@@ -118,13 +120,13 @@ class RouteNodeService implements RouteNodeServiceInterface
         // Автоматически устанавливаем updated_by
         $validated['updated_by_user_id'] = $this->currentActorId();
 
-        return DB::transaction(function () use ($node, $validated) {
+        return $this->asNameConflict($validated['name'] ?? null, fn (): RouteNode => DB::transaction(function () use ($node, $validated) {
             $node->update($validated);
 
             event(new RouteNodeUpdated($node));
 
             return $node->fresh(['parent', 'children']);
-        });
+        }));
     }
 
     public function delete(int $id): int
@@ -190,11 +192,17 @@ class RouteNodeService implements RouteNodeServiceInterface
             foreach ($nodes as $nodeData) {
                 $node = $routeNodes->get($nodeData['id']);
 
+                // Обновляем только присланные поля. Раньше отсутствующий
+                // parent_id трактовался как null, и узел, про который клиент
+                // сообщил лишь новый sort_order, молча уезжал в корень дерева.
+                $changes = array_intersect_key($nodeData, array_flip(['parent_id', 'sort_order']));
+
+                if ($changes === []) {
+                    continue;
+                }
+
                 // Используем Eloquent (не Query Builder) для вызова Observer
-                $node->update([
-                    'parent_id' => $nodeData['parent_id'] ?? null,
-                    'sort_order' => $nodeData['sort_order'] ?? 0,
-                ]);
+                $node->update($changes);
 
                 $updated++;
             }
@@ -227,6 +235,34 @@ class RouteNodeService implements RouteNodeServiceInterface
     }
 
     // ========== Private Helper Methods ==========
+
+    /**
+     * Выполнить запись, переведя гонку по уникальному имени в доменный конфликт.
+     *
+     * validateNameUniqueness — проверка «до», то есть TOCTOU: два параллельных
+     * запроса читают «имя свободно» и оба пишут. Страхует частичный уникальный
+     * индекс route_nodes_name_unique, а здесь его нарушение превращается
+     * в 409 вместо 500.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $write
+     * @return T
+     *
+     * @throws RouteNodeConflictException
+     */
+    private function asNameConflict(?string $name, callable $write): mixed
+    {
+        try {
+            return $write();
+        } catch (UniqueConstraintViolationException $exception) {
+            if ($name === null || ! str_contains($exception->getMessage(), 'route_nodes_name_unique')) {
+                throw $exception;
+            }
+
+            throw new RouteNodeConflictException("Route name '{$name}' already exists in database");
+        }
+    }
 
     /**
      * Проверить уникальность имени маршрута.
@@ -333,6 +369,37 @@ class RouteNodeService implements RouteNodeServiceInterface
             throw ValidationException::withMessages([
                 'sort_order' => ['sort_order must be >= 0 for CLIENT nodes. Negative values are reserved for SYSTEM/PLUGIN.'],
             ]);
+        }
+    }
+
+    /**
+     * Убедиться, что смена kind не оставит узел в нерабочем состоянии.
+     *
+     * Правила валидатора выбираются по присланному kind, и на update они
+     * «sometimes»: при переходе GROUP → ROUTE клиент мог не прислать ни uri,
+     * ни methods, и в БД сохранялся route-узел без них. Такой узел молча
+     * пропускается регистратором — маршрут создан, но не работает.
+     *
+     * @param  array<string, mixed>  $validated
+     *
+     * @throws ValidationException
+     */
+    private function assertKindChangeIsComplete(array $validated, RouteNode $node): void
+    {
+        if (RouteNodeKind::from($validated['kind']) !== RouteNodeKind::ROUTE) {
+            return;
+        }
+
+        $missing = [];
+
+        foreach (['uri', 'methods', 'action_type', 'action_meta'] as $field) {
+            if (($validated[$field] ?? null) === null) {
+                $missing[$field] = ["Поле {$field} обязательно при смене kind на route."];
+            }
+        }
+
+        if ($missing !== []) {
+            throw ValidationException::withMessages($missing);
         }
     }
 
