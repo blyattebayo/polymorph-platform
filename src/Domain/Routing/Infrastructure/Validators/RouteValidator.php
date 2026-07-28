@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Routing\Infrastructure\Validators;
 
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -37,6 +38,13 @@ final class RouteValidator
             ]);
         }
 
+        if (! $this->registry->hasValidator($kind)) {
+            $supported = implode(', ', $this->registry->getSupportedKinds());
+            throw ValidationException::withMessages([
+                'kind' => ["Неизвестный kind «{$kind}». Поддерживаются: {$supported}."],
+            ]);
+        }
+
         // Получаем специфичные правила для типа узла
         $dataValidator = $this->registry->getValidator($kind);
         $specificRules = $isUpdate
@@ -61,9 +69,11 @@ final class RouteValidator
      */
     private function buildCommonRules(bool $isUpdate): array
     {
+        $kindRule = Rule::in($this->registry->getSupportedKinds());
+
         if ($isUpdate) {
             return [
-                'kind' => ['sometimes', 'required', 'string'],
+                'kind' => ['sometimes', 'required', 'string', $kindRule],
                 'parent_id' => ['sometimes', 'nullable', 'integer', 'exists:route_nodes,id'],
                 'enabled' => ['sometimes', 'required', 'boolean'],
                 'sort_order' => ['sometimes', 'required', 'integer'],
@@ -73,7 +83,7 @@ final class RouteValidator
         }
 
         return [
-            'kind' => ['required', 'string'],
+            'kind' => ['required', 'string', $kindRule],
             'parent_id' => ['nullable', 'integer', 'exists:route_nodes,id'],
             'enabled' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer'],
