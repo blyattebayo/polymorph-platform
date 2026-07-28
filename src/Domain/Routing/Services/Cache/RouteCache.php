@@ -51,26 +51,41 @@ class RouteCache
      *
      * Позволяет автоматически инвалидировать кэш при изменении routes/*.php,
      * даже без ручного optimize:clear.
+     *
+     * Обходится ВЕСЬ каталог рекурсивно, а не список declarative_files: точки
+     * входа подключают вложенные файлы (api_admin.php → admin/v1.php →
+     * admin/v1/*.php), и по списку из четырёх имён fingerprint не замечал
+     * правку тринадцати остальных — на боевом кэше маршруты оставались
+     * протухшими до истечения TTL.
      */
     private function systemFilesFingerprint(): string
     {
-        $routeFiles = (array) config('routing.declarative_files', [
-            'web_core.php',
-            'api.php',
-            'api_plugins.php',
-            'api_admin.php',
-        ]);
         $base = rtrim((string) config('routing.base_path', base_path('routes')), '/');
-        $files = array_map(
-            static fn (string $file): string => $base.'/'.ltrim($file, '/'),
-            $routeFiles,
+
+        if (! is_dir($base)) {
+            return 'missing';
+        }
+
+        $files = [];
+
+        /** @var iterable<\SplFileInfo> $iterator */
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($base, \FilesystemIterator::SKIP_DOTS)
         );
 
-        $parts = [];
+        foreach ($iterator as $file) {
+            if ($file->isFile() && $file->getExtension() === 'php') {
+                $files[$file->getPathname()] = (string) ($file->getMTime() ?: 0);
+            }
+        }
 
-        foreach ($files as $file) {
-            $mtime = is_file($file) ? (string) (filemtime($file) ?: 0) : '0';
-            $parts[] = $file.':'.$mtime;
+        // Порядок обхода ФС не гарантирован — сортируем, иначе ключ прыгал бы
+        // между воркерами при неизменных файлах.
+        ksort($files);
+
+        $parts = [];
+        foreach ($files as $path => $mtime) {
+            $parts[] = $path.':'.$mtime;
         }
 
         return substr(sha1(implode('|', $parts)), 0, 12);
