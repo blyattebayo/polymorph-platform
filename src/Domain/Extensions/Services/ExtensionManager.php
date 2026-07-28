@@ -7,6 +7,7 @@ namespace Polymorph\Platform\Domain\Extensions\Services;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\Extensions\Core\Contracts\ExtensionRoutes;
 use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
 use Polymorph\Platform\Domain\Extensions\Core\Models\ExtensionRegistry;
 use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
@@ -21,7 +22,7 @@ final class ExtensionManager
     public function __construct(
         private readonly ExtensionDiscoveryService $discoveryService,
         private readonly ExtensionRegistryService $registryService,
-        private readonly ExtensionRouteService $routeService,
+        private readonly ExtensionRoutes $routeService,
         private readonly ExtensionCapabilityService $capabilityService,
         private readonly ExtensionCompatibilityService $compatibilityService,
         private readonly ExtensionMigrationService $migrationService,
@@ -81,7 +82,7 @@ final class ExtensionManager
             // Boot этого процесса прошёл без только что включённого плагина —
             // вживляем его роуты в живой роутер, чтобы они стали доступны сразу
             // (иначе 404 до следующего запроса/воркера).
-            $this->routeService->registerInCurrentRouter($plugin);
+            $this->routeService->mountInCurrentRouter($plugin);
 
             return $enabled;
         } catch (\Throwable $exception) {
@@ -157,9 +158,9 @@ final class ExtensionManager
             });
 
             // Вживляем роуты в живой роутер, если их там ещё нет (идемпотентно:
-            // при уже включённом плагине registerInCurrentRouter увидит
+            // при уже включённом плагине mountInCurrentRouter увидит
             // существующие роуты и не продублирует).
-            $this->routeService->registerInCurrentRouter($plugin);
+            $this->routeService->mountInCurrentRouter($plugin);
 
             return $entry;
         } catch (\Throwable $exception) {

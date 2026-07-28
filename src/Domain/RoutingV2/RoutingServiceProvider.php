@@ -6,6 +6,8 @@ namespace Polymorph\Platform\Domain\RoutingV2;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Polymorph\Platform\Domain\Extensions\Core\Contracts\ExtensionRoutes;
+use Polymorph\Platform\Domain\Extensions\Routing\ExtensionRouteMounter;
 use Polymorph\Platform\Domain\RoutingV2\Console\LintRoutesCommand;
 use Polymorph\Platform\Domain\RoutingV2\Http\FallbackController;
 use Polymorph\Platform\Domain\RoutingV2\Plugin\PluginRouteMounter;
@@ -46,10 +48,32 @@ final class RoutingServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->commands([LintRoutesCommand::class]);
+
+        // Маршруты расширений в их жизненном цикле — реализация этого движка.
+        // Тот же PluginRouteMounter, что и на бутстрапе, поэтому «работает при
+        // старте, но не работает при enable» структурно невозможно.
+        $this->app->singleton(
+            ExtensionRoutes::class,
+            ExtensionRouteMounter::class,
+        );
     }
 
     public function boot(): void
     {
+        // Маршруты подняты из файла кеша (route:cache). Laravel заменит
+        // коллекцию роутера скомпилированной УЖЕ ПОСЛЕ boot(), поэтому всё,
+        // что мы здесь зарегистрируем, будет отброшено. Без этого выхода
+        // остаётся только цена: require 14 файлов и запрос в БД за списком
+        // включённых расширений на КАЖДОМ запросе — ровно та работа, ради
+        // устранения которой кеш и делают.
+        //
+        // Следствие: кеш замораживает и маршруты расширений. После
+        // enable/disable нужен route:clear (или повторный route:cache),
+        // иначе расширение появится только в том процессе, который его включил.
+        if ($this->app->routesAreCached()) {
+            return;
+        }
+
         $this->registerCoreRoutes();
 
         // Маршруты плагинов идут после ядра: плагин не может перехватить

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Extensions\Services;
 
 use Illuminate\Support\Facades\Route;
+use Polymorph\Platform\Domain\Extensions\Core\Contracts\ExtensionRoutes;
 use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
 use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
 use Polymorph\Platform\Domain\Routing\Core\Enums\OwnerType;
@@ -17,7 +18,7 @@ use Polymorph\Platform\Domain\Routing\Infrastructure\RouteRegistrar;
  * и вживление в живой роутер при enable/update. В БД ничего не пишется —
  * на boot роуты собираются из файлов через PluginRouteLoader.
  */
-final class ExtensionRouteService
+final class ExtensionRouteService implements ExtensionRoutes
 {
     public function __construct(
         private readonly ExtensionRouteConstraints $constraints,
@@ -25,7 +26,7 @@ final class ExtensionRouteService
         private readonly PluginRouteLoader $pluginRouteLoader,
     ) {}
 
-    public function registerInCurrentRouter(DiscoveredExtension $plugin): void
+    public function mountInCurrentRouter(DiscoveredExtension $plugin): void
     {
         if ($plugin->backendRouteFile === null) {
             return;

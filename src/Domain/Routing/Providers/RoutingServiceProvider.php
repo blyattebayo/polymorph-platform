@@ -7,7 +7,12 @@ namespace Polymorph\Platform\Domain\Routing\Providers;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
+use Polymorph\Platform\Domain\Extensions\Core\Contracts\ExtensionRoutes;
+use Polymorph\Platform\Domain\Extensions\Services\ExtensionRouteService;
 use Polymorph\Platform\Domain\Routing\Access\RoutingCapabilityProvider;
+use Polymorph\Platform\Domain\Routing\Console\CacheRoutesCommand;
+use Polymorph\Platform\Domain\Routing\Console\ClearRouteCacheCommand;
+use Polymorph\Platform\Domain\Routing\Console\LintRoutesCommand;
 use Polymorph\Platform\Domain\Routing\Core\Contracts\PluginRouteCatalog;
 use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeKind;
 use Polymorph\Platform\Domain\Routing\Core\Models\RouteNode;
@@ -65,6 +70,16 @@ class RoutingServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // 0. Консольные команды движка. Живут здесь, а не в HostBootstrap:
+        // они управляют кешем route_nodes и линтуют дерево узлов, то есть
+        // осмысленны только пока работает этот движок.
+
+        $this->commands([
+            CacheRoutesCommand::class,
+            ClearRouteCacheCommand::class,
+            LintRoutesCommand::class,
+        ]);
+
         // 1. Базовые сервисы без зависимостей
 
         $this->app->singleton(RouteCache::class);
@@ -169,6 +184,14 @@ class RoutingServiceProvider extends ServiceProvider
         $this->app->singleton(
             RouteNodeServiceInterface::class,
             RouteNodeService::class
+        );
+
+        // Маршруты расширений в их жизненном цикле — реализация этого движка.
+        // Биндится здесь, а не в ExtensionsServiceProvider: контракт один,
+        // и выбирать реализацию должен тот, кто знает, какой движок работает.
+        $this->app->singleton(
+            ExtensionRoutes::class,
+            ExtensionRouteService::class,
         );
     }
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\RoutingV2\Plugin;
 
-use Illuminate\Routing\RouteRegistrar;
 use Illuminate\Support\Facades\Route;
 use Polymorph\Platform\Http\Middleware\VerifyApiCsrf;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
@@ -69,6 +68,36 @@ final class PluginRouteMounter
                 'exception' => $exception->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Есть ли маршруты этого расширения в текущем роутере.
+     *
+     * Проверяем по префиксу пути, а не по именам: имя необязательно, а префикс
+     * задаёт хост и он уникален для расширения — значит, признак не зависит
+     * от того, что расширение написало в своём файле.
+     */
+    public function isMounted(string $pluginId): bool
+    {
+        $prefixes = array_map(
+            static fn (ZoneKind $kind): string => self::prefix($kind, $pluginId),
+            ZoneKind::cases(),
+        );
+
+        foreach (Route::getRoutes()->getRoutes() as $route) {
+            $uri = ltrim($route->uri(), '/');
+
+            foreach ($prefixes as $prefix) {
+                // Точное совпадение — маршрут в корне зоны; со слэшем — всё
+                // остальное. Голый str_starts_with без слэша считал бы
+                // расширение 'demo' смонтированным по маршрутам 'demo-2'.
+                if ($uri === $prefix || str_starts_with($uri, $prefix.'/')) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public function mount(string $pluginId, Routes $routes): void

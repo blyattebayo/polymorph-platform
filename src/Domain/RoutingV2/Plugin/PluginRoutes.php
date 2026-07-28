@@ -35,7 +35,7 @@ final class PluginRoutes
 
         if (! $value instanceof Routes) {
             throw new RuntimeException(
-                "Plugin route file must return ".Routes::class.", got ".get_debug_type($value).": {$path}",
+                'Plugin route file must return '.Routes::class.', got '.get_debug_type($value).": {$path}",
             );
         }
 

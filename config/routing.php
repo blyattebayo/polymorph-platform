@@ -18,6 +18,13 @@ return [
     */
     'engine' => env('ROUTING_ENGINE', 'v1'),
 
+    // --- Ниже: только для engine=v2 ---
+
+    // Каталог нативных роут-файлов ядра. Их список и порядок задаёт
+    // RoutingV2\RoutingServiceProvider::CORE_FILES — здесь только корень,
+    // чтобы тесты и хост могли подменить каталог целиком.
+    'v2_path' => dirname(__DIR__).'/routes-v2',
+
     // --- Ниже: только для engine=v1 ---
 
     // Root directory holding the declarative route files. Package-local (the routes

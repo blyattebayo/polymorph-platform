@@ -21,9 +21,6 @@ use Polymorph\Platform\Domain\Extensions\Console\PluginsUninstallCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsUpdateCommand;
 use Polymorph\Platform\Domain\Extensions\Console\ScaffoldPluginCommand;
 use Polymorph\Platform\Domain\Extensions\Http\ReplyRenderer;
-use Polymorph\Platform\Domain\Routing\Console\CacheRoutesCommand;
-use Polymorph\Platform\Domain\Routing\Console\ClearRouteCacheCommand;
-use Polymorph\Platform\Domain\Routing\Console\LintRoutesCommand;
 use Polymorph\Platform\Http\Middleware\AddCacheVary;
 use Polymorph\Platform\Http\Middleware\CanonicalUrl;
 use Polymorph\Platform\Http\Middleware\EnsureSessionCredential;
@@ -51,15 +48,21 @@ use Throwable;
  */
 final class HostBootstrap
 {
-    /** @return array<int, class-string> */
+    /**
+     * Консольные команды хоста.
+     *
+     * Команды маршрутизации сюда НЕ входят: они свои у каждого движка и
+     * регистрируются его провайдером. Иначе команды v1 (routing:lint,
+     * route:cache-db) существовали бы и под v2 — и молча затеняли бы
+     * одноимённые команды работающего движка.
+     *
+     * @return array<int, class-string>
+     */
     public static function commands(): array
     {
         return [
             PreflightCommand::class,
             RebuildAccessControlCommand::class,
-            CacheRoutesCommand::class,
-            ClearRouteCacheCommand::class,
-            LintRoutesCommand::class,
             PruneAuthSessionsCommand::class,
             PluginsListCommand::class,
             PluginsInstallCommand::class,

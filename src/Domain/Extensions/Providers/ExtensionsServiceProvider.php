@@ -22,8 +22,6 @@ use Polymorph\Platform\Domain\Extensions\Services\ExtensionManager;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionManifestValidator;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionMigrationService;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionRegistryService;
-use Polymorph\Platform\Domain\Extensions\Services\ExtensionRouteConstraints;
-use Polymorph\Platform\Domain\Extensions\Services\ExtensionRouteService;
 use Polymorph\Platform\Domain\Records\Events\RecordDeleted;
 use Polymorph\Platform\Domain\Routing\Core\Contracts\PluginRouteCatalog;
 use Polymorph\Platform\Domain\RoutingV2\Plugin\PluginRouteCatalog as PluginRouteFileCatalog;
@@ -38,8 +36,6 @@ final class ExtensionsServiceProvider extends ServiceProvider
         $this->app->singleton(ExtensionManifestValidator::class);
         $this->app->singleton(ExtensionDiscoveryService::class);
         $this->app->singleton(ExtensionRegistryService::class);
-        $this->app->singleton(ExtensionRouteConstraints::class);
-        $this->app->singleton(ExtensionRouteService::class);
         $this->app->singleton(ExtensionCapabilityService::class);
         $this->app->singleton(ExtensionCompatibilityService::class);
         $this->app->singleton(ExtensionMigrationService::class);
@@ -55,6 +51,10 @@ final class ExtensionsServiceProvider extends ServiceProvider
 
         // Каталог маршрутов расширений — по одному порту на движок. Оба биндинга
         // безвредны: работает тот, чей провайдер зарегистрирован (routing.engine).
+        //
+        // Сами реализации маршрутной части жизненного цикла (ExtensionRoutes)
+        // биндит провайдер движка: контракт один, и выбирать должен тот, кто
+        // знает, какой движок работает.
         $this->app->singleton(
             PluginRouteCatalog::class,
             ExtensionRouteCatalogAdapter::class,
