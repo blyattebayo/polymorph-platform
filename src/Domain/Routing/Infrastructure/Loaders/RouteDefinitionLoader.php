@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Routing\Infrastructure\Loaders;
 
 use Illuminate\Support\Collection;
+use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeActionType;
 use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeKind;
 use Polymorph\Platform\Domain\Routing\Core\ValueObjects\RouteNodeDefinition;
-use Polymorph\Platform\Domain\Routing\Infrastructure\Builders\RouteNodeBuilderFactory;
 use Polymorph\Platform\Domain\Routing\Infrastructure\Validators\RouteValidator;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 
@@ -22,27 +22,10 @@ use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
  */
 class RouteDefinitionLoader
 {
-    /**
-     * Фабрика для создания билдеров узлов.
-     */
-    private RouteNodeBuilderFactory $builderFactory;
-
-    /**
-     * Валидатор для декларативных маршрутов.
-     */
-    private RouteValidator $validator;
-
-    /**
-     * Конструктор.
-     */
     public function __construct(
-        RouteValidator $validator,
-        RouteNodeBuilderFactory $builderFactory,
+        private readonly RouteValidator $validator,
         private readonly AppLogger $logger,
-    ) {
-        $this->validator = $validator;
-        $this->builderFactory = $builderFactory;
-    }
+    ) {}
 
     /**
      * Загрузить декларативные маршруты из файла.
@@ -99,26 +82,22 @@ class RouteDefinitionLoader
     /**
      * Создать RouteNodeDefinition из массива конфигурации.
      *
-     * Использует фабрику билдеров для создания узла соответствующего типа.
-     * Делегирует всю логику создания билдерам, что упрощает код и улучшает расширяемость.
+     * Валидация неотделима от сборки: сюда приходит сырой конфиг из файла ядра
+     * или из routes.php плагина, и единственный путь «массив → VO» проходит
+     * через RouteValidator.
      *
      * @param  array<string, mixed>  $data  Данные конфигурации
      * @return RouteNodeDefinition|null Созданный RouteNodeDefinition или null при ошибке
      */
     public function createFromArray(array $data): ?RouteNodeDefinition
     {
-        // Нормализация enum в строки для валидации
-        $data = $this->normalizeEnumsToStrings($data);
-
-        // Валидация данных
-        $validated = $this->validator->validate($data, false);
-
-        // Нормализация kind в enum
+        $validated = $this->validator->validate($this->normalizeEnumsToStrings($data), false);
         $kind = RouteNodeKind::from($validated['kind']);
 
-        // Сначала рекурсивно собираем детей (для GROUP узлов).
+        // Дети валидируются как непрозрачный массив (у правила children нет
+        // вложенных правил), поэтому каждый ребёнок проходит этот же метод.
         $children = [];
-        if (isset($validated['children']) && is_array($validated['children'])) {
+        if ($kind === RouteNodeKind::GROUP && is_array($validated['children'] ?? null)) {
             foreach ($validated['children'] as $childData) {
                 if (! is_array($childData)) {
                     continue;
@@ -131,46 +110,57 @@ class RouteDefinitionLoader
             }
         }
 
-        // Получаем билдер для типа узла.
-        $builder = $this->builderFactory->create($kind);
-        if ($builder === null) {
-            $this->logger->error('routing.declarative.builder_not_found', [
-                'kind' => $kind->value,
-            ]);
+        return $this->buildDefinition($validated, $kind, $children);
+    }
 
-            return null;
-        }
+    /**
+     * Собрать VO, обнулив поля, несовместимые с видом узла.
+     *
+     * @param  array<string, mixed>  $data  Валидированные данные
+     * @param  list<RouteNodeDefinition>  $children
+     */
+    private function buildDefinition(array $data, RouteNodeKind $kind, array $children): RouteNodeDefinition
+    {
+        $isGroup = $kind === RouteNodeKind::GROUP;
 
-        return $builder->build($validated, $children);
+        return new RouteNodeDefinition(
+            kind: $kind,
+            owner: is_string($data['owner'] ?? null) ? $data['owner'] : null,
+            sortOrder: (int) ($data['sort_order'] ?? 0),
+            enabled: (bool) ($data['enabled'] ?? true),
+            name: is_string($data['name'] ?? null) ? $data['name'] : null,
+            domain: is_string($data['domain'] ?? null) ? $data['domain'] : null,
+            prefix: $isGroup && is_string($data['prefix'] ?? null) ? $data['prefix'] : null,
+            namespace: $isGroup && is_string($data['namespace'] ?? null) ? $data['namespace'] : null,
+            uri: ! $isGroup && is_string($data['uri'] ?? null) ? $data['uri'] : null,
+            methods: ! $isGroup && is_array($data['methods'] ?? null) ? array_values($data['methods']) : [],
+            actionType: ! $isGroup && isset($data['action_type'])
+                ? RouteNodeActionType::from((string) $data['action_type'])
+                : null,
+            actionMeta: ! $isGroup && is_array($data['action_meta'] ?? null) ? $data['action_meta'] : [],
+            middleware: is_array($data['middleware'] ?? null) ? array_values($data['middleware']) : [],
+            where: is_array($data['where'] ?? null) ? $data['where'] : [],
+            defaults: ! $isGroup && is_array($data['defaults'] ?? null) ? $data['defaults'] : [],
+            children: $children,
+        );
     }
 
     /**
      * Нормализовать enum объекты в строки для валидации.
      *
-     * Рекурсивно проходит по массиву и преобразует объекты RouteNodeKind
-     * и RouteNodeActionType в их строковые значения.
+     * Конфиг плагина может нести kind/action_type как enum (см. ExtensionRouteService),
+     * а правила валидации ожидают строки. Дети не обходятся: каждый ребёнок
+     * попадает сюда самостоятельно через createFromArray().
      *
      * @param  array<string, mixed>  $data  Данные для нормализации
      * @return array<string, mixed> Нормализованные данные
      */
     protected function normalizeEnumsToStrings(array $data): array
     {
-        // Нормализация kind
-        if (isset($data['kind']) && $data['kind'] instanceof \BackedEnum) {
-            $data['kind'] = $data['kind']->value;
-        }
-
-        // Нормализация action_type
-        if (isset($data['action_type']) && $data['action_type'] instanceof \BackedEnum) {
-            $data['action_type'] = $data['action_type']->value;
-        }
-
-        // Рекурсивная обработка дочерних узлов
-        if (isset($data['children']) && is_array($data['children'])) {
-            $data['children'] = array_map(
-                fn ($child) => is_array($child) ? $this->normalizeEnumsToStrings($child) : $child,
-                $data['children']
-            );
+        foreach (['kind', 'action_type'] as $key) {
+            if (($data[$key] ?? null) instanceof \BackedEnum) {
+                $data[$key] = $data[$key]->value;
+            }
         }
 
         return $data;

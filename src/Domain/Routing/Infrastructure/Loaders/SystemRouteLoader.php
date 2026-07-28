@@ -15,28 +15,9 @@ use Polymorph\Platform\Domain\Routing\Core\ValueObjects\RouteNodeDefinition;
  */
 class SystemRouteLoader
 {
-    /**
-     * Конструктор.
-     *
-     * @param  \Polymorph\Platform\Domain\Routing\Loaders\RouteDefinitionLoader  $loader  Базовый загрузчик маршрутов
-     */
     public function __construct(
         private RouteDefinitionLoader $loader
     ) {}
-
-    /**
-     * Создать RouteNodeDefinition из массива конфигурации.
-     *
-     * @param  array<string, mixed>  $data  Данные конфигурации
-     * @return RouteNodeDefinition|null Созданный RouteNodeDefinition или null при ошибке
-     */
-    public function createFromArray(array $data): ?RouteNodeDefinition
-    {
-        // Поддерживаем прежнюю семантику: owner и sort_order приходят как есть из config.
-        $data['enabled'] = $data['enabled'] ?? true;
-
-        return $this->loader->createFromArray($data);
-    }
 
     /**
      * Загрузить все системные декларативные маршруты.

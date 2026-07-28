@@ -84,27 +84,22 @@ final readonly class RouteNodeDefinition
 
     /**
      * Вернуть копию узла с новым owner/sortOrder.
+     *
+     * Владение распространяется на всё поддерево: дочерние узлы наследуют owner
+     * родителя, сохраняя собственный sortOrder. Без этого дети декларативной
+     * группы оставались с owner=null, то есть неотличимы от клиентских — а по
+     * owner решается, доверять ли контроллеру узла без проверки whitelist.
      */
     public function withOwnership(?string $owner, int $sortOrder): self
     {
-        return new self(
-            kind: $this->kind,
-            owner: $owner,
-            sortOrder: $sortOrder,
-            enabled: $this->enabled,
-            name: $this->name,
-            domain: $this->domain,
-            prefix: $this->prefix,
-            namespace: $this->namespace,
-            uri: $this->uri,
-            methods: $this->methods,
-            actionType: $this->actionType,
-            actionMeta: $this->actionMeta,
-            middleware: $this->middleware,
-            where: $this->where,
-            defaults: $this->defaults,
-            children: $this->children,
-            sourceId: $this->sourceId,
-        );
+        return new self(...[
+            ...get_object_vars($this),
+            'owner' => $owner,
+            'sortOrder' => $sortOrder,
+            'children' => array_map(
+                static fn (self $child): self => $child->withOwnership($owner, $child->sortOrder),
+                $this->children,
+            ),
+        ]);
     }
 }
