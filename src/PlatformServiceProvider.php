@@ -15,28 +15,6 @@ use Illuminate\Support\ServiceProvider;
 final class PlatformServiceProvider extends ServiceProvider
 {
     /**
-     * Место движка маршрутизации в порядке провайдеров.
-     *
-     * Позиция значима: провайдер маршрутизации обязан отработать boot() РАНЬШЕ
-     * AdminServiceProvider, иначе catch-all админки затенит маршруты ядра.
-     * Какой именно движок сюда подставится, решает config('routing.engine').
-     */
-    private const ROUTING_ENGINE_PLACEHOLDER = '__routing_engine__';
-
-    /**
-     * Движки маршрутизации: значение config('routing.engine') → провайдер.
-     *
-     * Регистрируется РОВНО ОДИН, поэтому два движка никогда не работают
-     * одновременно и не спорят за одни и те же URI.
-     *
-     * @var array<string, class-string>
-     */
-    private const ROUTING_ENGINES = [
-        'v1' => Domain\Routing\Providers\RoutingServiceProvider::class,
-        'v2' => Domain\RoutingV2\RoutingServiceProvider::class,
-    ];
-
-    /**
      * Domain providers in dependency order (mirrors the former bootstrap/providers.php).
      * Order is load-bearing: PipelineCore early; Schema -> RecordDefinitions -> Records ->
      * Materialization.
@@ -53,7 +31,9 @@ final class PlatformServiceProvider extends ServiceProvider
         Domain\AccessControl\Providers\AccessControlServiceProvider::class,
         Domain\Extensions\Providers\ExtensionsServiceProvider::class,
         Domain\Extensions\Providers\ExtensionsSdkServiceProvider::class,
-        self::ROUTING_ENGINE_PLACEHOLDER,
+        // Позиция значима: маршрутизация обязана отработать boot() РАНЬШЕ
+        // AdminServiceProvider, иначе catch-all админки затенит маршруты ядра.
+        Domain\Routing\RoutingServiceProvider::class,
         Admin\Providers\AdminServiceProvider::class,
         Domain\SchemaModel\Providers\SchemaServiceProvider::class,
         Domain\SchemaModelValidation\Providers\SchemaModelValidationServiceProvider::class,
@@ -84,31 +64,9 @@ final class PlatformServiceProvider extends ServiceProvider
     {
         $this->mergePlatformConfigs();
 
-        $routingEngine = $this->routingEngineProvider();
-
         foreach (self::PROVIDERS as $provider) {
-            $this->app->register(
-                $provider === self::ROUTING_ENGINE_PLACEHOLDER ? $routingEngine : $provider,
-            );
+            $this->app->register($provider);
         }
-    }
-
-    /**
-     * Провайдер выбранного движка маршрутизации.
-     *
-     * Неизвестное значение флага — ошибка конфигурации, а не повод молча
-     * поднять приложение без маршрутов.
-     *
-     * @return class-string
-     */
-    private function routingEngineProvider(): string
-    {
-        $engine = (string) config('routing.engine', 'v1');
-
-        return self::ROUTING_ENGINES[$engine]
-            ?? throw new \InvalidArgumentException(
-                "Unknown routing engine '{$engine}'. Supported: ".implode(', ', array_keys(self::ROUTING_ENGINES)).'.',
-            );
     }
 
     /**
@@ -147,7 +105,7 @@ final class PlatformServiceProvider extends ServiceProvider
      *
      * They are added to the DEFAULT namespace's search path — not a `polymorph::`
      * hint — so existing bare view names (view('home.default'), view('errors.404'),
-     * content route_nodes with a VIEW action, page templates) resolve with zero
+     * page templates) resolve with zero
      * controller changes. The package path is appended AFTER config('view.paths'),
      * so a host that publishes its own views (resource_path('views'), searched
      * first) transparently overrides the package.

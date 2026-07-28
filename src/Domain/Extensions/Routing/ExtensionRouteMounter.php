@@ -7,8 +7,8 @@ namespace Polymorph\Platform\Domain\Extensions\Routing;
 use Polymorph\Platform\Domain\Extensions\Core\Contracts\ExtensionRoutes;
 use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
 use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
-use Polymorph\Platform\Domain\RoutingV2\Plugin\PluginRouteMounter;
-use Polymorph\Platform\Domain\RoutingV2\Plugin\PluginRoutes;
+use Polymorph\Platform\Domain\Routing\Plugin\PluginRouteMounter;
+use Polymorph\Platform\Domain\Routing\Plugin\PluginRoutes;
 use Polymorph\Sdk\Routing\Routes;
 
 /**

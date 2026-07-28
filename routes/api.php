@@ -2,227 +2,92 @@
 
 declare(strict_types=1);
 
-use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeActionType;
-use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeKind;
+use Illuminate\Support\Facades\Route;
+use Polymorph\Platform\Domain\Auth\Http\Controllers\AuthController;
+use Polymorph\Platform\Domain\Auth\Http\Controllers\EmailVerificationController;
+use Polymorph\Platform\Domain\Auth\Http\Controllers\MeAuthSessionController;
+use Polymorph\Platform\Domain\Auth\Http\Controllers\MePersonalAccessTokenController;
+use Polymorph\Platform\Domain\Auth\Http\Controllers\PasswordResetController;
+use Polymorph\Platform\Domain\Media\Http\Controllers\MediaPreviewController;
+use Polymorph\Platform\Domain\Menu\Http\Controllers\MenuController;
 use Polymorph\Platform\Http\Middleware\EnsureSessionCredential;
 use Polymorph\Platform\Http\Middleware\OptionalApiAuth;
+use Polymorph\Platform\Support\Validation\Http\ValidationRulesController;
 
 /**
- * Декларативные маршруты для публичного API.
- *
- * Эти маршруты загружаются автоматически и имеют приоритет над маршрутами из БД.
- * Используются для статических системных маршрутов, которые не должны изменяться через UI.
- *
- * @return array<int, array<string, mixed>>
+ * Публичное API ядра.
  */
-return [
-    // Группа для публичных API маршрутов
-    // Полный префикс: api/v1
-    // Middleware группа 'api' применяется в RouteServiceProvider через Route::middleware('api')
-    // sort_order = -999 (второй в порядке регистрации)
-    [
-        'kind' => RouteNodeKind::GROUP,
-        'sort_order' => -999,
-        'prefix' => 'api/v1',
-        'middleware' => ['api'],
-        'children' => [
-            [
-                'kind' => RouteNodeKind::ROUTE,
-                'uri' => '/validation-rules',
-                'methods' => ['GET'],
-                'action_type' => RouteNodeActionType::CONTROLLER,
-                'action_meta' => [
-                    'action' => 'Polymorph\\Platform\\Support\\Validation\\Http\\ValidationRulesController',
-                ],
-                'name' => 'api.v1.validation-rules',
-            ],
-            // Authentication endpoints
-            [
-                'kind' => RouteNodeKind::ROUTE,
-                'uri' => '/auth/register',
-                'methods' => ['POST'],
-                'action_type' => RouteNodeActionType::CONTROLLER,
-                'action_meta' => [
-                    'action' => 'Polymorph\Platform\Domain\Auth\Http\Controllers\AuthController@register',
-                ],
-                'name' => 'api.auth.register',
-                'middleware' => ['throttle:auth-register', 'no-cache-auth'],
-            ],
-            [
-                'kind' => RouteNodeKind::ROUTE,
-                'uri' => '/auth/login',
-                'methods' => ['POST'],
-                'action_type' => RouteNodeActionType::CONTROLLER,
-                'action_meta' => [
-                    'action' => 'Polymorph\Platform\Domain\Auth\Http\Controllers\AuthController@login',
-                ],
-                'name' => 'api.auth.login',
-                'middleware' => ['throttle:auth-login', 'no-cache-auth'],
-            ],
-            [
-                'kind' => RouteNodeKind::ROUTE,
-                'uri' => '/auth/refresh',
-                'methods' => ['POST'],
-                'action_type' => RouteNodeActionType::CONTROLLER,
-                'action_meta' => [
-                    'action' => 'Polymorph\Platform\Domain\Auth\Http\Controllers\AuthController@refresh',
-                ],
-                'name' => 'api.auth.refresh',
-                'middleware' => ['throttle:auth-refresh', 'no-cache-auth'],
-            ],
-            [
-                'kind' => RouteNodeKind::ROUTE,
-                'uri' => '/auth/password/forgot',
-                'methods' => ['POST'],
-                'action_type' => RouteNodeActionType::CONTROLLER,
-                'action_meta' => [
-                    'action' => 'Polymorph\\Platform\\Domain\\Auth\\Http\\Controllers\\PasswordResetController@forgot',
-                ],
-                'name' => 'api.auth.password.forgot',
-                'middleware' => ['throttle:auth-password-reset', 'no-cache-auth'],
-            ],
-            [
-                'kind' => RouteNodeKind::ROUTE,
-                'uri' => '/auth/password/reset',
-                'methods' => ['POST'],
-                'action_type' => RouteNodeActionType::CONTROLLER,
-                'action_meta' => [
-                    'action' => 'Polymorph\\Platform\\Domain\\Auth\\Http\\Controllers\\PasswordResetController@reset',
-                ],
-                'name' => 'api.auth.password.reset',
-                'middleware' => ['throttle:auth-password-reset', 'no-cache-auth'],
-            ],
-            // Email-верификация. verify открывается из письма (подписанная ссылка),
-            // отвечает редиректом в SPA; resend — для залогиненного пользователя.
-            [
-                'kind' => RouteNodeKind::ROUTE,
-                'uri' => '/auth/email/verify/{id}/{hash}',
-                'methods' => ['GET'],
-                'action_type' => RouteNodeActionType::CONTROLLER,
-                'action_meta' => [
-                    'action' => 'Polymorph\\Platform\\Domain\\Auth\\Http\\Controllers\\EmailVerificationController@verify',
-                ],
-                'name' => 'verification.verify',
-                'middleware' => ['throttle:30,1'],
-            ],
-            [
-                'kind' => RouteNodeKind::ROUTE,
-                'uri' => '/auth/email/verification-notification',
-                'methods' => ['POST'],
-                'action_type' => RouteNodeActionType::CONTROLLER,
-                'action_meta' => [
-                    'action' => 'Polymorph\\Platform\\Domain\\Auth\\Http\\Controllers\\EmailVerificationController@resend',
-                ],
-                'name' => 'api.auth.email.resend',
-                'middleware' => ['auth:api', 'throttle:auth-verify-resend', 'no-cache-auth'],
-            ],
-            [
-                'kind' => RouteNodeKind::GROUP,
-                'prefix' => 'me',
-                'middleware' => ['auth:api', EnsureSessionCredential::ALIAS, 'no-cache-auth'],
-                'children' => [
-                    [
-                        'kind' => RouteNodeKind::ROUTE,
-                        'uri' => '/sessions',
-                        'methods' => ['GET'],
-                        'action_type' => RouteNodeActionType::CONTROLLER,
-                        'action_meta' => [
-                            'action' => 'Polymorph\\Platform\\Domain\\Auth\\Http\\Controllers\\MeAuthSessionController@index',
-                        ],
-                        'name' => 'api.me.sessions.index',
-                    ],
-                    [
-                        'kind' => RouteNodeKind::ROUTE,
-                        'uri' => '/sessions/{sessionId}',
-                        'methods' => ['DELETE'],
-                        'action_type' => RouteNodeActionType::CONTROLLER,
-                        'action_meta' => [
-                            'action' => 'Polymorph\\Platform\\Domain\\Auth\\Http\\Controllers\\MeAuthSessionController@destroy',
-                        ],
-                        'name' => 'api.me.sessions.destroy',
-                        'where' => ['sessionId' => '[0-9]+'],
-                    ],
-                    [
-                        'kind' => RouteNodeKind::ROUTE,
-                        'uri' => '/personal-access-tokens',
-                        'methods' => ['GET'],
-                        'action_type' => RouteNodeActionType::CONTROLLER,
-                        'action_meta' => [
-                            'action' => 'Polymorph\\Platform\\Domain\\Auth\\Http\\Controllers\\MePersonalAccessTokenController@index',
-                        ],
-                        'name' => 'api.me.personal-access-tokens.index',
-                    ],
-                    [
-                        'kind' => RouteNodeKind::ROUTE,
-                        'uri' => '/personal-access-tokens',
-                        'methods' => ['POST'],
-                        'action_type' => RouteNodeActionType::CONTROLLER,
-                        'action_meta' => [
-                            'action' => 'Polymorph\\Platform\\Domain\\Auth\\Http\\Controllers\\MePersonalAccessTokenController@store',
-                        ],
-                        'name' => 'api.me.personal-access-tokens.store',
-                        'middleware' => ['throttle:pat-create'],
-                    ],
-                    [
-                        'kind' => RouteNodeKind::ROUTE,
-                        'uri' => '/personal-access-tokens/{tokenId}',
-                        'methods' => ['DELETE'],
-                        'action_type' => RouteNodeActionType::CONTROLLER,
-                        'action_meta' => [
-                            'action' => 'Polymorph\\Platform\\Domain\\Auth\\Http\\Controllers\\MePersonalAccessTokenController@destroy',
-                        ],
-                        'name' => 'api.me.personal-access-tokens.destroy',
-                        'where' => ['tokenId' => '[0-9]+'],
-                    ],
-                ],
-            ],
-            [
-                'kind' => RouteNodeKind::ROUTE,
-                'uri' => '/auth/logout',
-                'methods' => ['POST'],
-                'action_type' => RouteNodeActionType::CONTROLLER,
-                'action_meta' => [
-                    'action' => 'Polymorph\Platform\Domain\Auth\Http\Controllers\AuthController@logout',
-                ],
-                'name' => 'api.auth.logout',
-                'middleware' => ['auth:api', 'no-cache-auth'],
-            ],
-            [
-                'kind' => RouteNodeKind::ROUTE,
-                'uri' => '/auth/current',
-                'methods' => ['GET'],
-                'action_type' => RouteNodeActionType::CONTROLLER,
-                'action_meta' => [
-                    'action' => 'Polymorph\\Platform\\Domain\\Auth\\Http\\Controllers\\AuthController@current',
-                ],
-                'name' => 'api.auth.current',
-                'middleware' => ['auth:api', 'no-cache-auth'],
-            ],
-            // Configured navigation menu by key (FE owns defaults and ACL filtering).
-            [
-                'kind' => RouteNodeKind::ROUTE,
-                'uri' => '/menu/{key}',
-                'methods' => ['GET'],
-                'action_type' => RouteNodeActionType::CONTROLLER,
-                'action_meta' => [
-                    'action' => 'Polymorph\\Platform\\Domain\\Menu\\Http\\Controllers\\MenuController@show',
-                ],
-                'name' => 'api.v1.menu.show',
-                'where' => ['key' => '[a-z][a-z0-9_]*'],
-                'middleware' => ['auth:api'],
-            ],
-            // Public media access
-            [
-                'kind' => RouteNodeKind::ROUTE,
-                'uri' => '/media/{id}',
-                'methods' => ['GET'],
-                'action_type' => RouteNodeActionType::CONTROLLER,
-                'action_meta' => [
-                    'action' => 'Polymorph\Platform\Domain\Media\Http\Controllers\MediaPreviewController@show',
-                ],
-                'name' => 'api.v1.media.show',
-                'middleware' => [OptionalApiAuth::ALIAS],
-            ],
-        ],
-    ],
-];
+Route::middleware('api')->prefix('api/v1')->group(function (): void {
+    Route::get('/validation-rules', [ValidationRulesController::class, '__invoke'])->name('api.v1.validation-rules');
+
+    // Ссылка из письма: подписанный GET, открывается браузером, отвечает
+    // редиректом в SPA. Стоит вне группы auth по двум причинам: это
+    // единственный маршрут аутентификации без no-cache-auth, и его имя
+    // задано Laravel — MustVerifyEmail строит URL по 'verification.verify'.
+    Route::get('/auth/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware('throttle:30,1')
+        ->name('verification.verify');
+
+    Route::prefix('auth')->name('api.auth.')->middleware('no-cache-auth')->group(function (): void {
+        Route::post('/register', [AuthController::class, 'register'])
+            ->middleware('throttle:auth-register')
+            ->name('register');
+
+        Route::post('/login', [AuthController::class, 'login'])
+            ->middleware('throttle:auth-login')
+            ->name('login');
+
+        Route::post('/refresh', [AuthController::class, 'refresh'])
+            ->middleware('throttle:auth-refresh')
+            ->name('refresh');
+
+        Route::prefix('password')
+            ->name('password.')
+            ->middleware('throttle:auth-password-reset')
+            ->group(function (): void {
+                Route::post('/forgot', [PasswordResetController::class, 'forgot'])->name('forgot');
+                Route::post('/reset', [PasswordResetController::class, 'reset'])->name('reset');
+            });
+
+        Route::middleware('auth:api')->group(function (): void {
+            Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
+                ->middleware('throttle:auth-verify-resend')
+                ->name('email.resend');
+
+            Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+            Route::get('/current', [AuthController::class, 'current'])->name('current');
+        });
+    });
+
+    // Управление собственными сессиями и токенами. EnsureSessionCredential
+    // требует, чтобы запрос шёл под сессионной кукой, а не под PAT: иначе
+    // долгоживущим токеном можно было бы отозвать сессии владельца.
+    Route::prefix('me')
+        ->name('api.me.')
+        ->middleware(['auth:api', EnsureSessionCredential::ALIAS, 'no-cache-auth'])
+        ->whereNumber(['sessionId', 'tokenId'])
+        ->group(function (): void {
+            Route::get('/sessions', [MeAuthSessionController::class, 'index'])->name('sessions.index');
+            Route::delete('/sessions/{sessionId}', [MeAuthSessionController::class, 'destroy'])->name('sessions.destroy');
+
+            Route::name('personal-access-tokens.')->group(function (): void {
+                Route::get('/personal-access-tokens', [MePersonalAccessTokenController::class, 'index'])->name('index');
+                Route::post('/personal-access-tokens', [MePersonalAccessTokenController::class, 'store'])
+                    ->middleware('throttle:pat-create')
+                    ->name('store');
+                Route::delete('/personal-access-tokens/{tokenId}', [MePersonalAccessTokenController::class, 'destroy'])->name('destroy');
+            });
+        });
+
+    // Меню навигации по ключу: дефолты и ACL-фильтрацию делает FE.
+    Route::get('/menu/{key}', [MenuController::class, 'show'])
+        ->where('key', '[a-z][a-z0-9_]*')
+        ->middleware('auth:api')
+        ->name('api.v1.menu.show');
+
+    // Публичная выдача медиа: доступ решает контроллер, поэтому аутентификация
+    // опциональная — анонимный запрос не должен получать 401 на публичный файл.
+    Route::get('/media/{id}', [MediaPreviewController::class, 'show'])
+        ->middleware(OptionalApiAuth::ALIAS)
+        ->name('api.v1.media.show');
+});

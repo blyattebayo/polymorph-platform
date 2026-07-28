@@ -6,8 +6,8 @@ namespace Polymorph\Platform\Domain\Extensions\Routing;
 
 use Polymorph\Platform\Domain\Extensions\Core\Models\ExtensionRegistry;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionDiscoveryService;
-use Polymorph\Platform\Domain\RoutingV2\Plugin\PluginRouteCatalog;
-use Polymorph\Platform\Domain\RoutingV2\Plugin\PluginRouteFile;
+use Polymorph\Platform\Domain\Routing\Plugin\PluginRouteCatalog;
+use Polymorph\Platform\Domain\Routing\Plugin\PluginRouteFile;
 use Throwable;
 
 /**

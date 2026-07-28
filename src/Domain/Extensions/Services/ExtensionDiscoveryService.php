@@ -149,9 +149,9 @@ final class ExtensionDiscoveryService
             $routeFilePath = null;
         }
 
-        // Роуты плагина всегда declarative: грузятся в память из be/routes.php
-        // на boot (PluginRouteLoader), без записи в route_nodes. Прежний db-режим
-        // удалён — стейл-манифест с ним отклоняем громко, а не молча игнорируем.
+        // Маршруты расширения всегда declarative: объект Routes из be/routes.php,
+        // который хост монтирует на boot. Прежний db-режим удалён — стейл-манифест
+        // с ним отклоняем громко, а не молча игнорируем.
         $routeMode = data_get($decoded, 'backend.routes.mode');
         if ($routeMode !== null && $routeMode !== 'declarative') {
             throw new PluginException(
@@ -224,7 +224,7 @@ final class ExtensionDiscoveryService
         $pluginId = $manifest->id;
         $contributes = $manifest->contributes;
 
-        // Роуты v2 декларативны и всегда лежат в be/routes.php (Routes::for(...)).
+        // Маршруты расширения всегда лежат в be/routes.php (Routes::define()).
         $routeFilePath = $directory.DIRECTORY_SEPARATOR.'be/routes.php';
         if (! is_file($routeFilePath)) {
             $routeFilePath = null;

@@ -24,8 +24,6 @@ final class BuiltInRoleCatalog
 
     public const ROLE_USERS_MANAGER = 'users.manager';
 
-    public const ROLE_ROUTING_MANAGER = 'routing.manager';
-
     public const ROLE_PLUGINS_MANAGER = 'plugins.manager';
 
     public const ROLE_TABLE_CONFIG_MANAGER = 'table_config.manager';
@@ -80,11 +78,6 @@ final class BuiltInRoleCatalog
                 'code' => self::ROLE_USERS_MANAGER,
                 'name' => 'Users Manager',
                 'description' => 'Reads users and manages user lifecycle operations.',
-            ],
-            [
-                'code' => self::ROLE_ROUTING_MANAGER,
-                'name' => 'Routing Manager',
-                'description' => 'Manages route nodes and route metadata.',
             ],
             [
                 'code' => self::ROLE_PLUGINS_MANAGER,

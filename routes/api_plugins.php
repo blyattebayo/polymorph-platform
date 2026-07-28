@@ -2,26 +2,16 @@
 
 declare(strict_types=1);
 
-use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeActionType;
-use Polymorph\Platform\Domain\Routing\Core\Enums\RouteNodeKind;
+use Illuminate\Support\Facades\Route;
+use Polymorph\Platform\Domain\Extensions\Http\Controllers\ExtensionFrontendController;
 
-return [
-    [
-        'kind' => RouteNodeKind::GROUP,
-        'sort_order' => -997,
-        'prefix' => 'api/v1/plugins',
-        'middleware' => ['api', 'auth:api'],
-        'children' => [
-            [
-                'kind' => RouteNodeKind::ROUTE,
-                'uri' => '/frontend-manifest',
-                'methods' => ['GET'],
-                'action_type' => RouteNodeActionType::CONTROLLER,
-                'action_meta' => [
-                    'action' => 'Polymorph\\Platform\\Domain\\Extensions\\Http\\Controllers\\ExtensionFrontendController@index',
-                ],
-                'name' => 'api.v1.plugins.frontend-manifest',
-            ],
-        ],
-    ],
-];
+/**
+ * Метаданные расширений для админ-SPA.
+ *
+ * Это маршруты ЯДРА о расширениях, а не маршруты самих расширений: последние
+ * монтируются под api/v1/ext/{plugin} из файлов плагинов (PluginRouteMounter).
+ */
+Route::middleware(['api', 'auth:api'])->prefix('api/v1/plugins')->group(function (): void {
+    Route::get('/frontend-manifest', [ExtensionFrontendController::class, 'index'])
+        ->name('api.v1.plugins.frontend-manifest');
+});

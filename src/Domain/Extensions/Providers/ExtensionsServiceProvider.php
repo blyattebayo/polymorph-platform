@@ -10,7 +10,6 @@ use Polymorph\Platform\Domain\Extensions\Access\ExtensionsCapabilityProvider;
 use Polymorph\Platform\Domain\Extensions\Events\EloquentRecordDefinitionSchemaCode;
 use Polymorph\Platform\Domain\Extensions\Events\RecordDefinitionSchemaCode;
 use Polymorph\Platform\Domain\Extensions\Events\RecordLifecycleSdkBridge;
-use Polymorph\Platform\Domain\Extensions\Routing\ExtensionRouteCatalogAdapter;
 use Polymorph\Platform\Domain\Extensions\Routing\ExtensionRouteFileCatalog;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionAclManifestParser;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionAutoloadService;
@@ -23,8 +22,7 @@ use Polymorph\Platform\Domain\Extensions\Services\ExtensionManifestValidator;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionMigrationService;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionRegistryService;
 use Polymorph\Platform\Domain\Records\Events\RecordDeleted;
-use Polymorph\Platform\Domain\Routing\Core\Contracts\PluginRouteCatalog;
-use Polymorph\Platform\Domain\RoutingV2\Plugin\PluginRouteCatalog as PluginRouteFileCatalog;
+use Polymorph\Platform\Domain\Routing\Plugin\PluginRouteCatalog;
 use Polymorph\Platform\Support\Logging\Contracts\SecretRedactor;
 use Polymorph\Platform\Support\Logging\PayloadRedactor;
 
@@ -49,19 +47,11 @@ final class ExtensionsServiceProvider extends ServiceProvider
         // contract that extensions subscribe to (ADR 0005 Фаза 4).
         $this->app->singleton(RecordDefinitionSchemaCode::class, EloquentRecordDefinitionSchemaCode::class);
 
-        // Каталог маршрутов расширений — по одному порту на движок. Оба биндинга
-        // безвредны: работает тот, чей провайдер зарегистрирован (routing.engine).
-        //
-        // Сами реализации маршрутной части жизненного цикла (ExtensionRoutes)
-        // биндит провайдер движка: контракт один, и выбирать должен тот, кто
-        // знает, какой движок работает.
+        // Каталог файлов маршрутов включённых расширений. Порт объявлен в
+        // домене Routing, реализация живёт здесь: роутинг не знает, откуда
+        // берётся список расширений, а Extensions не знает, как их монтируют.
         $this->app->singleton(
             PluginRouteCatalog::class,
-            ExtensionRouteCatalogAdapter::class,
-        );
-
-        $this->app->singleton(
-            PluginRouteFileCatalog::class,
             ExtensionRouteFileCatalog::class,
         );
 
