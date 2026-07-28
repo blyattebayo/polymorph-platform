@@ -23,8 +23,10 @@ use Polymorph\Platform\Domain\Extensions\Services\ExtensionMigrationService;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionRegistryService;
 use Polymorph\Platform\Domain\Records\Events\RecordDeleted;
 use Polymorph\Platform\Domain\Routing\Plugin\PluginRouteCatalog;
+use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 use Polymorph\Platform\Support\Logging\Contracts\SecretRedactor;
 use Polymorph\Platform\Support\Logging\PayloadRedactor;
+use Throwable;
 
 final class ExtensionsServiceProvider extends ServiceProvider
 {
@@ -71,9 +73,25 @@ final class ExtensionsServiceProvider extends ServiceProvider
         Event::listen(RecordDeleted::class, RecordLifecycleSdkBridge::class);
     }
 
+    /**
+     * Страховка бутстрапа: обход каталога пропускает битые расширения
+     * поштучно, но цикл в зависимостях — свойство НАБОРА, а не одного
+     * расширения, и всё ещё бросает. Приложение обязано подниматься в любом
+     * случае: без расширений можно работать и чинить, без приложения — нет.
+     */
     private function registerExtensionProviders(): void
     {
-        foreach ($this->app->make(ExtensionDiscoveryService::class)->discoverAll() as $extension) {
+        try {
+            $extensions = $this->app->make(ExtensionDiscoveryService::class)->discoverAll();
+        } catch (Throwable $exception) {
+            $this->app->make(AppLogger::class)->error('extensions.discovery_aborted', [
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return;
+        }
+
+        foreach ($extensions as $extension) {
             $providerClass = $extension->providerClass;
             if (! is_string($providerClass) || $providerClass === '') {
                 continue;

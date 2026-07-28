@@ -6,26 +6,49 @@ namespace Polymorph\Platform\Domain\Extensions\Services;
 
 use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException as PluginException;
 use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
+use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\ExtensionDiscoveryFailure;
 use Polymorph\Platform\Domain\Extensions\Manifest\ManifestV2Validator;
+use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
+use Throwable;
 
 final class ExtensionDiscoveryService
 {
     /** Манифест расширения v2 (Extension SDK V2). */
     private const MANIFEST_V2 = 'extension.json';
 
+    /**
+     * Расширения, которые не удалось прочитать при последнем обходе.
+     *
+     * @var list<ExtensionDiscoveryFailure>
+     */
+    private array $failures = [];
+
     public function __construct(
         private readonly ExtensionManifestValidator $validator,
         private readonly ExtensionAclManifestParser $aclManifestParser,
         private readonly ManifestV2Validator $manifestV2Validator,
+        private readonly AppLogger $logger,
     ) {}
 
     /**
+     * Обойти каталог расширений.
+     *
+     * Битое расширение ПРОПУСКАЕТСЯ, а не роняет обход: каталог наполняется
+     * сторонним содержимым, и один негодный манифест не должен лишать хост
+     * всех остальных расширений. Раньше исключение отсюда доходило до
+     * ExtensionsServiceProvider::register() и убивало приложение целиком —
+     * и каждый запрос, и каждую artisan-команду, включая те, которыми это чинят.
+     *
+     * Пропуск не молчаливый: причина уходит в лог и остаётся в {@see failures()},
+     * откуда её показывает `plugins:list`.
+     *
      * @return list<DiscoveredExtension>
      */
     public function discoverAll(): array
     {
         $manifestFile = (string) config('plugins.manifest_file', 'plugin.json');
 
+        $this->failures = [];
         $plugins = [];
 
         // Рантайм drop-in плагины (магазинные) из plugins.root_path.
@@ -40,7 +63,19 @@ final class ExtensionDiscoveryService
                     continue;
                 }
 
-                $plugin = $this->loadFromDirectory($directory, $manifestFile);
+                try {
+                    $plugin = $this->loadFromDirectory($directory, $manifestFile);
+                } catch (Throwable $exception) {
+                    $this->failures[] = new ExtensionDiscoveryFailure($directory, $exception->getMessage());
+
+                    $this->logger->error('extensions.discovery_failed', [
+                        'path' => $directory,
+                        'exception' => $exception->getMessage(),
+                    ]);
+
+                    continue;
+                }
+
                 if ($plugin !== null) {
                     $plugins[] = $plugin;
                 }
@@ -48,6 +83,16 @@ final class ExtensionDiscoveryService
         }
 
         return $this->sortByDependencies($plugins);
+    }
+
+    /**
+     * Расширения, пропущенные при последнем {@see discoverAll()}.
+     *
+     * @return list<ExtensionDiscoveryFailure>
+     */
+    public function failures(): array
+    {
+        return $this->failures;
     }
 
     /**
@@ -218,7 +263,9 @@ final class ExtensionDiscoveryService
         try {
             $manifest = $this->manifestV2Validator->validate($decoded, $manifestPath);
         } catch (\InvalidArgumentException $e) {
-            throw new PluginException("Manifest {$manifestPath}: {$e->getMessage()}");
+            // Валидатор уже начинает сообщение с пути ($source), поэтому
+            // повторный префикс только задваивал бы его в выводе plugins:list.
+            throw new PluginException($e->getMessage(), previous: $e);
         }
 
         $pluginId = $manifest->id;

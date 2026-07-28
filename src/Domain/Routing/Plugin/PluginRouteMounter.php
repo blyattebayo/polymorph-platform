@@ -39,10 +39,30 @@ final class PluginRouteMounter
         'csrf' => VerifyApiCsrf::class,
     ];
 
+    /**
+     * Расширения, чьи маршруты не удалось смонтировать: id → причина.
+     *
+     * Расширение остаётся «включённым» в реестре, но его путей в роутере нет.
+     * Без этого следа состояние выглядит как «включено и работает», а по факту
+     * отдаёт 404 — ровно то, что бывает при обновлении ядра, когда установленный
+     * артефакт собран против старого SDK.
+     *
+     * @var array<string, string>
+     */
+    private array $failures = [];
+
     public function __construct(
         private readonly PluginRouteCatalog $catalog,
         private readonly AppLogger $logger,
     ) {}
+
+    /**
+     * @return array<string, string>
+     */
+    public function failures(): array
+    {
+        return $this->failures;
+    }
 
     /**
      * Смонтировать маршруты всех включённых расширений.
@@ -62,6 +82,8 @@ final class PluginRouteMounter
         try {
             $this->mount($file->pluginId, PluginRoutes::fromFile($file->path));
         } catch (Throwable $exception) {
+            $this->failures[$file->pluginId] = $exception->getMessage();
+
             $this->logger->error('routing.plugin.mount_failed', [
                 'plugin_id' => $file->pluginId,
                 'path' => $file->path,

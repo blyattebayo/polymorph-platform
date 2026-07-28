@@ -49,6 +49,12 @@ final class RoutingServiceProvider extends ServiceProvider
     {
         $this->commands([LintRoutesCommand::class]);
 
+        // Синглтон: список несмонтированных расширений накапливается на boot(),
+        // а читают его позже (plugins:list). С разными экземплярами он был бы
+        // всегда пуст, и состояние «включено, но маршрутов нет» осталось бы
+        // видно только в логе.
+        $this->app->singleton(PluginRouteMounter::class);
+
         // Маршруты расширений в их жизненном цикле — реализация этого движка.
         // Тот же PluginRouteMounter, что и на бутстрапе, поэтому «работает при
         // старте, но не работает при enable» структурно невозможно.

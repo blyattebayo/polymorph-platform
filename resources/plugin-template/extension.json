@@ -4,7 +4,7 @@
   "name": "__PLUGIN_NAME__",
   "version": "0.1.0",
   "kind": "plugin",
-  "sdk": "^2",
+  "sdk": "^3",
   "provider": "Plugins\\__PLUGIN_CLASS__\\__PLUGIN_CLASS__ServiceProvider",
   "scopes": ["records:read", "records:write"],
   "egress": [],

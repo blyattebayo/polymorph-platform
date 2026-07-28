@@ -31,7 +31,15 @@ final class ExtensionRouteFileCatalog implements PluginRouteCatalog
         $enabled = $this->enabledIds();
         $files = [];
 
-        foreach ($this->discovery->discoverAll() as $extension) {
+        try {
+            $extensions = $this->discovery->discoverAll();
+        } catch (Throwable) {
+            // Причину уже записал сам обход. Маршрутизация ядра не может
+            // зависеть от того, что лежит в каталоге расширений.
+            return [];
+        }
+
+        foreach ($extensions as $extension) {
             if (! isset($enabled[$extension->id]) || $extension->backendRouteFile === null) {
                 continue;
             }
