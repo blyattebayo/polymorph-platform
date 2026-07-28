@@ -11,6 +11,7 @@ use Polymorph\Platform\Domain\Extensions\Events\EloquentRecordDefinitionSchemaCo
 use Polymorph\Platform\Domain\Extensions\Events\RecordDefinitionSchemaCode;
 use Polymorph\Platform\Domain\Extensions\Events\RecordLifecycleSdkBridge;
 use Polymorph\Platform\Domain\Extensions\Routing\ExtensionRouteCatalogAdapter;
+use Polymorph\Platform\Domain\Extensions\Routing\ExtensionRouteFileCatalog;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionAclManifestParser;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionAutoloadService;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionCapabilityService;
@@ -25,6 +26,7 @@ use Polymorph\Platform\Domain\Extensions\Services\ExtensionRouteConstraints;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionRouteService;
 use Polymorph\Platform\Domain\Records\Events\RecordDeleted;
 use Polymorph\Platform\Domain\Routing\Core\Contracts\PluginRouteCatalog;
+use Polymorph\Platform\Domain\RoutingV2\Plugin\PluginRouteCatalog as PluginRouteFileCatalog;
 use Polymorph\Platform\Support\Logging\Contracts\SecretRedactor;
 use Polymorph\Platform\Support\Logging\PayloadRedactor;
 
@@ -51,9 +53,16 @@ final class ExtensionsServiceProvider extends ServiceProvider
         // contract that extensions subscribe to (ADR 0005 Фаза 4).
         $this->app->singleton(RecordDefinitionSchemaCode::class, EloquentRecordDefinitionSchemaCode::class);
 
+        // Каталог маршрутов расширений — по одному порту на движок. Оба биндинга
+        // безвредны: работает тот, чей провайдер зарегистрирован (routing.engine).
         $this->app->singleton(
             PluginRouteCatalog::class,
             ExtensionRouteCatalogAdapter::class,
+        );
+
+        $this->app->singleton(
+            PluginRouteFileCatalog::class,
+            ExtensionRouteFileCatalog::class,
         );
 
         $this->app->make(ExtensionAutoloadService::class)->registerAutoload();

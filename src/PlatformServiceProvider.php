@@ -15,11 +15,33 @@ use Illuminate\Support\ServiceProvider;
 final class PlatformServiceProvider extends ServiceProvider
 {
     /**
+     * Место движка маршрутизации в порядке провайдеров.
+     *
+     * Позиция значима: провайдер маршрутизации обязан отработать boot() РАНЬШЕ
+     * AdminServiceProvider, иначе catch-all админки затенит маршруты ядра.
+     * Какой именно движок сюда подставится, решает config('routing.engine').
+     */
+    private const ROUTING_ENGINE_PLACEHOLDER = '__routing_engine__';
+
+    /**
+     * Движки маршрутизации: значение config('routing.engine') → провайдер.
+     *
+     * Регистрируется РОВНО ОДИН, поэтому два движка никогда не работают
+     * одновременно и не спорят за одни и те же URI.
+     *
+     * @var array<string, class-string>
+     */
+    private const ROUTING_ENGINES = [
+        'v1' => Domain\Routing\Providers\RoutingServiceProvider::class,
+        'v2' => Domain\RoutingV2\RoutingServiceProvider::class,
+    ];
+
+    /**
      * Domain providers in dependency order (mirrors the former bootstrap/providers.php).
      * Order is load-bearing: PipelineCore early; Schema -> RecordDefinitions -> Records ->
      * Materialization.
      *
-     * @var array<int, class-string>
+     * @var array<int, string>
      */
     private const PROVIDERS = [
         Providers\AppServiceProvider::class,
@@ -31,7 +53,7 @@ final class PlatformServiceProvider extends ServiceProvider
         Domain\AccessControl\Providers\AccessControlServiceProvider::class,
         Domain\Extensions\Providers\ExtensionsServiceProvider::class,
         Domain\Extensions\Providers\ExtensionsSdkServiceProvider::class,
-        Domain\Routing\Providers\RoutingServiceProvider::class,
+        self::ROUTING_ENGINE_PLACEHOLDER,
         Admin\Providers\AdminServiceProvider::class,
         Domain\SchemaModel\Providers\SchemaServiceProvider::class,
         Domain\SchemaModelValidation\Providers\SchemaModelValidationServiceProvider::class,
@@ -62,9 +84,31 @@ final class PlatformServiceProvider extends ServiceProvider
     {
         $this->mergePlatformConfigs();
 
+        $routingEngine = $this->routingEngineProvider();
+
         foreach (self::PROVIDERS as $provider) {
-            $this->app->register($provider);
+            $this->app->register(
+                $provider === self::ROUTING_ENGINE_PLACEHOLDER ? $routingEngine : $provider,
+            );
         }
+    }
+
+    /**
+     * Провайдер выбранного движка маршрутизации.
+     *
+     * Неизвестное значение флага — ошибка конфигурации, а не повод молча
+     * поднять приложение без маршрутов.
+     *
+     * @return class-string
+     */
+    private function routingEngineProvider(): string
+    {
+        $engine = (string) config('routing.engine', 'v1');
+
+        return self::ROUTING_ENGINES[$engine]
+            ?? throw new \InvalidArgumentException(
+                "Unknown routing engine '{$engine}'. Supported: ".implode(', ', array_keys(self::ROUTING_ENGINES)).'.',
+            );
     }
 
     /**
