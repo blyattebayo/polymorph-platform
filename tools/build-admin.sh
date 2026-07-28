@@ -6,9 +6,12 @@
 # served by Admin\Http\AdminAssetController, so a thin host gets a working admin panel
 # straight after `composer require` — no host-side Node build, no publish step.
 #
-# Run this before tagging/publishing a platform release. Then BUMP the platform version
-# (composer.json) — the local Satis registry caches package dist by version, so a release
-# without a version bump ships the stale bundle.
+# Run this before tagging/publishing a platform release, and COMMIT the result: версия
+# пакета = git-тег, поэтому в тег обязан попасть уже свежий бандл.
+#
+# Поля "version" в composer.json нет намеренно (оно перекрывает версию тега), и
+# sdk-v2/tests/smoke_version.php это проверяет — прежняя инструкция «бампни version
+# в composer.json» относилась к локальному Satis и сейчас сломала бы гейт.
 #
 set -euo pipefail
 
