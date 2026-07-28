@@ -32,127 +32,55 @@ final class RouteNodeValidator implements ValidatorInterface
     private const VALID_REDIRECT_STATUSES = [301, 302, 307, 308];
 
     /**
-     * Построить правила валидации для route-узлов при создании.
-     *
-     * Правила для StoreRouteNodeRequest:
-     * - uri: required, string, max:255
-     * - methods: required, array, min:1
-     * - methods.*: Rule::in([GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD])
-     * - name: nullable, string, max:255
-     * - domain: nullable, string, max:255
-     * - middleware: nullable, array
-     * - middleware.*: string
-     * - where: nullable, array
-     * - defaults: nullable, array
-     * - action_type: required, Rule::in([controller, view, redirect])
-     * - action_meta: required, array (с условной валидацией в зависимости от action_type)
-     *   - Для CONTROLLER: action_meta.action обязателен, string
-     *   - Для VIEW: action_meta.view обязателен, string; action_meta.data опционален, array
-     *   - Для REDIRECT: action_meta.to обязателен, string; action_meta.status опционален, integer, in:301,302,307,308
-     * - Запретить: prefix, namespace, children
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function buildRulesForStore(): array
     {
-        $actionTypeValues = RouteNodeActionType::values();
-        $httpMethods = self::VALID_HTTP_METHODS;
-
-        return [
-            'uri' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-            'methods' => ['required', 'array', 'min:1'],
-            'methods.*' => [Rule::in($httpMethods)],
-            'name' => ['nullable', 'string', 'max:255'],
-            'domain' => ['nullable', 'string', 'max:255'],
-            'middleware' => ['nullable', 'array'],
-            'middleware.*' => ['string'],
-            'where' => ['nullable', 'array'],
-            'defaults' => ['nullable', 'array'],
-            'action_type' => ['required', Rule::in($actionTypeValues)],
-            'action_meta' => ['required', 'array'],
-            // для CONTROLLER
-            'action_meta.action' => [
-                'required_if:action_type,controller',
-                'prohibited_unless:action_type,controller',
-                'string',
-                'max:512',
-            ],
-            // для VIEW
-            'action_meta.view' => [
-                'required_if:action_type,view',
-                'prohibited_unless:action_type,view',
-                'string',
-                'max:512',
-            ],
-            'action_meta.data' => [
-                'nullable',
-                'prohibited_unless:action_type,view',
-                'array',
-            ],
-            // для REDIRECT
-            'action_meta.to' => [
-                'required_if:action_type,redirect',
-                'prohibited_unless:action_type,redirect',
-                'string',
-                'max:255',
-            ],
-            'action_meta.status' => [
-                'nullable',
-                'prohibited_unless:action_type,redirect',
-                'integer',
-                Rule::in(self::VALID_REDIRECT_STATUSES),
-            ],
-        ];
+        return $this->buildRules(isUpdate: false);
     }
 
     /**
-     * Построить правила валидации для route-узлов при обновлении.
-     *
-     * Правила для UpdateRouteNodeRequest (аналогично Store, но с sometimes и nullable):
-     * - uri: sometimes, nullable, string, max:255
-     * - methods: sometimes, nullable, array, min:1
-     * - methods.*: Rule::in([GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD])
-     * - name: sometimes, nullable, string, max:255
-     * - domain: sometimes, nullable, string, max:255
-     * - middleware: sometimes, nullable, array
-     * - middleware.*: string
-     * - where: sometimes, nullable, array
-     * - defaults: sometimes, nullable, array
-     * - action_type: sometimes, Rule::in([controller, view, redirect])
-     * - action_meta: sometimes, nullable, array (с условной валидацией в зависимости от action_type)
-     *   - Для CONTROLLER: action_meta.action обязателен, string
-     *   - Для VIEW: action_meta.view обязателен, string; action_meta.data опционален, array
-     *   - Для REDIRECT: action_meta.to обязателен, string; action_meta.status опционален, integer, in:301,302,307,308
-     * - Запретить: prefix, namespace, children
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function buildRulesForUpdate(): array
     {
-        $actionTypeValues = RouteNodeActionType::values();
-        $httpMethods = self::VALID_HTTP_METHODS;
+        return $this->buildRules(isUpdate: true);
+    }
+
+    /**
+     * Правила для route-узлов.
+     *
+     * Store и update отличаются только «головой» правила:
+     * - $req — поле обязательно (при update можно не присылать, но не обнулять);
+     * - $opt — поле необязательно и обнуляемо.
+     *
+     * Условные правила action_meta.* в обеих версиях одинаковы.
+     *
+     * Поля prefix/namespace/children правил не имеют — Laravel не вернёт их
+     * из validate(), то есть до модели они не доедут.
+     *
+     * @return array<string, ValidationRule|array<mixed>|string>
+     */
+    private function buildRules(bool $isUpdate): array
+    {
+        // 'sometimes','required' вместо 'sometimes','nullable': обнулить uri или
+        // methods у существующего маршрута означало бесшумно погасить его —
+        // регистратор пропускает такой узел, и URI молча уходил в 404.
+        $req = $isUpdate ? ['sometimes', 'required'] : ['required'];
+        $opt = $isUpdate ? ['sometimes', 'nullable'] : ['nullable'];
 
         return [
-            'uri' => [
-                'sometimes',
-                'nullable',
-                'string',
-                'max:255',
-            ],
-            'methods' => ['sometimes', 'nullable', 'array', 'min:1'],
-            'methods.*' => [Rule::in($httpMethods)],
-            'name' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'domain' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'middleware' => ['sometimes', 'nullable', 'array'],
+            'uri' => [...$req, 'string', 'max:255'],
+            'methods' => [...$req, 'array', 'min:1'],
+            'methods.*' => [Rule::in(self::VALID_HTTP_METHODS)],
+            'name' => [...$opt, 'string', 'max:255'],
+            'domain' => [...$opt, 'string', 'max:255'],
+            'middleware' => [...$opt, 'array'],
             'middleware.*' => ['string'],
-            'where' => ['sometimes', 'nullable', 'array'],
-            'defaults' => ['sometimes', 'nullable', 'array'],
-            'action_type' => ['sometimes', Rule::in($actionTypeValues)],
-            'action_meta' => ['sometimes', 'nullable', 'array'],
+            'where' => [...$opt, 'array'],
+            'defaults' => [...$opt, 'array'],
+            'action_type' => [...$req, Rule::in(RouteNodeActionType::values())],
+            'action_meta' => [...$req, 'array'],
             // для CONTROLLER
             'action_meta.action' => [
                 'required_if:action_type,controller',

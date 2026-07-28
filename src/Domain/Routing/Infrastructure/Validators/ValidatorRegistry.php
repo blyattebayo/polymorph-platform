@@ -26,7 +26,7 @@ final class ValidatorRegistry
      * он будет перезаписан новым валидатором.
      *
      * @param  string  $kind  Тип узла (например, 'group', 'route')
-     * @param  \Polymorph\Platform\Domain\Routing\Validators\ValidatorInterface  $validator  Валидатор правил
+     * @param  ValidatorInterface  $validator  Валидатор правил
      */
     public function register(string $kind, ValidatorInterface $validator): void
     {
@@ -37,7 +37,7 @@ final class ValidatorRegistry
      * Получить валидатор для определённого kind.
      *
      * @param  string  $kind  Тип узла (например, 'group', 'route')
-     * @return \Polymorph\Platform\Domain\Routing\Validators\ValidatorInterface|null Валидатор или null, если не найден
+     * @return ValidatorInterface|null Валидатор или null, если не найден
      */
     public function getValidator(string $kind): ?ValidatorInterface
     {
@@ -63,15 +63,5 @@ final class ValidatorRegistry
     public function getSupportedKinds(): array
     {
         return array_keys($this->validators);
-    }
-
-    /**
-     * Получить все зарегистрированные валидаторы.
-     *
-     * @return array<string, ValidatorInterface> Массив валидаторов
-     */
-    public function getAllValidators(): array
-    {
-        return $this->validators;
     }
 }

@@ -16,56 +16,44 @@ use Illuminate\Contracts\Validation\ValidationRule;
 final class GroupNodeValidator implements ValidatorInterface
 {
     /**
-     * Построить правила валидации для group-узлов при создании.
-     *
-     * Правила для StoreRouteNodeRequest:
-     * - prefix: nullable, string, max:255
-     * - domain: nullable, string, max:255
-     * - namespace: nullable, string, max:255
-     * - middleware: nullable, array
-     * - where: nullable, array
-     * - children: nullable, array (для будущей поддержки)
-     * - Запретить: uri, methods, name, action_type, action_meta
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function buildRulesForStore(): array
     {
-        return [
-            'prefix' => ['nullable', 'string', 'max:255'],
-            'domain' => ['nullable', 'string', 'max:255'],
-            'namespace' => ['nullable', 'string', 'max:255'],
-            'middleware' => ['nullable', 'array'],
-            'middleware.*' => ['string'],
-            'where' => ['nullable', 'array'],
-            'children' => ['nullable', 'array'], // Для будущей поддержки
-        ];
+        return $this->buildRules(isUpdate: false);
     }
 
     /**
-     * Построить правила валидации для group-узлов при обновлении.
-     *
-     * Правила для UpdateRouteNodeRequest (аналогично Store, но с sometimes):
-     * - prefix: sometimes, nullable, string, max:255
-     * - domain: sometimes, nullable, string, max:255
-     * - namespace: sometimes, nullable, string, max:255
-     * - middleware: sometimes, nullable, array
-     * - where: sometimes, nullable, array
-     * - children: sometimes, nullable, array
-     * - Запретить: uri, methods, name, action_type, action_meta
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function buildRulesForUpdate(): array
     {
+        return $this->buildRules(isUpdate: true);
+    }
+
+    /**
+     * Правила для group-узлов.
+     *
+     * Store и update отличались только префиксом 'sometimes' у каждого поля,
+     * поэтому обе версии строятся из одного описания.
+     *
+     * Поля uri/methods/name/action_type/action_meta правил не имеют — Laravel
+     * их просто не вернёт из validate(), то есть до модели они не доедут.
+     *
+     * @return array<string, ValidationRule|array<mixed>|string>
+     */
+    private function buildRules(bool $isUpdate): array
+    {
+        $opt = $isUpdate ? ['sometimes', 'nullable'] : ['nullable'];
+
         return [
-            'prefix' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'domain' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'namespace' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'middleware' => ['sometimes', 'nullable', 'array'],
+            'prefix' => [...$opt, 'string', 'max:255'],
+            'domain' => [...$opt, 'string', 'max:255'],
+            'namespace' => [...$opt, 'string', 'max:255'],
+            'middleware' => [...$opt, 'array'],
             'middleware.*' => ['string'],
-            'where' => ['sometimes', 'nullable', 'array'],
-            'children' => ['sometimes', 'nullable', 'array'],
+            'where' => [...$opt, 'array'],
+            'children' => [...$opt, 'array'],
         ];
     }
 

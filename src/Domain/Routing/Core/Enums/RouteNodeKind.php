@@ -27,34 +27,4 @@ enum RouteNodeKind: string
      * Представляет HTTP endpoint с определённым URI, методами и действием.
      */
     case ROUTE = 'route';
-
-    /**
-     * Получить все возможные значения enum.
-     *
-     * @return array<string> Массив строковых значений: ['group', 'route']
-     */
-    public static function values(): array
-    {
-        return array_column(self::cases(), 'value');
-    }
-
-    /**
-     * Проверить, является ли узел группой.
-     *
-     * @return bool true если узел является группой, false иначе
-     */
-    public function isGroup(): bool
-    {
-        return $this === self::GROUP;
-    }
-
-    /**
-     * Проверить, является ли узел маршрутом.
-     *
-     * @return bool true если узел является маршрутом, false иначе
-     */
-    public function isRoute(): bool
-    {
-        return $this === self::ROUTE;
-    }
 }

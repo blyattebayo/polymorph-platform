@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Routing\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
-use Polymorph\Platform\Domain\Routing\Http\Requests\FallbackRequest;
 use Polymorph\Platform\Http\Controllers\Controller;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ErrorFactory;
@@ -34,10 +34,13 @@ final class FallbackController extends Controller
      * Логирует информацию о запросе и возвращает ответ в зависимости
      * от типа запроса (JSON для API, HTML для веб).
      *
-     * @param  FallbackRequest  $request  Запрос
+     * Намеренно принимает базовый Request, а не FormRequest: fallback ловит
+     * произвольный мусорный трафик, включая битые тела запросов, и не должен
+     * запускать на нём машинерию валидации до входа в контроллер.
+     *
      * @return Response|View|JsonResponse Ответ
      */
-    public function __invoke(FallbackRequest $request): Response|View|JsonResponse
+    public function __invoke(Request $request): Response|View|JsonResponse
     {
         $this->logger->event('routing.fallback.not_found', [
             'path' => $request->path(),
