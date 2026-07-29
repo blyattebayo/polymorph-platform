@@ -9,6 +9,7 @@ use Polymorph\Platform\Domain\Extensions\Artifacts\ExtensionArtifactInstaller;
 use Polymorph\Platform\Domain\Extensions\Artifacts\LocalZipSource;
 use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException;
 use Polymorph\Platform\Domain\Extensions\Core\Models\ExtensionRegistry;
+use Polymorph\Platform\Domain\Extensions\Services\ExtensionAutoloadService;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionManager;
 
 final class PluginsInstallCommand extends Command
@@ -17,8 +18,15 @@ final class PluginsInstallCommand extends Command
 
     protected $description = 'Install a plugin from a .zip drop-in artifact (or by id from the plugins root): unpack + register + migrate + enable/upgrade.';
 
-    public function handle(ExtensionManager $pluginManager, ExtensionArtifactInstaller $installer): int
-    {
+    private ExtensionAutoloadService $autoload;
+
+    public function handle(
+        ExtensionManager $pluginManager,
+        ExtensionArtifactInstaller $installer,
+        ExtensionAutoloadService $autoload,
+    ): int {
+        $this->autoload = $autoload;
+
         $source = (string) $this->argument('source');
 
         if ($this->looksLikeArtifact($source)) {
@@ -39,6 +47,14 @@ final class PluginsInstallCommand extends Command
         }
 
         $this->line("Unpacked artifact into plugins root: {$pluginId}.");
+
+        // Расширение появилось на диске уже после бутстрапа, поэтому его
+        // автолоадер сейчас не зарегистрирован — а включение ниже исполняет
+        // его файл маршрутов. Без этого ПЕРВАЯ установка падала с
+        // «Class not found»; на апгрейде дефект маскировался тем, что каталог
+        // расширения уже лежал на месте при старте процесса.
+        $this->autoload->registerExtension($pluginId);
+
         $before = ExtensionRegistry::query()->where('plugin_id', $pluginId)->first();
         $pluginManager->discoverAndSync();
 

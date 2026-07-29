@@ -30,4 +30,5 @@ mkdir -p "$DEST_ROOT"
 cp -r "$FE_DIR/dist" "$DEST_ROOT/"
 
 echo "==> Done."
-echo "    Next: bump 'version' in be/platform/composer.json before publishing to the registry."
+echo "    Next: закоммить dist — версия пакета берётся из git-тега, и в тег должен"
+echo "    попасть уже свежий бандл. Поля 'version' в composer.json нет намеренно."
