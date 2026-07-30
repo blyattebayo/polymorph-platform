@@ -20,7 +20,7 @@ Route::prefix('schema-models')->name('schema-models.')->whereNumber('schema')->g
             Route::get('/{schema}/usage', [SchemaController::class, 'usage'])->name('usage');
         });
 
-    Route::middleware(RequireCapability::forRoute(SchemaCapabilities::MANAGE))->group(function (): void {
+    Route::middleware(RequireCapability::forRoute(SchemaCapabilities::RESOURCE, CapabilityCatalog::ACTION_MANAGE))->group(function (): void {
         Route::post('/', [SchemaController::class, 'store'])->name('store');
         Route::delete('/bulk', [SchemaController::class, 'bulkDestroy'])->name('bulkDestroy');
         Route::put('/{schema}', [SchemaController::class, 'update'])->name('update');

@@ -25,6 +25,7 @@ use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
  * @property string $email Email пользователя (уникальный)
  * @property Carbon|null $email_verified_at Дата подтверждения email
  * @property string $password Хеш пароля
+ * @property bool $is_platform_admin Встроенная учётка платформенного администратора
  * @property string|null $remember_token Токен для "запомнить меня"
  * @property Carbon $created_at
  * @property Carbon $updated_at
@@ -86,7 +87,17 @@ class User extends Authenticatable implements MustVerifyEmail, UserIdentity
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_platform_admin' => 'boolean',
         ];
+    }
+
+    /**
+     * Флаг намеренно НЕ в $fillable: встроенность назначает только сидер,
+     * никакой mass-assignment из HTTP-запроса не должен её включить.
+     */
+    public function isPlatformAdmin(): bool
+    {
+        return (bool) ($this->is_platform_admin ?? false);
     }
 
     public function statusValue(): string

@@ -34,7 +34,6 @@ final readonly class RefreshSession
         }
 
         $accessToken = $this->jwt->issueAccessToken($rotation->userId, [
-            'scp' => ['api'],
             'sid' => $rotation->sessionId,
             'aex' => $rotation->absoluteExpiresAt,
         ]);

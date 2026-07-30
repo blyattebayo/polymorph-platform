@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\AccessControl\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Polymorph\Platform\Domain\AccessControl\Access\AccessControlCapabilityProvider;
+use Polymorph\Platform\Domain\AccessControl\Access\AccessControlCapabilities;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdministration;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\ActionDefinitionProvider;
@@ -30,7 +30,9 @@ use Polymorph\Platform\Domain\AccessControl\Services\CurrentAuditActorResolver;
 use Polymorph\Platform\Domain\AccessControl\Services\DefaultPolicyRuntime;
 use Polymorph\Platform\Domain\AccessControl\Services\DotPrefixResourceMatcher;
 use Polymorph\Platform\Domain\AccessControl\Services\PolicyCompiler;
+use Polymorph\Platform\Domain\AccessControl\Services\PolicyRuntimeAccessGate;
 use Polymorph\Platform\Domain\AccessControl\Services\RoleAwareAccessSubjectProvider;
+use Polymorph\Platform\SharedKernel\Access\AccessGate;
 
 final class AccessControlServiceProvider extends ServiceProvider
 {
@@ -56,7 +58,14 @@ final class AccessControlServiceProvider extends ServiceProvider
         $this->app->bind(AccessControlAdministration::class, AccessControlAdminService::class);
         $this->app->bind(PolicyRuntime::class, DefaultPolicyRuntime::class);
 
-        $this->app->singleton(CapabilityRegistry::class, function ($app): CapabilityRegistry {
+        // Scoped: гейт держит AccessSubjectProvider, который кэширует субъекты
+        // на запрос; singleton пережил бы запрос под Octane.
+        $this->app->scoped(AccessGate::class, PolicyRuntimeAccessGate::class);
+
+        // Scoped, а не singleton: реестр мемоизирует каталог на своё время жизни,
+        // и singleton заморозил бы его на первом запросе воркера — включённый
+        // позже плагин не попал бы в каталог до рестарта процесса.
+        $this->app->scoped(CapabilityRegistry::class, function ($app): CapabilityRegistry {
             /** @var iterable<CapabilityDefinitionProvider> $providers */
             $providers = $app->tagged('access.capability_providers');
 
@@ -67,7 +76,7 @@ final class AccessControlServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->app->tag([
-            AccessControlCapabilityProvider::class,
+            AccessControlCapabilities::class,
         ], 'access.capability_providers');
     }
 }

@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Services;
 
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRuntime;
+use Polymorph\Platform\SharedKernel\Access\AccessCheck;
+use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
+use Polymorph\Platform\SharedKernel\Access\ResourceRef;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
 final class EffectiveCapabilityResolver
 {
     public function __construct(
-        private readonly PolicyRuntime $runtime,
-        private readonly AccessSubjectProvider $subjectProvider,
+        private readonly AccessGate $gate,
         private readonly CapabilityRegistry $capabilityRegistry,
     ) {}
 
@@ -22,7 +22,6 @@ final class EffectiveCapabilityResolver
      */
     public function for(UserIdentity $user): array
     {
-        $subjects = $this->subjectProvider->for($user);
         $checks = [];
         $keys = [];
 
@@ -33,7 +32,7 @@ final class EffectiveCapabilityResolver
                 continue;
             }
 
-            $checks[] = ['resource' => $resource, 'action' => $action];
+            $checks[] = new AccessCheck(ResourceRef::fromString($resource), $action);
             $keys[] = CapabilityCatalog::capabilityKey($resource, $action);
         }
 
@@ -41,11 +40,9 @@ final class EffectiveCapabilityResolver
             return [];
         }
 
-        $decisions = $this->runtime->batchEvaluate($subjects, $checks);
         $allowed = [];
-
-        foreach ($decisions as $index => $decision) {
-            if ($decision->allowed()) {
+        foreach ($this->gate->allowsEach($user, $checks) as $index => $isAllowed) {
+            if ($isAllowed) {
                 $allowed[] = $keys[$index];
             }
         }

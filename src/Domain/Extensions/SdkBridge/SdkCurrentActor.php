@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\SdkBridge;
 
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRuntime;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
+use Polymorph\Platform\SharedKernel\Access\AccessGate;
+use Polymorph\Platform\SharedKernel\Access\ResourceRef;
 use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Sdk\Access\CapabilityAction;
 use Polymorph\Sdk\Errors\ExtensionError;
 use Polymorph\Sdk\Identity\Actor;
@@ -22,8 +21,7 @@ final class SdkCurrentActor implements CurrentActor
 {
     public function __construct(
         private readonly CurrentActorResolver $actors,
-        private readonly PolicyRuntime $policyRuntime,
-        private readonly AccessSubjectProvider $subjectProvider,
+        private readonly AccessGate $gate,
     ) {}
 
     public function actor(): ?Actor
@@ -60,16 +58,6 @@ final class SdkCurrentActor implements CurrentActor
 
     public function can(string $resource, string $action = CapabilityAction::ACCESS): bool
     {
-        $actor = $this->actors->actor();
-
-        if (! $actor instanceof UserIdentity) {
-            return false;
-        }
-
-        return $this->policyRuntime->allows(
-            $this->subjectProvider->for($actor),
-            trim($resource),
-            trim($action),
-        );
+        return $this->gate->currentActorAllows(ResourceRef::fromString($resource), trim($action));
     }
 }

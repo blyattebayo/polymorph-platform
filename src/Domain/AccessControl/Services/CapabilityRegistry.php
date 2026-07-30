@@ -11,6 +11,11 @@ use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\CapabilityDefiniti
 final class CapabilityRegistry
 {
     /**
+     * @var list<CapabilityDefinition>|null
+     */
+    private ?array $memoizedDefinitions = null;
+
+    /**
      * @param  iterable<CapabilityDefinitionProvider>  $providers
      */
     public function __construct(
@@ -18,9 +23,23 @@ final class CapabilityRegistry
     ) {}
 
     /**
+     * Мемоизация на время жизни инстанса (биндинг — scoped, т.е. один запрос):
+     * без неё каждый вызов заново обходил провайдеров, а ExtensionsCapabilityProvider
+     * на каждом проходе делал SQL-запрос + обход ФС (аудит, 6.6). Scoped, а не
+     * singleton: включение плагина в живом процессе должно попадать в каталог
+     * следующего запроса.
+     *
      * @return list<CapabilityDefinition>
      */
     public function capabilityDefinitions(): array
+    {
+        return $this->memoizedDefinitions ??= $this->collectDefinitions();
+    }
+
+    /**
+     * @return list<CapabilityDefinition>
+     */
+    private function collectDefinitions(): array
     {
         $definitions = [];
         $seen = [];

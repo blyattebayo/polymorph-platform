@@ -12,8 +12,6 @@ use Polymorph\Platform\Domain\Users\Core\Contracts\PrivilegedUserMembership;
 
 final class RolePrivilegedUserMembership implements PrivilegedUserMembership
 {
-    private ?int $adminRoleId = null;
-
     public function __construct(
         private readonly RoleRepository $roles,
         private readonly RoleAssignmentRepository $roleAssignments,
@@ -33,15 +31,16 @@ final class RolePrivilegedUserMembership implements PrivilegedUserMembership
         return in_array($adminRoleId, $this->roleAssignments->roleIdsForUser($userId), true);
     }
 
+    /**
+     * Без мемоизации намеренно: сервис зарегистрирован singleton'ом, и кеш id в
+     * свойстве переживал бы пересоздание роли внутри жизни процесса (queue
+     * worker, Octane) — isSystemAdministrator() молча возвращал бы false и
+     * снимал защиту гардов (аудит, C5). Запрос по уникальному code дешёвый.
+     */
     private function resolveAdminRoleId(): int
     {
-        if ($this->adminRoleId !== null) {
-            return $this->adminRoleId;
-        }
-
         $adminRole = $this->roles->findByCode(BuiltInRoleCatalog::ROLE_SYSTEM_ADMIN);
-        $this->adminRoleId = $adminRole instanceof Role ? (int) $adminRole->id : 0;
 
-        return $this->adminRoleId;
+        return $adminRole instanceof Role ? (int) $adminRole->id : 0;
     }
 }

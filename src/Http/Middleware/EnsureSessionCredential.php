@@ -11,6 +11,14 @@ use Polymorph\Platform\Domain\Auth\Core\ValueObjects\CredentialKind;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ThrowsErrors;
 
+/**
+ * Эндпоинт доступен только интерактивной JWT-сессии (не PAT).
+ *
+ * Fail-closed: отсутствие credential-атрибута — отказ, а не пропуск. Раньше
+ * проверка срабатывала только при «атрибут есть И это PAT», то есть корректность
+ * молча держалась на том, что auth:api стоит в цепочке раньше и атрибут
+ * проставил; забытая пара middleware превращала фильтр в no-op.
+ */
 final class EnsureSessionCredential
 {
     use ThrowsErrors;
@@ -21,7 +29,11 @@ final class EnsureSessionCredential
     {
         $credential = $request->attributes->get(AuthenticatedCredential::REQUEST_ATTRIBUTE);
 
-        if ($credential instanceof AuthenticatedCredential && $credential->kind === CredentialKind::PersonalAccessToken) {
+        if (! $credential instanceof AuthenticatedCredential) {
+            $this->unauthorized('Authentication is required to access this resource.');
+        }
+
+        if ($credential->kind !== CredentialKind::JwtSession) {
             $this->throwError(ErrorCode::FORBIDDEN, 'This endpoint requires an interactive session.');
         }
 

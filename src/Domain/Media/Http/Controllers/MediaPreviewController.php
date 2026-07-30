@@ -7,22 +7,25 @@ namespace Polymorph\Platform\Domain\Media\Http\Controllers;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Polymorph\Platform\Domain\Media\Access\MediaCapabilities;
 use Polymorph\Platform\Domain\Media\Core\Contracts\MediaRepository;
 use Polymorph\Platform\Domain\Media\Core\Exceptions\MediaNotFoundException;
 use Polymorph\Platform\Domain\Media\Core\Exceptions\MediaStorageException;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Domain\Media\Services\OnDemandVariantService;
 use Polymorph\Platform\Http\Controllers\Controller;
+use Polymorph\Platform\SharedKernel\Access\AccessGate;
+use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
+use Polymorph\Platform\SharedKernel\Access\ResourceRef;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Контроллер для предпросмотра медиа-файлов (публичный с поддержкой админских функций).
  *
  * Предоставляет доступ к медиа-файлам и их вариантам (thumbnails, resized) для публичных
- * и админских запросов. Для админов поддерживает доступ к удаленным файлам (withTrashed).
- * Для публичных запросов доступны только активные (не удаленные) файлы.
+ * и привилегированных запросов. Носителям `media/read` доступны удалённые файлы
+ * (withTrashed) и админский TTL подписанных URL; публичным запросам — только активные.
  */
 final class MediaPreviewController extends Controller
 {
@@ -32,6 +35,7 @@ final class MediaPreviewController extends Controller
     public function __construct(
         private readonly OnDemandVariantService $variantService,
         private readonly MediaRepository $mediaRepository,
+        private readonly AccessGate $gate,
     ) {}
 
     /**
@@ -113,10 +117,10 @@ final class MediaPreviewController extends Controller
     {
         $variant = $request->query('variant');
 
-        $isAdmin = $this->isAdminRequest($request);
+        $privileged = $this->hasMediaReadCapability();
 
-        // Для админов используем withTrashed, для публичных — только активные
-        $media = $isAdmin
+        // Носителям media/read используем withTrashed, для публичных — только активные
+        $media = $privileged
             ? $this->mediaRepository->findWithTrashed($id)
             : $this->mediaRepository->find($id);
 
@@ -125,36 +129,35 @@ final class MediaPreviewController extends Controller
         }
 
         // Для публичных запросов проверяем, что файл не удален
-        if (! $isAdmin && $media->trashed()) {
+        if (! $privileged && $media->trashed()) {
             throw MediaNotFoundException::byId($id);
         }
 
-        // Для админов проверяем права доступа
         if ($variant !== null) {
-            return $this->serveVariant($media, $variant);
+            return $this->serveVariant($media, $variant, $privileged);
         }
 
         // Иначе возвращаем оригинал
-        return $this->serveFile($media->disk, $media->path, $media->mime, $isAdmin);
+        return $this->serveFile($media->disk, $media->path, $media->mime, $privileged);
     }
 
     /**
      * Получить вариант изображения.
      *
      * Генерирует или возвращает существующий вариант изображения (thumbnail, medium, large).
-     * Для админов поддерживает доступ к удаленным файлам.
      *
      * @param  Media  $media  Медиа-файл
      * @param  string  $variant  Имя варианта
+     * @param  bool  $privileged  Есть ли у актора media/read
      */
-    private function serveVariant(Media $media, string $variant): RedirectResponse|BinaryFileResponse
+    private function serveVariant(Media $media, string $variant, bool $privileged): RedirectResponse|BinaryFileResponse
     {
         $variantModel = $this->variantService->ensureVariant($media, $variant);
 
         // Определяем MIME-тип варианта на основе расширения
         $variantMime = $this->getMimeFromPath($variantModel->path, $media->mime);
 
-        return $this->serveFile($media->disk, $variantModel->path, $variantMime, $this->isAdminRequest(request()));
+        return $this->serveFile($media->disk, $variantModel->path, $variantMime, $privileged);
     }
 
     /**
@@ -229,19 +232,21 @@ final class MediaPreviewController extends Controller
     }
 
     /**
-     * Проверить, является ли запрос админским.
+     * Есть ли у текущего актора капабилити media/read.
      *
-     * Проверяет наличие аутентифицированного пользователя через guard 'api'.
-     * Аутентификация выполняется через optional API guard, который устанавливает
-     * пользователя при наличии валидного access-токена.
-     * Это позволяет админам получать доступ к удаленным файлам даже на публичных эндпоинтах.
-     *
-     * @param  Request  $request  HTTP запрос
-     * @return bool true, если запрос от админа
+     * Раньше здесь было `Auth::check()` — «админом» считался ЛЮБОЙ аутентифицированный
+     * пользователь, включая PAT с минимальными правами, и получал trashed-файлы и
+     * админский TTL на публичном эндпоинте. Теперь решение принимает та же ACL-цепочка,
+     * что и middleware RequireCapability на админских маршрутах медиа: доступ к
+     * удалённым файлам симметричен праву видеть их в медиатеке. Актора нет — публичный
+     * режим (fail-closed).
      */
-    private function isAdminRequest(Request $request): bool
+    private function hasMediaReadCapability(): bool
     {
-        return Auth::guard('api')->check() || Auth::check();
+        return $this->gate->currentActorAllows(
+            ResourceRef::fromString(MediaCapabilities::RESOURCE),
+            CapabilityCatalog::ACTION_READ,
+        );
     }
 
     /**

@@ -138,18 +138,27 @@ final class ExtensionAclManifestParser
         $entries = array_values((array) data_get($manifest, 'acl.roles', []));
 
         return array_map(
-            function (mixed $entry): ExtensionRoleDefinition {
+            function (mixed $entry) use ($pluginId): ExtensionRoleDefinition {
                 /** @var array<string, mixed> $entry */
                 $entry = is_array($entry) ? $entry : [];
+                $code = trim((string) ($entry['code'] ?? ''));
+                $this->assertRoleCodeNotBuiltIn($code);
+
+                // Тот же префикс, что validate() требует от acl.capabilities.
+                // Раньше capability РОЛЕЙ не проверялись вовсе: V1-манифест с
+                // acl.roles[].capabilities=['user.lifecycle'] при установке
+                // создавал allow-политику на чужой ресурс ядра и вешал её на
+                // роль — эскалация привилегий плагином.
+                $capabilities = array_values(array_filter(array_map(
+                    fn (mixed $c): string => $this->assertPluginResource(trim((string) $c), $pluginId),
+                    (array) ($entry['capabilities'] ?? []),
+                ), static fn (string $c): bool => $c !== ''));
 
                 return new ExtensionRoleDefinition(
-                    code: trim((string) ($entry['code'] ?? '')),
+                    code: $code,
                     name: trim((string) ($entry['name'] ?? '')),
                     description: trim((string) ($entry['description'] ?? '')),
-                    capabilities: array_values(array_filter(array_map(
-                        static fn (mixed $c): string => trim((string) $c),
-                        (array) ($entry['capabilities'] ?? []),
-                    ), static fn (string $c): bool => $c !== '')),
+                    capabilities: $capabilities,
                 );
             },
             $entries,
@@ -205,6 +214,7 @@ final class ExtensionAclManifestParser
                 /** @var array<string, mixed> $entry */
                 $entry = is_array($entry) ? $entry : [];
                 $code = trim((string) ($entry['code'] ?? ''));
+                $this->assertRoleCodeNotBuiltIn($code);
                 $capabilities = array_values(array_filter(array_map(
                     fn (mixed $c): string => $this->assertExtResource(trim((string) $c), $pluginId),
                     (array) ($entry['capabilities'] ?? []),
@@ -256,6 +266,27 @@ final class ExtensionAclManifestParser
         }
 
         return $resource;
+    }
+
+    private function assertPluginResource(string $resource, string $pluginId): string
+    {
+        if ($resource === '' || ! str_starts_with($resource, "plugin.{$pluginId}.")) {
+            throw new PluginException("role capability '{$resource}' must start with 'plugin.{$pluginId}.'.");
+        }
+
+        return $resource;
+    }
+
+    /**
+     * Роль плагина не может носить код встроенной роли: ensurePluginRoles делает
+     * updateOrCreate по коду, и плагин мог бы «переименовать» system.admin или
+     * навесить свои политики на любую built-in роль.
+     */
+    private function assertRoleCodeNotBuiltIn(string $code): void
+    {
+        if (BuiltInRoleCatalog::isProtected($code)) {
+            throw new PluginException("role code '{$code}' collides with a built-in role.");
+        }
     }
 
     private function labelFromResource(string $resource): string

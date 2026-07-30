@@ -19,10 +19,13 @@ use Polymorph\Platform\Domain\Records\Pipeline\Handlers\CreateRecordHandler;
 use Polymorph\Platform\Domain\Records\Pipeline\Handlers\DeleteRecordHandler;
 use Polymorph\Platform\Domain\Records\Pipeline\Handlers\UpdateRecordHandler;
 use Polymorph\Platform\Domain\Records\Query\RecordQueryCriteriaFactory;
+use Polymorph\Platform\Domain\Records\Services\RecordWriteAccessService;
 use Polymorph\Platform\Domain\Records\Support\RecordSystemFields;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
+use Polymorph\Platform\Domain\SchemaModel\Services\FieldAccessService;
 use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
+use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
 use Polymorph\Sdk\Data\Entity;
 use Polymorph\Sdk\Data\EntityPage;
@@ -59,6 +62,8 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
         private readonly RecordRepository $records,
         private readonly CurrentActorResolver $actors,
         private readonly RecordQueryCriteriaFactory $criteriaFactory,
+        private readonly RecordWriteAccessService $writeAccess,
+        private readonly FieldAccessService $fieldAccess,
         private readonly string $extensionId,
         private readonly string $entity,
         private readonly string $entityClass = Entity::class,
@@ -66,6 +71,8 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
 
     public function create(array $data): Entity
     {
+        $this->assertActorMayWrite($data);
+
         $snapshot = $this->createHandler->handle(new CreateRecordCommand(
             recordDefinition: $this->definition(),
             dataJson: $data,
@@ -84,6 +91,11 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
 
     public function update(int $id, array $partial): Entity
     {
+        // Проверяется ИМЕННО $partial (что меняем от имени актора), а не merged:
+        // merged содержит и скрытые для записи поля, которые актор не трогал, —
+        // требование прав на них блокировало бы любое обновление записи.
+        $this->assertActorMayWrite($partial);
+
         return DB::transaction(function () use ($id, $partial): Entity {
             $record = $this->requireForUpdate($id);
             $current = is_array($record->data_json) ? $record->data_json : [];
@@ -95,6 +107,7 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
 
     public function replace(int $id, array $data): Entity
     {
+        $this->assertActorMayWrite($data);
         $this->require($id);
 
         return $this->writeSnapshot($id, $data);
@@ -330,7 +343,7 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
 
         return new $class(
             $snapshot->id->value,
-            $this->publicData($snapshot->dataJson),
+            $this->readableData($this->publicData($snapshot->dataJson)),
             $snapshot->revision->value,
             $this->actorId(),
         );
@@ -343,10 +356,53 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
 
         return new $class(
             (int) $record->id,
-            $this->publicData($data),
+            $this->readableData($this->publicData($data)),
             (int) $record->revision,
             $record->author_id === null ? null : (int) $record->author_id,
         );
+    }
+
+    /**
+     * Field-ACL на SDK-пути (аудит, A7). Раньше HTTP-путь ядра маскировал и
+     * охранял поля через RecordReadProfileResolver/RecordWriteAccessService, а
+     * плагин, обслуживая запрос того же пользователя, читал и писал всё.
+     *
+     * Актора нет — системный контекст (консоль, джобы, lifecycle-хуки): плагин
+     * работает со своими данными от своего имени, фильтрация не применяется.
+     * Актор есть — те же правила видимости/записи, что и на пути ядра.
+     *
+     * ВАЖНО: update() мержит partial с НЕфильтрованным текущим data_json —
+     * скрытые от актора поля не теряются при записи.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function readableData(array $data): array
+    {
+        $actor = $this->actors->actor();
+        if (! $actor instanceof UserIdentity) {
+            return $data;
+        }
+
+        $schemaId = $this->definition()->schema_id;
+        if (! is_int($schemaId) || $schemaId <= 0) {
+            return $data;
+        }
+
+        return $this->fieldAccess->filterReadableDataJson($actor, $schemaId, $data);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function assertActorMayWrite(array $data): void
+    {
+        $actor = $this->actors->actor();
+        if (! $actor instanceof UserIdentity) {
+            return;
+        }
+
+        $this->writeAccess->assertCanWriteRecordDefinitionPayload($actor, $this->definition(), $data);
     }
 
     /**

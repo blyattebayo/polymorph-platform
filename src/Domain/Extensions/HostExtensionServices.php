@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Extensions;
 
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdministration;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRuntime;
 use Polymorph\Platform\Domain\DataPlatform\DataPlatform;
 use Polymorph\Platform\Domain\DataPlatform\ScopedExtensionData;
 use Polymorph\Platform\Domain\DataPlatform\SdkBridge\SdkDefinitionRegistry;
+use Polymorph\Platform\Domain\Extensions\SdkBridge\Contracts\ExtensionRegistryState;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkAccessGrants;
 use Polymorph\Platform\Domain\Users\Core\Contracts\UserRepository;
+use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Sdk\Access\AccessGrants;
 use Polymorph\Sdk\Data\DefinitionRegistry;
 use Polymorph\Sdk\Data\Entity;
@@ -24,15 +24,21 @@ use Polymorph\Sdk\Extension\ExtensionServices;
  * Хост-реализация {@see ExtensionServices}: строит scoped-сервисы по ЯВНОМУ
  * {@see ExtensionContext}. Data-часть идёт через единый шов {@see DataPlatform};
  * гранты — через {@see SdkAccessGrants} с enforcement 'ext.{id}.'.
+ *
+ * Контекст сверяется с реестром расширений: id, которого хост не знает, — отказ.
+ * ВАЖНО про модель угроз: плагины исполняются in-process как доверенный PHP-код,
+ * поэтому ext-префиксы и эта сверка — защита от ошибок и случайного залезания в
+ * чужой неймспейс, а не криптографическая граница. Полная атрибуция «какой плагин
+ * сейчас исполняется» — этап «песочница расширений» (см. docs/ACCESS_CONTROL_AUDIT.md).
  */
 final class HostExtensionServices implements ExtensionServices
 {
     public function __construct(
         private readonly DataPlatform $platform,
         private readonly AccessControlAdministration $admin,
-        private readonly PolicyRuntime $policyRuntime,
-        private readonly AccessSubjectProvider $subjectProvider,
+        private readonly AccessGate $gate,
         private readonly UserRepository $users,
+        private readonly ExtensionRegistryState $registry,
     ) {}
 
     /**
@@ -41,27 +47,45 @@ final class HostExtensionServices implements ExtensionServices
      */
     public function repository(ExtensionContext $context, string $entity, string $entityClass = Entity::class): Repository
     {
+        $this->assertKnown($context);
+
         return $this->platform->repository($context->id->value, $entity, $entityClass);
     }
 
     public function data(ExtensionContext $context): ExtensionData
     {
+        $this->assertKnown($context);
+
         return new ScopedExtensionData($this->platform, $context->id->value);
     }
 
     public function definitions(ExtensionContext $context): DefinitionRegistry
     {
+        $this->assertKnown($context);
+
         return new SdkDefinitionRegistry($this->platform, $context);
     }
 
     public function grants(ExtensionContext $context): AccessGrants
     {
+        $this->assertKnown($context);
+
         return new SdkAccessGrants(
             $this->admin,
-            $this->policyRuntime,
-            $this->subjectProvider,
+            $this->gate,
             $this->users,
             $context,
         );
+    }
+
+    private function assertKnown(ExtensionContext $context): void
+    {
+        if (! $this->registry->isKnown($context->id->value)) {
+            throw new \LogicException(sprintf(
+                "ExtensionContext '%s' does not match any registered extension. ".
+                'Scoped SDK services are issued only for extensions known to the host registry.',
+                $context->id->value,
+            ));
+        }
     }
 }

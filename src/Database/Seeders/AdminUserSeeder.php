@@ -27,13 +27,19 @@ class AdminUserSeeder extends Seeder
         $password = (string) config('admin.seed.password', self::DEFAULT_PASSWORD);
         $name = (string) config('admin.seed.name', 'Administrator');
 
-        User::query()->updateOrCreate(
+        $user = User::query()->updateOrCreate(
             ['email' => $email],
             [
                 'name' => $name,
                 'password' => Hash::make($password),
             ],
         );
+
+        // Маркер встроенности — вне fillable, поэтому forceFill: только сидер
+        // имеет право объявить учётку платформенным администратором.
+        if (! $user->isPlatformAdmin()) {
+            $user->forceFill(['is_platform_admin' => true])->save();
+        }
 
         $userId = (int) (User::query()->where('email', $email)->value('id') ?? 0);
         $adminRoleId = (int) (DB::table('roles')->where('code', BuiltInRoleCatalog::ROLE_SYSTEM_ADMIN)->value('id') ?? 0);

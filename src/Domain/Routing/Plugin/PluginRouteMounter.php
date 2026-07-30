@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Routing\Plugin;
 
 use Illuminate\Support\Facades\Route;
+use Polymorph\Platform\Http\Middleware\RequireCapability;
 use Polymorph\Platform\Http\Middleware\VerifyApiCsrf;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 use Polymorph\Sdk\Routing\RouteDefinition;
@@ -140,14 +141,16 @@ final class PluginRouteMounter
             $registrar = $registrar->withoutMiddleware($excluded);
         }
 
-        $registrar->group(function () use ($pluginId, $zone): void {
+        $zoneHasCapability = self::containsCapabilityMiddleware($zone->middleware);
+
+        $registrar->group(function () use ($pluginId, $zone, $zoneHasCapability): void {
             foreach ($zone->routes as $route) {
-                $this->mountRoute($pluginId, $route);
+                $this->mountRoute($pluginId, $route, $zone->kind, $zoneHasCapability);
             }
         });
     }
 
-    private function mountRoute(string $pluginId, RouteDefinition $route): void
+    private function mountRoute(string $pluginId, RouteDefinition $route, ZoneKind $kind, bool $zoneHasCapability): void
     {
         [$controller, $method] = $route->action();
 
@@ -165,10 +168,21 @@ final class PluginRouteMounter
             return;
         }
 
+        // Fail-closed дефолт админ-зоны: маршрут ADMIN_API, за который ни зона,
+        // ни сам маршрут не объявили capability, получает ext.{id}.admin/access.
+        // Раньше зона давала только auth:api, и забытый requires: в манифесте
+        // означал админ-эндпоинт, открытый любому аутентифицированному.
+        $middleware = $route->middlewareList();
+        if ($kind === ZoneKind::ADMIN_API
+            && ! $zoneHasCapability
+            && ! self::containsCapabilityMiddleware($middleware)) {
+            $middleware = [RequireCapability::forRoute("ext.{$pluginId}.admin"), ...$middleware];
+        }
+
         // Всё, что влияет на регистрацию, задаётся ДО match(): RouteCollection
         // наполняет таблицу имён в момент add(), поэтому имя, назначенное
         // fluent-вызовом после, в route() и Route::has() не попадает.
-        $registrar = Route::middleware($route->middlewareList());
+        $registrar = Route::middleware($middleware);
 
         $name = $route->relativeName();
         if ($name !== null) {
@@ -222,6 +236,20 @@ final class PluginRouteMounter
             ZoneKind::ADMIN_API => ['api', 'auth:api'],
             ZoneKind::WEB => ['web'],
         };
+    }
+
+    /**
+     * @param  list<string>  $middleware
+     */
+    private static function containsCapabilityMiddleware(array $middleware): bool
+    {
+        foreach ($middleware as $entry) {
+            if (is_string($entry) && str_starts_with($entry, RequireCapability::ALIAS.':')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

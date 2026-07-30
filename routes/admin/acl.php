@@ -8,6 +8,7 @@ use Polymorph\Platform\Domain\AccessControl\Http\Controllers\AssignmentControlle
 use Polymorph\Platform\Domain\AccessControl\Http\Controllers\CapabilityCatalogController;
 use Polymorph\Platform\Domain\AccessControl\Http\Controllers\PolicyController;
 use Polymorph\Platform\Http\Middleware\RequireCapability;
+use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 
 /**
  * Управление политиками доступа и их назначениями.
@@ -16,7 +17,7 @@ use Polymorph\Platform\Http\Middleware\RequireCapability;
  * раздавать их субъектам (POLICY_ASSIGN) — разные полномочия.
  */
 Route::prefix('acl')->name('acl.')->whereNumber(['policyId', 'assignmentId'])->group(function (): void {
-    Route::middleware(RequireCapability::forRoute(AccessControlCapabilities::POLICY_MANAGE))
+    Route::middleware(RequireCapability::forRoute(AccessControlCapabilities::POLICY, CapabilityCatalog::ACTION_MANAGE))
         ->prefix('policies')
         ->name('policies.')
         ->group(function (): void {
@@ -26,7 +27,7 @@ Route::prefix('acl')->name('acl.')->whereNumber(['policyId', 'assignmentId'])->g
             Route::delete('/{policyId}', [PolicyController::class, 'destroy'])->name('destroy');
         });
 
-    Route::middleware(RequireCapability::forRoute(AccessControlCapabilities::POLICY_ASSIGN))->group(function (): void {
+    Route::middleware(RequireCapability::forRoute(AccessControlCapabilities::ASSIGNMENT, CapabilityCatalog::ACTION_MANAGE))->group(function (): void {
         Route::prefix('policies/{policyId}/assignments')->name('policies.assignments.')->group(function (): void {
             Route::get('/', [PolicyController::class, 'listAssignments'])->name('index');
             Route::post('/', [PolicyController::class, 'assign'])->name('store');

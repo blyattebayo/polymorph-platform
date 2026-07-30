@@ -10,13 +10,14 @@ use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\CapabilityDefiniti
 use Polymorph\Platform\Domain\Extensions\Core\Models\ExtensionRegistry;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionDiscoveryService;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
+use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 
 final class ExtensionsCapabilityProvider implements CapabilityDefinitionProvider
 {
     public function capabilities(): array
     {
         return [
-            new CapabilityDefinition(ExtensionsCapabilities::MANAGE, CapabilityCatalog::ACTION_ACCESS, 'Manage plugins'),
+            new CapabilityDefinition(ExtensionsCapabilities::RESOURCE, CapabilityCatalog::ACTION_MANAGE, 'Manage plugins'),
             ...$this->enabledPluginCapabilities(),
         ];
     }
@@ -25,7 +26,7 @@ final class ExtensionsCapabilityProvider implements CapabilityDefinitionProvider
     {
         return [
             BuiltInRoleCatalog::ROLE_PLUGINS_MANAGER => [
-                CapabilityCatalog::capabilityKey(ExtensionsCapabilities::MANAGE),
+                CapabilityCatalog::capabilityKey(ExtensionsCapabilities::RESOURCE, CapabilityCatalog::ACTION_MANAGE),
             ],
         ];
     }
@@ -70,7 +71,14 @@ final class ExtensionsCapabilityProvider implements CapabilityDefinitionProvider
             }
 
             return $definitions;
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
+            // Каталог не должен падать из-за одного битого плагина, но и молчать
+            // нельзя: раньше capability плагинов просто исчезали из /auth/current
+            // без следа в логах (аудит, C5).
+            app(AppLogger::class)->error('extensions.capability_catalog_failed', [
+                'exception' => $exception->getMessage(),
+            ]);
+
             return [];
         }
     }

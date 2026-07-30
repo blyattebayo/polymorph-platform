@@ -15,6 +15,7 @@ use Polymorph\Platform\Domain\Users\Core\Exceptions\UserNotFoundException;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Domain\Users\Queries\FindUserByIdQuery;
 use Polymorph\Platform\Domain\Users\Support\RoleIdsNormalizer;
+use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
 
 final class AdminUserManagementService
 {
@@ -25,6 +26,7 @@ final class AdminUserManagementService
         private readonly UserRoleManager $userRoleManager,
         private readonly SystemAdministratorGuard $systemAdministratorGuard,
         private readonly FindUserByIdQuery $findUserByIdQuery,
+        private readonly CurrentActorResolver $currentActor,
     ) {}
 
     /**
@@ -35,6 +37,10 @@ final class AdminUserManagementService
     public function create(array $validated): User
     {
         $roleIds = RoleIdsNormalizer::normalize($validated['role_ids'] ?? []);
+
+        // Симметрично update(): создать пользователя сразу системным админом
+        // может только системный админ. Раньше create() guard не звал вовсе.
+        $this->userRoleManager->assertRoleChangeAllowed($this->currentActor->requireActor(), null, $roleIds);
 
         return DB::transaction(function () use ($validated, $roleIds): User {
             $user = $this->createUserAction->execute($validated);
@@ -55,16 +61,23 @@ final class AdminUserManagementService
         $user = $this->findUserByIdQuery->executeOrFail($userId);
         $this->systemAdministratorGuard->assertCanMutate($user);
 
+        $roleIds = array_key_exists('role_ids', $validated)
+            ? RoleIdsNormalizer::normalize($validated['role_ids'])
+            : null;
+
+        if ($roleIds !== null) {
+            // Диff по членству в system.admin: выдать или снять роль может
+            // только действующий системный админ.
+            $this->userRoleManager->assertRoleChangeAllowed($this->currentActor->requireActor(), $userId, $roleIds);
+        }
+
         // Ревок сессий при смене статуса на ограничивающий выполняет
         // листенер RevokeSessionsAfterUserStatusChanged на событии UserUpdated.
-        return DB::transaction(function () use ($user, $validated): User {
+        return DB::transaction(function () use ($user, $validated, $roleIds): User {
             $updated = $this->updateUserAction->execute($user, $validated);
 
-            if (array_key_exists('role_ids', $validated)) {
-                $this->userRoleManager->syncForUser(
-                    (int) $updated->id,
-                    RoleIdsNormalizer::normalize($validated['role_ids']),
-                );
+            if ($roleIds !== null) {
+                $this->userRoleManager->syncForUser((int) $updated->id, $roleIds);
             }
 
             return $updated;

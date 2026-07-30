@@ -104,6 +104,15 @@ final class BuiltInRoleCatalog
     }
 
     /**
+     * Единственная точка ответа на «эта роль встроенная?» — правило раньше
+     * дублировалось inline-проверками в репозитории и HTTP-ресурсе.
+     */
+    public static function isProtected(string $roleCode): bool
+    {
+        return in_array($roleCode, self::protectedRoleCodes(), true);
+    }
+
+    /**
      * @return list<string>
      */
     public static function baselineRoleCodes(): array

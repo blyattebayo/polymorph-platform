@@ -15,6 +15,7 @@ use Polymorph\Platform\Domain\AccessControl\Http\Requests\UpdatePolicyRequest;
 use Polymorph\Platform\Domain\AccessControl\Http\Resources\AssignmentResource;
 use Polymorph\Platform\Domain\AccessControl\Http\Resources\PolicyResource;
 use Polymorph\Platform\Domain\AccessControl\Services\PolicyQueryService;
+use Polymorph\Platform\Domain\AccessControl\Services\PolicyScopeAuthority;
 use Polymorph\Platform\Http\Controllers\Controller;
 use Polymorph\Platform\Http\Pagination\V2\PaginatedJsonResponse;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
@@ -25,6 +26,7 @@ final class PolicyController extends Controller
     public function __construct(
         private readonly PolicyQueryService $queryService,
         private readonly AccessControlAdministration $adminService,
+        private readonly PolicyScopeAuthority $scopeAuthority,
     ) {}
 
     public function index(IndexPoliciesRequest $request): JsonResponse
@@ -42,20 +44,41 @@ final class PolicyController extends Controller
 
     public function store(StorePolicyRequest $request): JsonResponse
     {
-        $policy = $this->adminService->createPolicy($request->validated());
+        $validated = $request->validated();
+
+        // Нельзя выпустить политику шире собственных прав — иначе policy.manage
+        // был бы фабрикой wildcard'ов.
+        $this->scopeAuthority->assertCanManageScope(
+            (string) $validated['resource_pattern'],
+            (string) $validated['action'],
+        );
+
+        $policy = $this->adminService->createPolicy($validated);
 
         return AdminResponse::json(['data' => PolicyResource::make($policy)->toArray($request)], 201);
     }
 
     public function update(UpdatePolicyRequest $request, int $policyId): JsonResponse
     {
-        $policy = $this->adminService->updatePolicy($policyId, $request->validated());
+        $validated = $request->validated();
+
+        // И старый скоуп (что переписываем), и новый (во что) должны быть в
+        // пределах прав актора — иначе свою узкую политику можно расширить в '*'.
+        $this->scopeAuthority->assertCanManagePolicies([$policyId]);
+        $this->scopeAuthority->assertCanManageScope(
+            (string) $validated['resource_pattern'],
+            (string) $validated['action'],
+        );
+
+        $policy = $this->adminService->updatePolicy($policyId, $validated);
 
         return AdminResponse::json(['data' => PolicyResource::make($policy)->toArray($request)]);
     }
 
     public function destroy(int $policyId): Response
     {
+        $this->scopeAuthority->assertCanManagePolicies([$policyId]);
+
         $this->adminService->deletePolicy($policyId);
 
         return AdminResponse::noContent();
@@ -68,6 +91,8 @@ final class PolicyController extends Controller
 
     public function assign(AssignPolicyRequest $request, int $policyId): JsonResponse
     {
+        $this->scopeAuthority->assertCanManagePolicies([$policyId]);
+
         $assignment = $this->adminService->assign(
             $policyId,
             Subject::fromString((string) $request->validated()['subject']),
@@ -78,6 +103,10 @@ final class PolicyController extends Controller
 
     public function unassign(int $policyId, int $assignmentId): Response
     {
+        // Снятие тоже в пределах собственных прав: иначе policy.assign мог бы
+        // снять wildcard с role:system.admin и обезглавить админов.
+        $this->scopeAuthority->assertCanManagePolicies([$policyId]);
+
         $this->adminService->unassign($policyId, $assignmentId);
 
         return AdminResponse::noContent();

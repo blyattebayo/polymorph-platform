@@ -35,25 +35,51 @@ final class ExtensionCapabilityService
 
     public function assignDefaultPluginAdminPolicy(DiscoveredExtension $plugin): void
     {
-        if ($plugin->capabilityDefinitions === []) {
-            return;
-        }
-
-        $policy = $this->adminService->ensurePolicy([
-            'resource_pattern' => "plugin.{$plugin->id}",
+        // Дефолтная админ-капабилити зоны ADMIN_API: ей защищаются маршруты,
+        // за которые манифест не объявил requires: (см. PluginRouteMounter).
+        // Создаётся независимо от наличия capabilityDefinitions — админ-зона
+        // без манифестных капабилити всё равно должна быть закрыта.
+        $adminZonePolicy = $this->adminService->ensurePolicy([
+            'resource_pattern' => "ext.{$plugin->id}.admin",
             'action' => CapabilityCatalog::ACTION_ACCESS,
             'effect' => CapabilityCatalog::EFFECT_ALLOW,
             'priority' => 100,
             'is_active' => true,
             'metadata' => [
-                'source' => 'plugin-default-admin',
+                'source' => 'plugin-admin-zone',
                 'plugin_id' => $plugin->id,
             ],
         ]);
 
         $subjects = $this->defaultAdminSubjects($plugin);
         foreach ($subjects as $subject) {
-            $this->adminService->assign((int) $policy->id, $subject);
+            $this->adminService->assign((int) $adminZonePolicy->id, $subject);
+        }
+
+        if ($plugin->capabilityDefinitions === []) {
+            return;
+        }
+
+        // Ресурс plugin.{id} — легаси V1-неймспейса. Для V2 (extension.json) он
+        // был мёртвым: вне ext.{id}., не зарегистрирован ни одним провайдером и
+        // нигде не проверялся (аудит, C4) — а фронт из-за него был вынужден
+        // матчить оба префикса. V2-дефолт админ-зоны — ext.{id}.admin выше.
+        if (! str_ends_with($plugin->manifestPath, 'extension.json')) {
+            $policy = $this->adminService->ensurePolicy([
+                'resource_pattern' => "plugin.{$plugin->id}",
+                'action' => CapabilityCatalog::ACTION_ACCESS,
+                'effect' => CapabilityCatalog::EFFECT_ALLOW,
+                'priority' => 100,
+                'is_active' => true,
+                'metadata' => [
+                    'source' => 'plugin-default-admin',
+                    'plugin_id' => $plugin->id,
+                ],
+            ]);
+
+            foreach ($subjects as $subject) {
+                $this->adminService->assign((int) $policy->id, $subject);
+            }
         }
 
         foreach ($plugin->capabilityDefinitions as $definition) {

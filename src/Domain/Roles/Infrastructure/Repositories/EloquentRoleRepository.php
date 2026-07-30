@@ -143,7 +143,7 @@ final class EloquentRoleRepository implements RoleRepository
 
     private function isProtected(Role $role): bool
     {
-        return in_array((string) $role->code, BuiltInRoleCatalog::protectedRoleCodes(), true);
+        return BuiltInRoleCatalog::isProtected((string) $role->code);
     }
 
     private function isUsedByUsers(int $roleId): bool

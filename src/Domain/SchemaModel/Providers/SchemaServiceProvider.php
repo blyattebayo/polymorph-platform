@@ -6,7 +6,7 @@ namespace Polymorph\Platform\Domain\SchemaModel\Providers;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use Polymorph\Platform\Domain\SchemaModel\Access\SchemaCapabilityProvider;
+use Polymorph\Platform\Domain\SchemaModel\Access\SchemaCapabilities;
 use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\FieldRepository;
 use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\FieldWriteService;
 use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\SchemaFieldPathReadModel;
@@ -78,6 +78,6 @@ class SchemaServiceProvider extends ServiceProvider
             Event::listen($event, InvalidateSnapshotCacheOnSchemaChange::class);
         }
 
-        $this->app->tag([SchemaCapabilityProvider::class], 'access.capability_providers');
+        $this->app->tag([SchemaCapabilities::class], 'access.capability_providers');
     }
 }

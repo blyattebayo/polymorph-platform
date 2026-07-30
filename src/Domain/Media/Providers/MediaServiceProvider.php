@@ -10,7 +10,7 @@ use Illuminate\Support\ServiceProvider;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\ImageManager;
-use Polymorph\Platform\Domain\Media\Access\MediaCapabilityProvider;
+use Polymorph\Platform\Domain\Media\Access\MediaCapabilities;
 use Polymorph\Platform\Domain\Media\Actions\CalculateChecksumAction;
 use Polymorph\Platform\Domain\Media\Actions\CreateMediaRecordAction;
 use Polymorph\Platform\Domain\Media\Actions\DeleteMediaFileAction;
@@ -88,7 +88,7 @@ class MediaServiceProvider extends ServiceProvider
         $this->registerEventListeners();
         $this->validateConfiguration();
 
-        $this->app->tag([MediaCapabilityProvider::class], 'access.capability_providers');
+        $this->app->tag([MediaCapabilities::class], 'access.capability_providers');
     }
 
     /**

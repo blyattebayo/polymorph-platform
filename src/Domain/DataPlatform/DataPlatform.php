@@ -13,9 +13,11 @@ use Polymorph\Platform\Domain\Records\Pipeline\Handlers\CreateRecordHandler;
 use Polymorph\Platform\Domain\Records\Pipeline\Handlers\DeleteRecordHandler;
 use Polymorph\Platform\Domain\Records\Pipeline\Handlers\UpdateRecordHandler;
 use Polymorph\Platform\Domain\Records\Query\RecordQueryCriteriaFactory;
+use Polymorph\Platform\Domain\Records\Services\RecordWriteAccessService;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
 use Polymorph\Platform\Domain\SchemaModel\Pipeline\Commands\SaveSchemaWithFieldsCommand;
 use Polymorph\Platform\Domain\SchemaModel\Pipeline\Handlers\SaveSchemaWithFieldsHandler;
+use Polymorph\Platform\Domain\SchemaModel\Services\FieldAccessService;
 use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwner;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwnershipService;
@@ -52,6 +54,8 @@ final class DataPlatform
         private readonly RecordRepository $records,
         private readonly CurrentActorResolver $actors,
         private readonly RecordQueryCriteriaFactory $queryCriteriaFactory,
+        private readonly RecordWriteAccessService $writeAccess,
+        private readonly FieldAccessService $fieldAccess,
     ) {}
 
     /**
@@ -70,6 +74,8 @@ final class DataPlatform
             $this->records,
             $this->actors,
             $this->queryCriteriaFactory,
+            $this->writeAccess,
+            $this->fieldAccess,
             $extensionId,
             $entity,
             $entityClass,

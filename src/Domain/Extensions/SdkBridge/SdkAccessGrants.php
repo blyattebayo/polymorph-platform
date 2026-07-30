@@ -6,14 +6,15 @@ namespace Polymorph\Platform\Domain\Extensions\SdkBridge;
 
 use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdministration;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRuntime;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Assignment;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Policy;
-use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Decision;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Polymorph\Platform\Domain\Users\Core\Contracts\UserRepository;
+use Polymorph\Platform\SharedKernel\Access\AccessCheck;
+use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
+use Polymorph\Platform\SharedKernel\Access\ResourceRef;
+use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Sdk\Access\AccessGrants;
 use Polymorph\Sdk\Access\CapabilityAction;
 use Polymorph\Sdk\Extension\ExtensionContext;
@@ -33,8 +34,7 @@ final class SdkAccessGrants implements AccessGrants
 
     public function __construct(
         private readonly AccessControlAdministration $admin,
-        private readonly PolicyRuntime $policyRuntime,
-        private readonly AccessSubjectProvider $subjectProvider,
+        private readonly AccessGate $gate,
         private readonly UserRepository $users,
         private readonly ExtensionContext $context,
     ) {}
@@ -120,7 +120,7 @@ final class SdkAccessGrants implements AccessGrants
     {
         $resource = $this->assertOwnResource($resource);
 
-        return $this->policyRuntime->allows($this->subjectsFor($userId), $resource, $action);
+        return $this->gate->allows($this->actorFor($userId), ResourceRef::fromString($resource), $action);
     }
 
     public function userCanBatch(int $userId, array $resources, string $action = CapabilityAction::ACCESS): array
@@ -135,16 +135,15 @@ final class SdkAccessGrants implements AccessGrants
         ));
 
         $checks = array_map(
-            static fn (string $resource): array => ['resource' => $resource, 'action' => $action],
+            static fn (string $resource): AccessCheck => new AccessCheck(ResourceRef::fromString($resource), $action),
             $resources,
         );
 
-        $decisions = $this->policyRuntime->batchEvaluate($this->subjectsFor($userId), $checks);
+        $allowed = $this->gate->allowsEach($this->actorFor($userId), $checks);
 
         $result = [];
         foreach ($resources as $index => $resource) {
-            $decision = $decisions[$index] ?? null;
-            $result[$resource] = $decision instanceof Decision && $decision->allowed();
+            $result[$resource] = $allowed[$index] ?? false;
         }
 
         return $result;
@@ -210,17 +209,17 @@ final class SdkAccessGrants implements AccessGrants
     }
 
     /**
-     * @return list<Subject>
+     * null — «неизвестный или неактивный аккаунт», для гейта это deny.
      */
-    private function subjectsFor(int $userId): array
+    private function actorFor(int $userId): ?UserIdentity
     {
         $user = $this->users->find($userId);
 
         if ($user === null || ! $user->isActiveAccount()) {
-            return [];
+            return null;
         }
 
-        return $this->subjectProvider->for($user);
+        return $user;
     }
 
     private function escapeLike(string $value): string

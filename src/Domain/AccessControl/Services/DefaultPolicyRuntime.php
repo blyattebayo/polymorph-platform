@@ -120,11 +120,25 @@ final class DefaultPolicyRuntime implements PolicyRuntime
     }
 
     /**
+     * Семантика конфликтов — «deny overrides»: любой совпавший deny побеждает
+     * независимо от priority.
+     *
+     * Раньше выигрывала ТОЛЬКО группа с минимальным priority («first-tier-wins»):
+     * deny с priority 200 молча проигрывал allow со 100 — при том что 100 был
+     * дефолтом всего сидинга, то есть почти любой рукотворный deny оказывался
+     * мёртвым (аудит, B3). Ни одно штатное правило на «allow перекрывает deny
+     * номером» не опиралось: точечные исключения делаются НЕназначением deny
+     * субъекту, а не приоритетной гонкой. Поле priority осталось данными
+     * (сортировка, отображение), в решении конфликтов оно не участвует.
+     *
      * @param  iterable<CompiledPolicy>  $matchedPolicies
      */
     private function evaluateMatchedPolicies(iterable $matchedPolicies): Decision
     {
-        $prioritized = [];
+        $hasAny = false;
+        $hasDeny = false;
+        $denyPolicyIds = [];
+        $allowPolicyIds = [];
 
         foreach ($matchedPolicies as $policy) {
             $effect = $this->effectOf($policy);
@@ -132,29 +146,11 @@ final class DefaultPolicyRuntime implements PolicyRuntime
                 continue;
             }
 
-            $priority = (int) $policy->priority;
-            $prioritized[$priority][] = [
-                'effect' => $effect,
-                'policy_id' => $this->policyIdOf($policy),
-            ];
-        }
+            $hasAny = true;
+            $policyId = $this->policyIdOf($policy);
 
-        if ($prioritized === []) {
-            return Decision::deny('no_matching_policy');
-        }
-
-        ksort($prioritized, SORT_NUMERIC);
-        $winningRules = reset($prioritized);
-        if (! is_array($winningRules) || $winningRules === []) {
-            return Decision::deny('no_matching_policy');
-        }
-
-        $denyPolicyIds = [];
-        $allowPolicyIds = [];
-
-        foreach ($winningRules as $rule) {
-            $policyId = $rule['policy_id'];
-            if ($rule['effect']->isDeny()) {
+            if ($effect->isDeny()) {
+                $hasDeny = true;
                 if ($policyId !== null) {
                     $denyPolicyIds[] = $policyId;
                 }
@@ -167,7 +163,11 @@ final class DefaultPolicyRuntime implements PolicyRuntime
             }
         }
 
-        if ($denyPolicyIds !== []) {
+        if (! $hasAny) {
+            return Decision::deny('no_matching_policy');
+        }
+
+        if ($hasDeny) {
             return Decision::deny('explicit_deny', matchedPolicyIds: $this->uniqueIds($denyPolicyIds));
         }
 

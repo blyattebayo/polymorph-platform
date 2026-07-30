@@ -6,13 +6,14 @@ use Illuminate\Support\Facades\Route;
 use Polymorph\Platform\Domain\Extensions\Access\ExtensionsCapabilities;
 use Polymorph\Platform\Domain\Extensions\Http\Controllers\ExtensionAdminController;
 use Polymorph\Platform\Http\Middleware\RequireCapability;
+use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 
 /**
  * Жизненный цикл расширений.
  */
 Route::prefix('plugins')
     ->name('plugins.')
-    ->middleware(RequireCapability::forRoute(ExtensionsCapabilities::MANAGE))
+    ->middleware(RequireCapability::forRoute(ExtensionsCapabilities::RESOURCE, CapabilityCatalog::ACTION_MANAGE))
     ->group(function (): void {
         Route::get('/', [ExtensionAdminController::class, 'index'])->name('index');
         Route::post('/enable', [ExtensionAdminController::class, 'enable'])->name('enable');

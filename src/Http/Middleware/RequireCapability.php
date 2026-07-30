@@ -7,9 +7,9 @@ namespace Polymorph\Platform\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRuntime;
+use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
+use Polymorph\Platform\SharedKernel\Access\ResourceRef;
 use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\Support\Errors\ErrorCode;
@@ -36,13 +36,14 @@ final class RequireCapability
     }
 
     public function __construct(
-        private readonly PolicyRuntime $policyRuntime,
-        private readonly AccessSubjectProvider $subjectProvider,
+        private readonly AccessGate $gate,
         private readonly CurrentActorResolver $currentActor,
     ) {}
 
     public function handle(Request $request, Closure $next, string $resource, string $action = CapabilityCatalog::ACTION_ACCESS)
     {
+        // Актор резолвится здесь, а не внутри гейта: middleware различает
+        // 401 (не аутентифицирован) и 403 (нет права), гейт отвечает только bool.
         $user = $this->currentActor->actor();
 
         if (! $user instanceof UserIdentity) {
@@ -52,7 +53,7 @@ final class RequireCapability
         $normalizedResource = trim($resource);
         $normalizedAction = trim($action);
 
-        if (! $this->policyRuntime->allows($this->subjectProvider->for($user), $normalizedResource, $normalizedAction)) {
+        if (! $this->gate->allows($user, ResourceRef::fromString($normalizedResource), $normalizedAction)) {
             $this->throwError(ErrorCode::FORBIDDEN, 'Required capability is missing.', [
                 'capability' => $normalizedResource.'/'.$normalizedAction,
                 'resource' => $normalizedResource,

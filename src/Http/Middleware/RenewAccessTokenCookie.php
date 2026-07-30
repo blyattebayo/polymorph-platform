@@ -89,7 +89,6 @@ final class RenewAccessTokenCookie
         }
 
         $renewed = $this->jwt->issueAccessToken((int) $credential->user->id, [
-            'scp' => ['api'],
             'sid' => $credential->sessionId,
             'aex' => $absoluteExpiresAt,
         ]);

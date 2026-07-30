@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Services;
 
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRuntime;
+use Polymorph\Platform\Domain\SchemaModel\Access\SchemaFieldResources;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
+use Polymorph\Platform\SharedKernel\Access\AccessCheck;
+use Polymorph\Platform\SharedKernel\Access\AccessGate;
+use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
+use Polymorph\Platform\SharedKernel\Access\ResourceRef;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
 final class FieldAccessService
@@ -22,8 +25,7 @@ final class FieldAccessService
     private array $schemaFieldPathsCache = [];
 
     public function __construct(
-        private readonly PolicyRuntime $runtime,
-        private readonly AccessSubjectProvider $subjectProvider,
+        private readonly AccessGate $gate,
         private readonly PathTreeFilter $pathTreeFilter,
     ) {}
 
@@ -34,17 +36,13 @@ final class FieldAccessService
             return false;
         }
 
-        return $this->runtime->allows(
-            $this->subjectProvider->for($user),
-            $this->resourcePath($schemaId, $fieldPath),
-            trim($action),
-        );
+        return $this->gate->allows($user, $this->resourcePath($schemaId, $fieldPath), trim($action));
     }
 
     /**
      * @return string[]
      */
-    public function visibleFieldPaths(?UserIdentity $user, int $schemaId, string $action = 'read'): array
+    public function visibleFieldPaths(?UserIdentity $user, int $schemaId, string $action = CapabilityCatalog::ACTION_READ): array
     {
         $normalizedAction = trim($action);
         if ($user === null || $schemaId <= 0 || $normalizedAction === '') {
@@ -75,15 +73,14 @@ final class FieldAccessService
         }
 
         $checks = array_map(
-            fn (string $path): array => ['resource' => $this->resourcePath($schemaId, $path), 'action' => $action],
+            fn (string $path): AccessCheck => new AccessCheck($this->resourcePath($schemaId, $path), $action),
             $fieldPaths,
         );
-        $decisions = $this->runtime->batchEvaluate($this->subjectProvider->for($user), $checks);
+        $allowed = $this->gate->allowsEach($user, $checks);
 
         $visible = [];
         foreach ($fieldPaths as $index => $path) {
-            $decision = $decisions[$index] ?? null;
-            if ($decision !== null && $decision->allowed()) {
+            if ($allowed[$index] ?? false) {
                 $visible[] = $path;
             }
         }
@@ -100,7 +97,7 @@ final class FieldAccessService
      */
     public function filterReadableDataJson(?UserIdentity $user, int $schemaId, array $dataJson): array
     {
-        return $this->pathTreeFilter->filterVisibleData($dataJson, $this->visibleFieldPaths($user, $schemaId, 'read'));
+        return $this->pathTreeFilter->filterVisibleData($dataJson, $this->visibleFieldPaths($user, $schemaId, CapabilityCatalog::ACTION_READ));
     }
 
     /**
@@ -109,12 +106,12 @@ final class FieldAccessService
      */
     public function forbiddenWritePaths(?UserIdentity $user, int $schemaId, array $dataJson): array
     {
-        return $this->pathTreeFilter->forbiddenWritePaths($dataJson, $this->visibleFieldPaths($user, $schemaId, 'write'));
+        return $this->pathTreeFilter->forbiddenWritePaths($dataJson, $this->visibleFieldPaths($user, $schemaId, CapabilityCatalog::ACTION_WRITE));
     }
 
-    private function resourcePath(int $schemaId, string $fieldPath): string
+    private function resourcePath(int $schemaId, string $fieldPath): ResourceRef
     {
-        return 'schema.'.$schemaId.'.fields.'.ltrim($fieldPath, '.');
+        return SchemaFieldResources::field($schemaId, ltrim($fieldPath, '.'));
     }
 
     /**

@@ -14,6 +14,8 @@ final class CapabilityCatalog
 
     public const ACTION_DELETE = 'delete';
 
+    public const ACTION_MANAGE = 'manage';
+
     public const ACTION_WILDCARD = '*';
 
     public const EFFECT_ALLOW = 'allow';
@@ -31,6 +33,7 @@ final class CapabilityCatalog
             self::ACTION_READ,
             self::ACTION_WRITE,
             self::ACTION_DELETE,
+            self::ACTION_MANAGE,
             self::ACTION_WILDCARD,
         ];
     }

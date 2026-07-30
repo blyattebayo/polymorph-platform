@@ -40,7 +40,6 @@ final class LoginSession
 
         $refreshSession = $this->sessions->createForUser((int) $user->id, $command->ip, $command->userAgent);
         $accessToken = $this->jwt->issueAccessToken((int) $user->id, [
-            'scp' => ['api'],
             'sid' => $refreshSession->sessionId,
             // Абсолютный потолок скользящей сессии: дальше него access-токен
             // не продлевается (см. RenewAccessTokenCookie).

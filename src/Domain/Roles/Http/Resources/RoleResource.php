@@ -19,7 +19,7 @@ final class RoleResource extends AdminJsonResource
             'id' => (int) $role->id,
             'code' => (string) $role->code,
             'name' => (string) $role->name,
-            'is_protected' => in_array((string) $role->code, BuiltInRoleCatalog::protectedRoleCodes(), true),
+            'is_protected' => BuiltInRoleCatalog::isProtected((string) $role->code),
         ];
     }
 }

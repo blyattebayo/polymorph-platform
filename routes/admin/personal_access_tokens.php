@@ -7,6 +7,7 @@ use Polymorph\Platform\Domain\Auth\Http\Controllers\AdminPersonalAccessTokenCont
 use Polymorph\Platform\Domain\Users\Access\UsersCapabilities;
 use Polymorph\Platform\Http\Middleware\EnsureSessionCredential;
 use Polymorph\Platform\Http\Middleware\RequireCapability;
+use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 
 /**
  * Администрирование персональных токенов.
@@ -20,25 +21,25 @@ Route::prefix('personal-access-tokens')
     ->whereNumber('tokenId')
     ->group(function (): void {
         Route::get('/', [AdminPersonalAccessTokenController::class, 'indexAll'])
-            ->middleware(RequireCapability::forRoute(UsersCapabilities::READ))
+            ->middleware(RequireCapability::forRoute(UsersCapabilities::RESOURCE, CapabilityCatalog::ACTION_READ))
             ->name('index');
 
         Route::delete('/{tokenId}', [AdminPersonalAccessTokenController::class, 'destroy'])
-            ->middleware([RequireCapability::forRoute(UsersCapabilities::LIFECYCLE), EnsureSessionCredential::ALIAS])
+            ->middleware([RequireCapability::forRoute(UsersCapabilities::RESOURCE, CapabilityCatalog::ACTION_MANAGE), EnsureSessionCredential::ALIAS])
             ->name('destroy');
     });
 
 Route::prefix('users/{userId}/personal-access-tokens')
     ->name('users.personal-access-tokens.')
     ->whereNumber('userId')
-    ->middleware(RequireCapability::forRoute(UsersCapabilities::READ))
+    ->middleware(RequireCapability::forRoute(UsersCapabilities::RESOURCE, CapabilityCatalog::ACTION_READ))
     ->group(function (): void {
         Route::get('/', [AdminPersonalAccessTokenController::class, 'indexForUser'])->name('index');
 
         Route::post('/', [AdminPersonalAccessTokenController::class, 'storeForUser'])
             ->middleware([
                 'throttle:pat-create',
-                RequireCapability::forRoute(UsersCapabilities::LIFECYCLE),
+                RequireCapability::forRoute(UsersCapabilities::RESOURCE, CapabilityCatalog::ACTION_MANAGE),
                 EnsureSessionCredential::ALIAS,
             ])
             ->name('store');

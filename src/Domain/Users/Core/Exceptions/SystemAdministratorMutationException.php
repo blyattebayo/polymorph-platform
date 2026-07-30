@@ -9,6 +9,14 @@ use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
 use Polymorph\Platform\Support\Errors\ConvertsToErrorPayload;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 
+/**
+ * Встроенная учётка платформенного администратора неприкасаема через админ-API.
+ *
+ * Раньше это исключение бросалось для ЛЮБОГО носителя роли system.admin —
+ * назначение роли превращалось в одностороннюю дверь (пользователь становился
+ * нередактируемым, роль неснимаемой). Теперь предикат — флаг is_platform_admin,
+ * который ставит только AdminUserSeeder.
+ */
 final class SystemAdministratorMutationException extends \DomainException implements DomainErrorDescriptor, ErrorConvertible
 {
     use ConvertsToErrorPayload;
@@ -17,7 +25,7 @@ final class SystemAdministratorMutationException extends \DomainException implem
 
     public static function forUser(int $userId): self
     {
-        $exception = new self('The system administrator account cannot be modified.');
+        $exception = new self('The built-in platform administrator account cannot be modified.');
         $exception->userId = $userId;
 
         return $exception;
@@ -34,6 +42,7 @@ final class SystemAdministratorMutationException extends \DomainException implem
     public function errorMeta(): array
     {
         return [
+            'reason' => 'platform_admin_immutable',
             'resource' => 'user',
             'user_id' => $this->userId,
         ];

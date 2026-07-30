@@ -6,7 +6,7 @@ namespace Polymorph\Platform\Domain\Roles\Providers;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use Polymorph\Platform\Domain\Roles\Access\RolesCapabilityProvider;
+use Polymorph\Platform\Domain\Roles\Access\RolesCapabilities;
 use Polymorph\Platform\Domain\Roles\Core\Contracts\RoleAssignmentRepository;
 use Polymorph\Platform\Domain\Roles\Core\Contracts\RoleRepository;
 use Polymorph\Platform\Domain\Roles\Core\Contracts\UserRoleAssignmentGuard;
@@ -40,6 +40,6 @@ final class RolesServiceProvider extends ServiceProvider
     {
         Event::listen(UserCreated::class, SyncUserAccessOnCreated::class);
 
-        $this->app->tag([RolesCapabilityProvider::class], 'access.capability_providers');
+        $this->app->tag([RolesCapabilities::class], 'access.capability_providers');
     }
 }

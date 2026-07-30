@@ -65,7 +65,11 @@ class BuiltInPoliciesSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        $policyAdmin->setSubjectPolicies(Subject::role(BuiltInRoleCatalog::ROLE_SYSTEM_ADMIN), [(int) $wildcardPolicy->id]);
+        // Аддитивно (assign = upsert), а НЕ setSubjectPolicies: полная замена
+        // набора при повторном db:seed сносила все назначения, сделанные
+        // администратором руками (аудит, 6.4). Сидер гарантирует НАЛИЧИЕ
+        // built-in набора; снятие лишнего — осознанное действие оператора.
+        $policyAdmin->assign((int) $wildcardPolicy->id, Subject::role(BuiltInRoleCatalog::ROLE_SYSTEM_ADMIN));
 
         foreach (self::roleCapabilityMap() as $roleCode => $capabilityKeys) {
             if ($roleCode === BuiltInRoleCatalog::ROLE_SYSTEM_ADMIN) {
@@ -73,7 +77,6 @@ class BuiltInPoliciesSeeder extends Seeder
             }
 
             $subject = Subject::role($roleCode);
-            $policyIds = [];
 
             foreach ($capabilityKeys as $capabilityKey) {
                 $policyId = $policyIdsByKey[$capabilityKey] ?? 0;
@@ -81,10 +84,8 @@ class BuiltInPoliciesSeeder extends Seeder
                     continue;
                 }
 
-                $policyIds[] = $policyId;
+                $policyAdmin->assign($policyId, $subject);
             }
-
-            $policyAdmin->setSubjectPolicies($subject, array_values(array_unique($policyIds)));
         }
     }
 }

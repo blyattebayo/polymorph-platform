@@ -34,11 +34,17 @@ final class AccessControlApplicationException extends RuntimeException implement
         return new self($message, 'conflict');
     }
 
+    public static function forbidden(string $message): self
+    {
+        return new self($message, 'forbidden');
+    }
+
     public function errorCode(): ErrorCode
     {
         return match ($this->kind) {
             'not_found' => ErrorCode::NOT_FOUND,
             'conflict' => ErrorCode::CONFLICT,
+            'forbidden' => ErrorCode::FORBIDDEN,
             default => ErrorCode::VALIDATION_ERROR,
         };
     }

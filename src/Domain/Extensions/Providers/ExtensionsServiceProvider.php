@@ -26,6 +26,7 @@ use Polymorph\Platform\Domain\Routing\Plugin\PluginRouteCatalog;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 use Polymorph\Platform\Support\Logging\Contracts\SecretRedactor;
 use Polymorph\Platform\Support\Logging\PayloadRedactor;
+use Polymorph\Sdk\Extension\ExtensionProvider as SdkV2ExtensionProvider;
 use Throwable;
 
 final class ExtensionsServiceProvider extends ServiceProvider
@@ -101,7 +102,23 @@ final class ExtensionsServiceProvider extends ServiceProvider
                 continue;
             }
 
-            $this->app->register($providerClass);
+            $provider = new $providerClass($this->app);
+
+            // Провайдер обязан представляться тем же id, что и манифест его
+            // каталога: иначе он получил бы scoped-сервисы (данные, гранты)
+            // чужого расширения через $this->records()/grants().
+            if ($provider instanceof SdkV2ExtensionProvider
+                && $provider->declaredExtensionId() !== $extension->id) {
+                $this->app->make(AppLogger::class)->error('extensions.provider_id_mismatch', [
+                    'manifest_id' => $extension->id,
+                    'declared_id' => $provider->declaredExtensionId(),
+                    'provider' => $providerClass,
+                ]);
+
+                continue;
+            }
+
+            $this->app->register($provider);
         }
     }
 }

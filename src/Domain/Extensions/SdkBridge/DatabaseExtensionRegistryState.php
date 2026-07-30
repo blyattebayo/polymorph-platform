@@ -20,4 +20,15 @@ final class DatabaseExtensionRegistryState implements ExtensionRegistryState
             return false;
         }
     }
+
+    public function isKnown(string $extensionId): bool
+    {
+        try {
+            return DB::table('plugins_registry')
+                ->where('plugin_id', $extensionId)
+                ->exists();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
 }

@@ -7,6 +7,7 @@ namespace Polymorph\Platform\Bootstrap;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Polymorph\Platform\Domain\AccessControl\Console\GenerateFeCapabilityCatalogCommand;
 use Polymorph\Platform\Domain\AccessControl\Console\RebuildAccessControlCommand;
 use Polymorph\Platform\Domain\Auth\Console\PruneAuthSessionsCommand;
 use Polymorph\Platform\Domain\Extensions\Console\MigrateLegacyExtensionDataCommand;
@@ -54,6 +55,7 @@ final class HostBootstrap
         return [
             PreflightCommand::class,
             RebuildAccessControlCommand::class,
+            GenerateFeCapabilityCatalogCommand::class,
             PruneAuthSessionsCommand::class,
             PluginsListCommand::class,
             PluginsInstallCommand::class,

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Polymorph\Platform\Domain\TableConfig\Access\TableConfigCapabilities;
 use Polymorph\Platform\Domain\TableConfig\Http\Controllers\TableConfigController;
 use Polymorph\Platform\Http\Middleware\RequireCapability;
+use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 
 /**
  * Настройки таблиц.
@@ -17,7 +18,7 @@ Route::prefix('table-configs/{tableKey}')
     ->name('table-configs.')
     ->where(['tableKey' => '[A-Za-z0-9._-]+'])
     ->group(function (): void {
-        Route::middleware(RequireCapability::forRoute(TableConfigCapabilities::MANAGE))
+        Route::middleware(RequireCapability::forRoute(TableConfigCapabilities::RESOURCE, CapabilityCatalog::ACTION_MANAGE))
             ->name('base.')
             ->group(function (): void {
                 Route::get('/base', [TableConfigController::class, 'showBase'])->name('show');
