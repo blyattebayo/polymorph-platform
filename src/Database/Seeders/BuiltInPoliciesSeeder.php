@@ -10,6 +10,7 @@ use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdminist
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Polymorph\Platform\Domain\AccessControl\Services\CapabilityRegistry;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
+use RuntimeException;
 
 class BuiltInPoliciesSeeder extends Seeder
 {
@@ -80,8 +81,17 @@ class BuiltInPoliciesSeeder extends Seeder
 
             foreach ($capabilityKeys as $capabilityKey) {
                 $policyId = $policyIdsByKey[$capabilityKey] ?? 0;
+
+                // Раньше промах молча пропускался, и роль оставалась без единого
+                // права при зелёном db:seed. Ключи приходят из манифестов и уже
+                // сверены с каталогом в CapabilityRegistry — сюда промах может
+                // дойти только при рассинхроне, и он должен быть громким.
                 if ($policyId <= 0) {
-                    continue;
+                    throw new RuntimeException(sprintf(
+                        'Built-in role "%s" refers to capability "%s" that has no policy.',
+                        $roleCode,
+                        $capabilityKey,
+                    ));
                 }
 
                 $policyAdmin->assign($policyId, $subject);

@@ -30,7 +30,9 @@ final class AssignmentController extends Controller
 
         // Каждая политика из диффа (добавляемая или снимаемая) должна быть в
         // пределах прав актора — до этой проверки носитель policy.assign мог
-        // назначить себе wildcard и стать суперадмином.
+        // назначить себе wildcard и стать суперадмином. Если замена вдобавок
+        // урезает субъекта (добавляет deny или снимает allow), он должен быть
+        // не привилегированнее актора.
         $this->scopeAuthority->assertCanReplaceSubjectPolicies($subject, $policyIds);
 
         $this->adminService->setSubjectPolicies($subject, $policyIds);

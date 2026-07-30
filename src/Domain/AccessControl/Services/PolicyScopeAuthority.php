@@ -6,7 +6,9 @@ namespace Polymorph\Platform\Domain\AccessControl\Services;
 
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AssignmentRepository;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRepository;
+use Polymorph\Platform\Domain\AccessControl\Core\Models\Assignment;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Policy;
+use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Effect;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\ResourceRef;
@@ -40,15 +42,7 @@ final class PolicyScopeAuthority
 
     public function assertCanManageScope(string $resourcePattern, string $action): void
     {
-        $actor = $this->currentActor->actor();
-
-        // Fail-closed: без актора этот путь недостижим штатно (маршруты за
-        // RequireCapability), значит отсутствие актора — отказ, а не пропуск.
-        if (! $actor instanceof UserIdentity) {
-            throw AccessControlApplicationException::forbidden(
-                'Managing policies requires an authenticated actor.',
-            );
-        }
+        $actor = $this->requireActor();
 
         // resource_pattern проверяется как ресурс: покрытие паттерна актором
         // означает покрытие всего поддерева, которое этот паттерн раздаёт.
@@ -84,6 +78,109 @@ final class PolicyScopeAuthority
     }
 
     /**
+     * Нельзя УРЕЗАТЬ права субъекта, который привилегированнее актора.
+     *
+     * Проверка скоупа отвечает только на вопрос «не шире ли политика моих прав»
+     * и ничего не знает о том, КОМУ её вешают. С deny-overrides этого мало:
+     * политику {acl.policy, manage, deny} актор покрывал собственным
+     * acl.policy/manage, вешал на role:system.admin и отбирал у админов
+     * управление ACL, сохраняя своё. Симметрично работало снятие allow.
+     *
+     * Ограничение намеренно узкое — только на операции, снижающие доступ
+     * (назначить deny, снять allow). Расширять права субъекта, который в чём-то
+     * привилегированнее актора, по-прежнему можно: иначе управление «своей»
+     * частью набора блокировала бы чужая политика, назначенная кем-то выше
+     * (см. assertCanReplaceSubjectPolicies).
+     */
+    public function assertCanReduceSubjectAccess(Subject $subject): void
+    {
+        $actor = $this->requireActor();
+
+        foreach ($this->subjectPolicies($subject) as $policy) {
+            $resourcePattern = (string) $policy->resource_pattern;
+            $action = (string) $policy->action;
+
+            if ($this->gate->allows($actor, ResourceRef::fromString($resourcePattern), $action)) {
+                continue;
+            }
+
+            throw AccessControlApplicationException::forbidden(sprintf(
+                'You cannot reduce access of "%s": it holds "%s/%s", which your own access does not cover.',
+                (string) $subject,
+                $resourcePattern,
+                $action,
+            ));
+        }
+    }
+
+    /**
+     * Назначение политики субъекту. Урезает доступ только deny — allow субъекту
+     * ничего не отнимает, и требовать для него превосходства над субъектом
+     * незачем.
+     */
+    public function assertCanAssignPolicy(int $policyId, Subject $subject): void
+    {
+        if ($this->isDenyPolicy($policyId)) {
+            $this->assertCanReduceSubjectAccess($subject);
+        }
+    }
+
+    /**
+     * Снятие назначения. Урезает доступ снятие allow; снятие deny, наоборот,
+     * возвращает субъекту права и превосходства не требует.
+     */
+    public function assertCanUnassignPolicy(int $assignmentId): void
+    {
+        $assignment = $this->assignments->find($assignmentId);
+
+        // Несуществующее назначение — не забота guard'а: сервис ответит 404.
+        if (! $assignment instanceof Assignment) {
+            return;
+        }
+
+        if (! $this->isDenyPolicy((int) $assignment->policy_id)) {
+            $this->assertCanReduceSubjectAccess(Subject::fromString((string) $assignment->subject));
+        }
+    }
+
+    /**
+     * Правка и удаление политики бьют по всем, кому она уже назначена: сменив
+     * effect или сузив паттерн, назначенную allow-политику превращают в
+     * инструмент против привилегированного субъекта.
+     */
+    public function assertCanRewritePolicyForSubjects(int $policyId): void
+    {
+        foreach ($this->assignments->subjectsByPolicy($policyId) as $subject) {
+            $this->assertCanReduceSubjectAccess(Subject::fromString((string) $subject));
+        }
+    }
+
+    private function isDenyPolicy(int $policyId): bool
+    {
+        $policy = $this->policies->find($policyId);
+
+        return $policy instanceof Policy
+            && strtolower(trim((string) $policy->effect)) === Effect::DENY->value;
+    }
+
+    /**
+     * Роль — контейнер политик, поэтому выдать или снять её равносильно тому,
+     * чтобы назначить или снять субъекту весь её набор. Дверь через
+     * ac_assignments закрыта {@see self::assertCanReplaceSubjectPolicies()},
+     * эта закрывает вторую дверь — user_role_assignments.
+     */
+    public function assertCanManageRolePolicies(string $roleCode): void
+    {
+        $policyIds = $this->assignments->policyIdsForSubject(Subject::role($roleCode))
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $this->assertCanManagePolicies($policyIds);
+    }
+
+    /**
      * Для полной замены набора политик субъекта проверяется ДИФФ, а не весь
      * список: неизменяемая часть набора может содержать политики шире прав
      * актора (их назначил кто-то более привилегированный), и это не повод
@@ -101,11 +198,50 @@ final class PolicyScopeAuthority
             ->values()
             ->all();
 
-        $changed = [
-            ...array_diff($requested, $current),
-            ...array_diff($current, $requested),
-        ];
+        $added = array_values(array_diff($requested, $current));
+        $removed = array_values(array_diff($current, $requested));
 
-        $this->assertCanManagePolicies(array_values($changed));
+        $this->assertCanManagePolicies([...$added, ...$removed]);
+
+        // Полная замена урезает доступ, если добавляет deny или снимает allow.
+        $reduces = array_filter($added, fn (int $id): bool => $this->isDenyPolicy($id)) !== []
+            || array_filter($removed, fn (int $id): bool => ! $this->isDenyPolicy($id)) !== [];
+
+        if ($reduces) {
+            $this->assertCanReduceSubjectAccess($subject);
+        }
+    }
+
+    private function requireActor(): UserIdentity
+    {
+        $actor = $this->currentActor->actor();
+
+        // Fail-closed: без актора этот путь недостижим штатно (маршруты за
+        // RequireCapability), значит отсутствие актора — отказ, а не пропуск.
+        if (! $actor instanceof UserIdentity) {
+            throw AccessControlApplicationException::forbidden(
+                'Managing policies requires an authenticated actor.',
+            );
+        }
+
+        return $actor;
+    }
+
+    /**
+     * @return list<Policy>
+     */
+    private function subjectPolicies(Subject $subject): array
+    {
+        $policies = [];
+
+        foreach ($this->assignments->policyIdsForSubject($subject)->unique() as $policyId) {
+            $policy = $this->policies->find((int) $policyId);
+
+            if ($policy instanceof Policy) {
+                $policies[] = $policy;
+            }
+        }
+
+        return $policies;
     }
 }

@@ -155,6 +155,11 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
     {
         $this->require($id);
         $this->assertNumericField($field);
+        // Инкремент — такая же запись в поле, как create/update/replace:
+        // incrementField() идёт сырым UPDATE мимо пайплайна, поэтому полевой
+        // ACL здесь приходится требовать явно, иначе запрет на поле обходится
+        // прибавлением нуля.
+        $this->assertActorMayWrite([$field => $delta]);
 
         $this->records->incrementField($id, $field, $delta);
 
@@ -367,8 +372,11 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
      * охранял поля через RecordReadProfileResolver/RecordWriteAccessService, а
      * плагин, обслуживая запрос того же пользователя, читал и писал всё.
      *
-     * Актора нет — системный контекст (консоль, джобы, lifecycle-хуки): плагин
-     * работает со своими данными от своего имени, фильтрация не применяется.
+     * Актора нет — фильтрация не применяется: плагин работает со своими данными
+     * от своего имени. Это не только консоль, джобы и lifecycle-хуки: в ту же
+     * ветку попадает ЛЮБОЙ запрос без аутентификации, включая публичную зону
+     * маршрутов плагина (ZoneKind::API даёт middleware ['api'], без auth). То
+     * есть на публичном эндпоинте плагин сам отвечает за то, что отдаёт.
      * Актор есть — те же правила видимости/записи, что и на пути ядра.
      *
      * ВАЖНО: update() мержит partial с НЕфильтрованным текущим data_json —

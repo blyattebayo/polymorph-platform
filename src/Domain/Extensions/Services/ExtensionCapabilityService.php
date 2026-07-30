@@ -16,23 +16,6 @@ final class ExtensionCapabilityService
         private readonly AccessControlAdministration $adminService,
     ) {}
 
-    public function ensureDefaultPolicies(DiscoveredExtension $plugin): void
-    {
-        foreach ($plugin->capabilityDefinitions as $definition) {
-            $this->adminService->ensurePolicy([
-                'resource_pattern' => $definition->resource,
-                'action' => $definition->action,
-                'effect' => CapabilityCatalog::EFFECT_ALLOW,
-                'priority' => 100,
-                'is_active' => true,
-                'metadata' => [
-                    'source' => 'plugin',
-                    'plugin_id' => $plugin->id,
-                ],
-            ]);
-        }
-    }
-
     public function assignDefaultPluginAdminPolicy(DiscoveredExtension $plugin): void
     {
         // Дефолтная админ-капабилити зоны ADMIN_API: ей защищаются маршруты,

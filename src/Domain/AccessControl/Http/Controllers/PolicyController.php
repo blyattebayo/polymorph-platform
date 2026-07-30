@@ -69,6 +69,9 @@ final class PolicyController extends Controller
             (string) $validated['resource_pattern'],
             (string) $validated['action'],
         );
+        // Правка бьёт по всем, кому политика уже назначена: сменив effect на
+        // deny, её можно было превратить в оружие против привилегированных.
+        $this->scopeAuthority->assertCanRewritePolicyForSubjects($policyId);
 
         $policy = $this->adminService->updatePolicy($policyId, $validated);
 
@@ -78,6 +81,9 @@ final class PolicyController extends Controller
     public function destroy(int $policyId): Response
     {
         $this->scopeAuthority->assertCanManagePolicies([$policyId]);
+        // Удаление снимает политику со всех её субъектов — для allow это
+        // урезание доступа.
+        $this->scopeAuthority->assertCanRewritePolicyForSubjects($policyId);
 
         $this->adminService->deletePolicy($policyId);
 
@@ -91,12 +97,14 @@ final class PolicyController extends Controller
 
     public function assign(AssignPolicyRequest $request, int $policyId): JsonResponse
     {
-        $this->scopeAuthority->assertCanManagePolicies([$policyId]);
+        $subject = Subject::fromString((string) $request->validated()['subject']);
 
-        $assignment = $this->adminService->assign(
-            $policyId,
-            Subject::fromString((string) $request->validated()['subject']),
-        );
+        $this->scopeAuthority->assertCanManagePolicies([$policyId]);
+        // Проверка скоупа не знает, КОМУ вешают политику: без этого deny в
+        // пределах своих прав навешивался на role:system.admin.
+        $this->scopeAuthority->assertCanAssignPolicy($policyId, $subject);
+
+        $assignment = $this->adminService->assign($policyId, $subject);
 
         return AdminResponse::json(['data' => AssignmentResource::make($assignment)->toArray($request)], 201);
     }
@@ -104,8 +112,10 @@ final class PolicyController extends Controller
     public function unassign(int $policyId, int $assignmentId): Response
     {
         // Снятие тоже в пределах собственных прав: иначе policy.assign мог бы
-        // снять wildcard с role:system.admin и обезглавить админов.
+        // снять wildcard с role:system.admin и обезглавить админов. Узкую
+        // политику у привилегированного субъекта отбирала проверка субъекта.
         $this->scopeAuthority->assertCanManagePolicies([$policyId]);
+        $this->scopeAuthority->assertCanUnassignPolicy($assignmentId);
 
         $this->adminService->unassign($policyId, $assignmentId);
 

@@ -6,13 +6,12 @@ use Illuminate\Support\Facades\Route;
 use Polymorph\Platform\Domain\EntryView\Http\Controllers\EntryViewController;
 use Polymorph\Platform\Domain\RecordDefinitions\Http\Controllers\RecordDefinitionController;
 use Polymorph\Platform\Domain\SchemaModel\Access\SchemaCapabilities;
-use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 
 /**
  * Определения записей и конфигурация формы записи.
  *
  * Чтение доступно любому аутентифицированному: без определений админ-SPA не
- * нарисует ни одного экрана. Правка — только SchemaCapabilities::RESOURCE, CapabilityCatalog::ACTION_MANAGE.
+ * нарисует ни одного экрана. Правка — только по schema/manage.
  */
 Route::prefix('record-definitions')
     ->name('record-definitions.')

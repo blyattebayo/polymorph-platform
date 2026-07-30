@@ -23,6 +23,7 @@ use Polymorph\Platform\Domain\SchemaModel\Pipeline\Commands\SaveSchemaWithFields
 use Polymorph\Platform\Domain\SchemaModel\Pipeline\Handlers\BulkDeleteSchemasHandler;
 use Polymorph\Platform\Domain\SchemaModel\Pipeline\Handlers\DeleteSchemaHandler;
 use Polymorph\Platform\Domain\SchemaModel\Pipeline\Handlers\SaveSchemaWithFieldsHandler;
+use Polymorph\Platform\Domain\SchemaModel\Services\SchemaFieldVisibility;
 use Polymorph\Platform\Http\Pagination\V2\PaginatedJsonResponse;
 use Polymorph\Platform\Infrastructure\Pagination\V2\LaravelPaginatorAdapter;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwnershipService;
@@ -43,6 +44,7 @@ final class SchemaController extends Controller
         private readonly SchemaRepository $repository,
         private readonly LaravelPaginatorAdapter $paginatorAdapter,
         private readonly ResourceOwnershipService $ownershipService,
+        private readonly SchemaFieldVisibility $fieldVisibility,
     ) {}
 
     /**
@@ -77,7 +79,7 @@ final class SchemaController extends Controller
         ));
         $this->requireOwnership($schema);
 
-        return (new SchemaResource($schema->load('fields')))
+        return (new SchemaResource($this->withVisibleFields($schema)))
             ->response()
             ->setStatusCode(201);
     }
@@ -120,7 +122,9 @@ final class SchemaController extends Controller
 
         return response()->json([
             'schema' => new SchemaResource($schema),
-            'fields' => FieldTreeResource::collection($rootFields),
+            'fields' => FieldTreeResource::collection(
+                $this->fieldVisibility->filterTree((int) $schema->id, $rootFields),
+            ),
         ]);
     }
 
@@ -149,7 +153,7 @@ final class SchemaController extends Controller
         ));
         $this->requireOwnership($schema);
 
-        return new SchemaResource($schema->load('fields'));
+        return new SchemaResource($this->withVisibleFields($schema));
     }
 
     /**
@@ -205,5 +209,20 @@ final class SchemaController extends Controller
     private function requireOwnership(SchemaModel $schema): void
     {
         $this->ownershipService->require(ResourceType::SCHEMA, (int) $schema->id);
+    }
+
+    /**
+     * Схема с полями, закрытыми от актора: право на поле решает и судьбу его
+     * описания, а не только значения в data_json.
+     */
+    private function withVisibleFields(SchemaModel $schema): SchemaModel
+    {
+        $schema->load('fields');
+        $schema->setRelation(
+            'fields',
+            $this->fieldVisibility->filterFields((int) $schema->id, $schema->fields),
+        );
+
+        return $schema;
     }
 }

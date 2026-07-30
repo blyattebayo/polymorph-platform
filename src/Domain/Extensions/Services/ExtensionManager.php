@@ -66,7 +66,6 @@ final class ExtensionManager
                 // Для PostgreSQL enable должен быть атомарным целиком:
                 // миграции (DDL), ACL и lifecycle hook откатываются вместе.
                 $this->migrationService->runMigrations($plugin);
-                $this->capabilityService->ensureDefaultPolicies($plugin);
                 $this->capabilityService->assignDefaultPluginAdminPolicy($plugin);
                 $this->capabilityService->ensurePluginRoles($plugin);
 
@@ -140,7 +139,6 @@ final class ExtensionManager
                 $warning = $this->compatibilityService->coreVersionIssue($plugin);
                 $this->migrationService->runMigrations($plugin);
                 $this->routeService->validate($plugin);
-                $this->capabilityService->ensureDefaultPolicies($plugin);
                 $this->capabilityService->assignDefaultPluginAdminPolicy($plugin);
                 $this->capabilityService->ensurePluginRoles($plugin);
                 $this->registryService->syncDiscoveredPlugins([$plugin]);

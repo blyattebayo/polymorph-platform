@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Roles\Services;
 
 use Polymorph\Platform\Domain\AccessControl\Access\BuiltInRoleCatalog;
+use Polymorph\Platform\Domain\AccessControl\Services\PolicyScopeAuthority;
 use Polymorph\Platform\Domain\Roles\Core\Contracts\RoleAssignmentRepository;
 use Polymorph\Platform\Domain\Roles\Core\Contracts\RoleRepository;
 use Polymorph\Platform\Domain\Roles\Core\Contracts\UserRoleAssignmentGuard;
@@ -23,6 +24,7 @@ final class RoleAssignmentUserRoleManager implements UserRoleManager
         private readonly RoleAssignmentRepository $roleAssignments,
         private readonly RoleRepository $roles,
         private readonly PrivilegedUserMembership $privilegedUserMembership,
+        private readonly PolicyScopeAuthority $policyScope,
     ) {}
 
     public function assertAssignable(array $roleIds): void
@@ -35,30 +37,50 @@ final class RoleAssignmentUserRoleManager implements UserRoleManager
     }
 
     /**
-     * Правило проверяется по ДИФФУ членства в system.admin, а не по составу
-     * запроса: обычный users.manager может пересобирать любые роли пользователя,
-     * пока не трогает админскую. До этого guard'а выдать system.admin мог любой
-     * носитель user.lifecycle — эскалация привилегий одним запросом.
+     * Правило проверяется по ДИФФУ ролей, а не по составу запроса: неизменяемая
+     * часть набора может быть шире прав актора (её выдал кто-то привилегированнее),
+     * и это не повод запрещать актору менять свою часть.
+     *
+     * Для изменяемых ролей действуют два ограничения. Членство в system.admin
+     * меняет только действующий системный админ. Любая другая роль — контейнер
+     * политик, поэтому выдать её вправе лишь тот, кто сам покрывает каждую из
+     * них: иначе носитель user/manage выдавал себе plugins.manager или
+     * access.policy_manager и одним запросом получал права, которых у него нет.
      */
     public function assertRoleChangeAllowed(UserIdentity $actor, ?int $targetUserId, array $requestedRoleIds): void
+    {
+        $requested = array_values(array_unique(
+            array_map(static fn (mixed $id): int => (int) $id, $requestedRoleIds),
+        ));
+        $current = $targetUserId === null ? [] : $this->roleAssignments->roleIdsForUser($targetUserId);
+
+        $changed = array_values(array_unique([
+            ...array_diff($requested, $current),
+            ...array_diff($current, $requested),
+        ]));
+
+        if ($changed === []) {
+            return;
+        }
+
+        $this->assertAdminRoleChangeAllowed($actor, $changed);
+
+        foreach ($this->roles->codesByIds($changed) as $roleCode) {
+            $this->policyScope->assertCanManageRolePolicies($roleCode);
+        }
+    }
+
+    /**
+     * @param  list<int>  $changedRoleIds
+     */
+    private function assertAdminRoleChangeAllowed(UserIdentity $actor, array $changedRoleIds): void
     {
         $adminRole = $this->roles->findByCode(BuiltInRoleCatalog::ROLE_SYSTEM_ADMIN);
         if (! $adminRole instanceof Role) {
             return;
         }
 
-        $adminRoleId = (int) $adminRole->id;
-
-        $requestedHasAdmin = in_array(
-            $adminRoleId,
-            array_map(static fn (mixed $id): int => (int) $id, $requestedRoleIds),
-            true,
-        );
-
-        $targetHasAdmin = $targetUserId !== null
-            && in_array($adminRoleId, $this->roleAssignments->roleIdsForUser($targetUserId), true);
-
-        if ($requestedHasAdmin === $targetHasAdmin) {
+        if (! in_array((int) $adminRole->id, $changedRoleIds, true)) {
             return;
         }
 

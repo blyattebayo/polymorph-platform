@@ -33,6 +33,7 @@ use Polymorph\Platform\Domain\AccessControl\Services\PolicyCompiler;
 use Polymorph\Platform\Domain\AccessControl\Services\PolicyRuntimeAccessGate;
 use Polymorph\Platform\Domain\AccessControl\Services\RoleAwareAccessSubjectProvider;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
+use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 
 final class AccessControlServiceProvider extends ServiceProvider
 {
@@ -69,7 +70,7 @@ final class AccessControlServiceProvider extends ServiceProvider
             /** @var iterable<CapabilityDefinitionProvider> $providers */
             $providers = $app->tagged('access.capability_providers');
 
-            return new CapabilityRegistry($providers);
+            return new CapabilityRegistry($providers, $app->make(AppLogger::class));
         });
     }
 

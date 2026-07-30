@@ -7,9 +7,7 @@ namespace Polymorph\Platform\Domain\Records\Services;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionRepository;
 use Polymorph\Platform\Domain\Records\Core\Models\Record;
 use Polymorph\Platform\Domain\Records\Support\RecordSchemaResolver;
-use Polymorph\Platform\Domain\SchemaModel\Access\SchemaFieldResources;
 use Polymorph\Platform\Domain\SchemaModel\Services\FieldAccessService;
-use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
@@ -18,7 +16,6 @@ final class RecordReadProfileResolver
     public function __construct(
         private readonly RecordDefinitionRepository $recordDefinitionRepository,
         private readonly FieldAccessService $fieldAccessService,
-        private readonly AccessGate $gate,
     ) {}
 
     public function forDefinition(?UserIdentity $actor, int $recordDefinitionId, string $action = CapabilityCatalog::ACTION_READ): RecordReadProfile
@@ -48,11 +45,20 @@ final class RecordReadProfileResolver
             return new RecordReadProfile($schemaId, [], false);
         }
 
-        // Тот же формат ресурса, что у FieldAccessService, — из одного источника:
-        // молчаливое расхождение строк здесь означало бы «видно всё».
-        if ($this->gate->allows($actor, SchemaFieldResources::root($schemaId), $action)) {
+        // Схема без описанных полей: полевых политик к ней не существует,
+        // фильтровать не по чему. Пустой список видимых путей означал бы
+        // «срезать все данные», а не «ничего не скрыто».
+        if ($this->fieldAccessService->schemaFieldPaths($schemaId) === []) {
             return new RecordReadProfile($schemaId, [], true);
         }
+
+        // Дальше фильтруем ВСЕГДА, поштучным перебором полей. Раньше здесь
+        // спрашивался корень schema.{id}.fields, и при allow профиль объявлял
+        // «видно всё». Матчер dot-prefix считает совпадением только сам паттерн
+        // и его поддерево, поэтому deny на schema.{id}.fields.{path} вопросом о
+        // корне не матчился вовсе — любой грант schema/read (а его несут базовые
+        // роли каждого пользователя) отменял все поштучные запреты, и HTTP-путь
+        // ядра расходился с SDK-путём, который всегда перебирает поля.
 
         return new RecordReadProfile($schemaId, $this->fieldAccessService->visibleFieldPaths($actor, $schemaId, $action), false);
     }

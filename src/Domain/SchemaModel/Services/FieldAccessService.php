@@ -20,6 +20,11 @@ final class FieldAccessService
     private array $visibleFieldPathsCache = [];
 
     /**
+     * @var array<string, list<string>>
+     */
+    private array $allowedFieldPathsCache = [];
+
+    /**
      * @var array<int, list<string>>
      */
     private array $schemaFieldPathsCache = [];
@@ -55,11 +60,31 @@ final class FieldAccessService
     }
 
     /**
-     * @return string[]
+     * Доступно ли актору конкретное поле схемы.
+     *
+     * Отвечает по тому же батчу, что и дерево видимости, поэтому проверка
+     * каждого поля схемы по очереди стоит один запрос к гейту, а не N.
+     * Fail-closed: нет актора — не видно ничего.
      */
-    private function computeVisibleFieldPaths(UserIdentity $user, int $schemaId, string $action): array
+    public function isFieldReadable(?UserIdentity $user, int $schemaId, string $fullPath, string $action = CapabilityCatalog::ACTION_READ): bool
     {
-        $fieldPaths = $this->schemaFieldPathsCache[$schemaId] ??= Field::query()
+        $normalizedAction = trim($action);
+        $fieldPath = trim($fullPath);
+        if ($user === null || $schemaId <= 0 || $fieldPath === '' || $normalizedAction === '') {
+            return false;
+        }
+
+        return in_array($fieldPath, $this->allowedFieldPaths($user, $schemaId, $normalizedAction), true);
+    }
+
+    /**
+     * Полный список путей полей схемы, без учёта прав.
+     *
+     * @return list<string>
+     */
+    public function schemaFieldPaths(int $schemaId): array
+    {
+        return $this->schemaFieldPathsCache[$schemaId] ??= Field::query()
             ->where('schema_id', $schemaId)
             ->orderByRaw('LENGTH(full_path), full_path')
             ->pluck('full_path')
@@ -67,28 +92,53 @@ final class FieldAccessService
             ->filter(static fn (string $path): bool => $path !== '')
             ->values()
             ->all();
+    }
 
-        if ($fieldPaths === []) {
-            return [];
-        }
-
-        $checks = array_map(
-            fn (string $path): AccessCheck => new AccessCheck($this->resourcePath($schemaId, $path), $action),
-            $fieldPaths,
-        );
-        $allowed = $this->gate->allowsEach($user, $checks);
-
-        $visible = [];
-        foreach ($fieldPaths as $index => $path) {
-            if ($allowed[$index] ?? false) {
-                $visible[] = $path;
-            }
-        }
+    /**
+     * @return string[]
+     */
+    private function computeVisibleFieldPaths(UserIdentity $user, int $schemaId, string $action): array
+    {
+        $visible = $this->allowedFieldPaths($user, $schemaId, $action);
 
         return array_values(array_filter(
             $visible,
             static fn (string $path): bool => ! self::hasVisibleDescendant($path, $visible)
         ));
+    }
+
+    /**
+     * Разрешённые актору пути БЕЗ схлопывания поддеревьев: на этом списке
+     * отвечает isFieldReadable(), а после схлопывания — дерево видимости.
+     *
+     * @return list<string>
+     */
+    private function allowedFieldPaths(UserIdentity $user, int $schemaId, string $action): array
+    {
+        $cacheKey = $user->userId().':'.$schemaId.':'.$action;
+
+        return $this->allowedFieldPathsCache[$cacheKey] ??= (function () use ($user, $schemaId, $action): array {
+            $fieldPaths = $this->schemaFieldPaths($schemaId);
+
+            if ($fieldPaths === []) {
+                return [];
+            }
+
+            $checks = array_map(
+                fn (string $path): AccessCheck => new AccessCheck($this->resourcePath($schemaId, $path), $action),
+                $fieldPaths,
+            );
+            $allowed = $this->gate->allowsEach($user, $checks);
+
+            $result = [];
+            foreach ($fieldPaths as $index => $path) {
+                if ($allowed[$index] ?? false) {
+                    $result[] = $path;
+                }
+            }
+
+            return $result;
+        })();
     }
 
     /**

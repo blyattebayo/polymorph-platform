@@ -34,6 +34,7 @@ use Polymorph\Platform\Domain\SchemaModel\Services\ConstraintManager;
 use Polymorph\Platform\Domain\SchemaModel\Services\FieldAccessService;
 use Polymorph\Platform\Domain\SchemaModel\Services\FieldMutationService;
 use Polymorph\Platform\Domain\SchemaModel\Services\FieldPathCalculator;
+use Polymorph\Platform\Domain\SchemaModel\Services\SchemaFieldVisibility;
 use Polymorph\Platform\Domain\SchemaModel\Services\SchemaViewRebuildScheduler;
 
 /**
@@ -52,6 +53,7 @@ class SchemaServiceProvider extends ServiceProvider
         // жить ровно один запрос (singleton протухал бы под Octane, transient
         // фрагментировал бы кэш по потребителям).
         $this->app->scoped(FieldAccessService::class);
+        $this->app->scoped(SchemaFieldVisibility::class);
 
         // Repository bindings
         $this->app->singleton(SchemaRepository::class, EloquentSchemaRepository::class);

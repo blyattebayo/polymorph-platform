@@ -7,6 +7,7 @@ namespace Polymorph\Platform\Domain\AccessControl\Services;
 use InvalidArgumentException;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\CapabilityDefinitionProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\CapabilityDefinition;
+use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 
 final class CapabilityRegistry
 {
@@ -16,10 +17,16 @@ final class CapabilityRegistry
     private ?array $memoizedDefinitions = null;
 
     /**
+     * @var array<string, true>
+     */
+    private array $duplicateKeys = [];
+
+    /**
      * @param  iterable<CapabilityDefinitionProvider>  $providers
      */
     public function __construct(
         private readonly iterable $providers,
+        private readonly AppLogger $logger,
     ) {}
 
     /**
@@ -47,8 +54,22 @@ final class CapabilityRegistry
         foreach ($this->providers as $provider) {
             foreach ($provider->capabilities() as $definition) {
                 $key = $definition->key();
+
+                // Дубль НЕ роняет каталог: он собирается на горячем пути
+                // (/auth/current и логин), а один из его источников —
+                // манифесты включённых расширений. Раньше плагин с задвоенной
+                // парой resource+action проходил установку и закрывал вход в
+                // админку всем пользователям. Побеждает первое определение,
+                // повтор уходит в лог; отвергать дубли — дело установки
+                // расширения и генератора FE-каталога, где падать полезно.
                 if (isset($seen[$key])) {
-                    throw new InvalidArgumentException("Duplicate capability definition: {$key}.");
+                    $this->duplicateKeys[$key] = true;
+                    $this->logger->warning('access.duplicate_capability_definition', [
+                        'capability' => $key,
+                        'provider' => $provider::class,
+                    ]);
+
+                    continue;
                 }
 
                 $seen[$key] = true;
@@ -57,6 +78,18 @@ final class CapabilityRegistry
         }
 
         return $definitions;
+    }
+
+    /**
+     * Ключи, объявленные более одного раза при последней сборке каталога.
+     *
+     * @return list<string>
+     */
+    public function duplicateCapabilityKeys(): array
+    {
+        $this->capabilityDefinitions();
+
+        return array_keys($this->duplicateKeys);
     }
 
     /**
@@ -83,8 +116,31 @@ final class CapabilityRegistry
             }
         }
 
+        $known = [];
+        foreach ($this->capabilityDefinitions() as $definition) {
+            $known[$definition->key()] = true;
+        }
+
         foreach ($merged as $roleCode => $capabilityKeys) {
-            $merged[$roleCode] = array_values(array_unique($capabilityKeys));
+            $unique = array_values(array_unique($capabilityKeys));
+
+            // Состав роли задаётся строковыми ключами, а набор capability —
+            // типизированным DSL, и синхронность двух списков ничем не держится.
+            // Раньше разошедшийся ключ (опечатка в действии, забытый tag()
+            // провайдера) сидер молча пропускал, и роль оставалась пустой: ни
+            // исключения, ни лога, а на проде «пользователю ничего не видно».
+            // Метод зовут только сидеры и консоль — падать здесь безопасно.
+            foreach ($unique as $capabilityKey) {
+                if (! isset($known[$capabilityKey])) {
+                    throw new InvalidArgumentException(sprintf(
+                        'Role "%s" is assigned an unknown capability "%s".',
+                        $roleCode,
+                        $capabilityKey,
+                    ));
+                }
+            }
+
+            $merged[$roleCode] = $unique;
         }
 
         return $merged;
