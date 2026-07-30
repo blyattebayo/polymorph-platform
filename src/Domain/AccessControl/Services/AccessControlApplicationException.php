@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Services;
 
+use Polymorph\Platform\SharedKernel\Contracts\DomainErrorDescriptor;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
+use Polymorph\Platform\Support\Errors\ConvertsToErrorPayload;
 use Polymorph\Platform\Support\Errors\ErrorCode;
-use Polymorph\Platform\Support\Errors\ErrorFactory;
-use Polymorph\Platform\Support\Errors\ErrorPayload;
 use RuntimeException;
 
-final class AccessControlApplicationException extends RuntimeException implements ErrorConvertible
+final class AccessControlApplicationException extends RuntimeException implements DomainErrorDescriptor, ErrorConvertible
 {
+    use ConvertsToErrorPayload;
+
     private function __construct(string $message, private readonly string $kind)
     {
         parent::__construct($message);
@@ -32,14 +34,20 @@ final class AccessControlApplicationException extends RuntimeException implement
         return new self($message, 'conflict');
     }
 
-    public function toError(ErrorFactory $factory): ErrorPayload
+    public function errorCode(): ErrorCode
     {
-        $code = match ($this->kind) {
+        return match ($this->kind) {
             'not_found' => ErrorCode::NOT_FOUND,
             'conflict' => ErrorCode::CONFLICT,
             default => ErrorCode::VALIDATION_ERROR,
         };
+    }
 
-        return $factory->for($code)->detail($this->getMessage())->build();
+    /**
+     * @return array<string, mixed>
+     */
+    public function errorMeta(): array
+    {
+        return [];
     }
 }

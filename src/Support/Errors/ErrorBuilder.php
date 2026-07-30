@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Support\Errors;
 
-use InvalidArgumentException;
-
+/**
+ * Накопитель полей будущего ErrorPayload.
+ *
+ * Инварианты (диапазон статуса, непустые строки, форма meta) проверяет только
+ * конструктор ErrorPayload — единственная точка, через которую проходит каждый
+ * payload. Раньше те же ассерты жили ещё и здесь, и копии уже разошлись:
+ * билдер браковал meta-ключ из пробелов, payload — только пустую строку.
+ */
 final class ErrorBuilder
 {
     /**
@@ -49,27 +55,8 @@ final class ErrorBuilder
 
     public function status(int $status): self
     {
-        if ($status < 100 || $status > 599) {
-            throw new InvalidArgumentException(sprintf(
-                'Status code must be a valid HTTP status (100-599). %d given.',
-                $status,
-            ));
-        }
-
         $clone = clone $this;
         $clone->status = $status;
-
-        return $clone;
-    }
-
-    public function type(string $uri): self
-    {
-        if (trim($uri) === '') {
-            throw new InvalidArgumentException('Error type URI cannot be empty.');
-        }
-
-        $clone = clone $this;
-        $clone->uri = $uri;
 
         return $clone;
     }
@@ -79,8 +66,6 @@ final class ErrorBuilder
      */
     public function meta(array $meta): self
     {
-        $this->assertMeta($meta);
-
         $clone = clone $this;
         $clone->meta = $meta;
 
@@ -89,24 +74,8 @@ final class ErrorBuilder
 
     public function addMeta(string $key, mixed $value): self
     {
-        if ($key === '' || trim($key) === '') {
-            throw new InvalidArgumentException('Meta key cannot be empty.');
-        }
-
         $clone = clone $this;
         $clone->meta[$key] = $value;
-
-        return $clone;
-    }
-
-    public function traceId(?string $traceId): self
-    {
-        if ($traceId !== null && trim($traceId) === '') {
-            $traceId = null;
-        }
-
-        $clone = clone $this;
-        $clone->traceId = $traceId;
 
         return $clone;
     }
@@ -122,21 +91,5 @@ final class ErrorBuilder
             meta: $this->meta,
             traceId: $this->traceId,
         );
-    }
-
-    /**
-     * @param  array<string, mixed>  $meta
-     */
-    private function assertMeta(array $meta): void
-    {
-        foreach ($meta as $key => $value) {
-            if (! is_string($key) || trim($key) === '') {
-                throw new InvalidArgumentException('Meta keys must be non-empty strings.');
-            }
-
-            if (is_resource($value)) {
-                throw new InvalidArgumentException(sprintf('Meta value for key "%s" cannot be a resource.', $key));
-            }
-        }
     }
 }

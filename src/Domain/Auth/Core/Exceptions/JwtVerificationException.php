@@ -4,17 +4,19 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Core\Exceptions;
 
+use Polymorph\Platform\SharedKernel\Contracts\DomainErrorDescriptor;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
+use Polymorph\Platform\Support\Errors\ConvertsToErrorPayload;
 use Polymorph\Platform\Support\Errors\ErrorCode;
-use Polymorph\Platform\Support\Errors\ErrorFactory;
-use Polymorph\Platform\Support\Errors\ErrorPayload;
 use RuntimeException;
 
 /**
  * Исключение: ошибка верификации JWT токена.
  */
-class JwtVerificationException extends RuntimeException implements ErrorConvertible
+class JwtVerificationException extends RuntimeException implements DomainErrorDescriptor, ErrorConvertible
 {
+    use ConvertsToErrorPayload;
+
     public function __construct(
         string $message,
         public readonly string $reason
@@ -61,14 +63,21 @@ class JwtVerificationException extends RuntimeException implements ErrorConverti
         );
     }
 
-    /**
-     * Конвертировать в ErrorPayload для API.
-     */
-    public function toError(ErrorFactory $factory): ErrorPayload
+    public function errorCode(): ErrorCode
     {
-        return $factory->for(ErrorCode::UNAUTHORIZED)
-            ->detail('Invalid or malformed authentication token')
-            ->meta(['reason' => $this->reason])
-            ->build();
+        return ErrorCode::UNAUTHORIZED;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function errorMeta(): array
+    {
+        return ['reason' => $this->reason];
+    }
+
+    protected function errorDetail(): string
+    {
+        return 'Invalid or malformed authentication token';
     }
 }

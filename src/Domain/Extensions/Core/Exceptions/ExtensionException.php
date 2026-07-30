@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Core\Exceptions;
 
+use Polymorph\Platform\SharedKernel\Contracts\DomainErrorDescriptor;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
+use Polymorph\Platform\Support\Errors\ConvertsToErrorPayload;
 use Polymorph\Platform\Support\Errors\ErrorCode;
-use Polymorph\Platform\Support\Errors\ErrorFactory;
-use Polymorph\Platform\Support\Errors\ErrorPayload;
 use RuntimeException;
 
-final class ExtensionException extends RuntimeException implements ErrorConvertible
+final class ExtensionException extends RuntimeException implements DomainErrorDescriptor, ErrorConvertible
 {
+    use ConvertsToErrorPayload;
+
     public function __construct(
         string $message,
         private readonly ErrorCode $errorCode = ErrorCode::INVALID_PLUGIN_MANIFEST,
@@ -25,11 +27,11 @@ final class ExtensionException extends RuntimeException implements ErrorConverti
         return $this->errorCode;
     }
 
-    public function toError(ErrorFactory $factory): ErrorPayload
+    /**
+     * @return array<string, mixed>
+     */
+    public function errorMeta(): array
     {
-        return $factory->for($this->errorCode)
-            ->detail($this->getMessage())
-            ->meta(['resource' => 'plugin'])
-            ->build();
+        return ['resource' => 'plugin'];
     }
 }

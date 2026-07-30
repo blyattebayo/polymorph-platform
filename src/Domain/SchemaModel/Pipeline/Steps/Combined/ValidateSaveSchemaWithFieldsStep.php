@@ -16,6 +16,7 @@ use Polymorph\Platform\Domain\SchemaModel\Pipeline\Data\UpdateFieldData;
 use Polymorph\Platform\PipelineCore\Runtime\AbstractStep;
 use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\StepResult;
+use Polymorph\Platform\SharedKernel\Contracts\DomainErrorDescriptor;
 use Polymorph\Platform\SharedKernel\SystemFields\SystemFieldNames;
 use Polymorph\Platform\Support\Validation\ValidationConstraints;
 
@@ -45,9 +46,21 @@ final class ValidateSaveSchemaWithFieldsStep extends AbstractStep
     public function run(PipelineContext $context): StepResult
     {
         /** @var SaveSchemaWithFieldsContext $context */
-        $schemaValidation = $this->validateSchemaPayload($context);
-        if ($schemaValidation !== null) {
-            return StepResult::failure($schemaValidation);
+        try {
+            $schemaValidation = $this->validateSchemaPayload($context);
+            if ($schemaValidation !== null) {
+                return StepResult::failure($schemaValidation);
+            }
+        } catch (DomainErrorDescriptor $e) {
+            // Занятый код схемы — конфликт, а не ошибка формата: несём его
+            // errorCode/meta в StepResult, иначе стадия VALIDATION схлопнула бы
+            // его в общий 422 (см. PipelineDomainFailureHttpMapper).
+            return StepResult::failure(
+                error: $e->getMessage(),
+                metadata: $e->errorMeta(),
+                errorCode: $e->errorCode(),
+                cause: $e,
+            );
         }
 
         $upsertValidation = $this->validateUpsertItems($context);
@@ -63,6 +76,9 @@ final class ValidateSaveSchemaWithFieldsStep extends AbstractStep
         return StepResult::success();
     }
 
+    /**
+     * @throws DuplicateSchemaCodeException код схемы уже занят (409)
+     */
     private function validateSchemaPayload(SaveSchemaWithFieldsContext $context): ?string
     {
         $schema = $context->existingSchema;
@@ -79,7 +95,7 @@ final class ValidateSaveSchemaWithFieldsStep extends AbstractStep
             }
 
             if ($this->schemaRepository->codeExists($code)) {
-                return DuplicateSchemaCodeException::create($code)->getMessage();
+                throw DuplicateSchemaCodeException::create($code);
             }
 
             return null;
@@ -87,7 +103,7 @@ final class ValidateSaveSchemaWithFieldsStep extends AbstractStep
 
         if ($code !== '' && $code !== $schema->code) {
             if ($this->schemaRepository->codeExists($code, $schema->id)) {
-                return DuplicateSchemaCodeException::create($code)->getMessage();
+                throw DuplicateSchemaCodeException::create($code);
             }
         }
 

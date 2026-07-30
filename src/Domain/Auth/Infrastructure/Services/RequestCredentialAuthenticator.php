@@ -89,18 +89,19 @@ final class RequestCredentialAuthenticator
         $request->attributes->set(self::FAILURE_MESSAGE_ATTRIBUTE, self::failureMessage($reason));
     }
 
+    /**
+     * `WWW-Authenticate` и `Pragma: no-cache` здесь больше не перечисляются: они
+     * выводятся из статуса 401 в ErrorResponseFactory и потому приезжают со всеми
+     * 401 одинаково, включая те, что раньше их не получали.
+     */
     private function respondUnauthorized(string $reason): never
     {
-        $this->throwErrorWithHeaders(
+        $this->throwError(
             ErrorCode::UNAUTHORIZED,
             detail: null,
             meta: [
                 'reason' => $reason,
                 'message' => self::failureMessage($reason),
-            ],
-            headers: [
-                'WWW-Authenticate' => 'Bearer',
-                'Pragma' => 'no-cache',
             ],
         );
     }

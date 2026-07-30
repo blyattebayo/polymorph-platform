@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Core\Exceptions;
 
+use Polymorph\Platform\SharedKernel\Contracts\DomainErrorDescriptor;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
+use Polymorph\Platform\Support\Errors\ConvertsToErrorPayload;
 use Polymorph\Platform\Support\Errors\ErrorCode;
-use Polymorph\Platform\Support\Errors\ErrorFactory;
-use Polymorph\Platform\Support\Errors\ErrorPayload;
 use RuntimeException;
 use Throwable;
 
 /**
  * Исключение: ошибка работы с хранилищем медиа
  */
-class MediaStorageException extends RuntimeException implements ErrorConvertible
+class MediaStorageException extends RuntimeException implements DomainErrorDescriptor, ErrorConvertible
 {
+    use ConvertsToErrorPayload;
+
     private ?string $disk = null;
 
     private ?string $path = null;
@@ -161,13 +163,31 @@ class MediaStorageException extends RuntimeException implements ErrorConvertible
     }
 
     /**
-     * Конвертировать в ErrorPayload для API
+     * Код выводится из операции: MEDIA_DOWNLOAD_ERROR — только про выдачу файла
+     * клиенту. Раньше он стоял на всех операциях, и сбой записи при загрузке или
+     * переполнение квоты приезжали клиенту и в лог как «Failed to download media».
      */
-    public function toError(ErrorFactory $factory): ErrorPayload
+    public function errorCode(): ErrorCode
     {
-        return $factory->for(ErrorCode::MEDIA_DOWNLOAD_ERROR)
-            ->detail('Failed to access media storage.')
-            ->meta(['operation' => $this->operation])
-            ->build();
+        return $this->operation === 'url_generation'
+            ? ErrorCode::MEDIA_DOWNLOAD_ERROR
+            : ErrorCode::MEDIA_STORAGE_ERROR;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function errorMeta(): array
+    {
+        return ['operation' => $this->operation];
+    }
+
+    protected function errorDetail(): string
+    {
+        // Сообщение исключения содержит диск и путь — это диагностика для лога,
+        // наружу идёт нейтральный текст.
+        return $this->operation === 'url_generation'
+            ? 'Failed to generate download URL.'
+            : 'Failed to access media storage.';
     }
 }

@@ -11,7 +11,9 @@ use Polymorph\Platform\PipelineCore\Runtime\StageResult;
 
 final class PipelineDomainFailureHttpMapper
 {
-    private ?ErrorFactory $cachedErrorFactory = null;
+    public function __construct(
+        private readonly ErrorFactory $factory,
+    ) {}
 
     public function map(PipelineDomainFailureException $exception): HttpErrorException
     {
@@ -20,7 +22,7 @@ final class PipelineDomainFailureHttpMapper
         $failedStep = $result->failedStageResult->failedStep;
 
         if ($failedStep?->errorCode instanceof ErrorCode) {
-            $builder = $this->errorFactory()->for($failedStep->errorCode)
+            $builder = $this->factory->for($failedStep->errorCode)
                 ->detail($detail)
                 ->meta($failedStep->metadata);
 
@@ -33,7 +35,7 @@ final class PipelineDomainFailureHttpMapper
 
         if ($result->failedStage === Stage::VALIDATION) {
             return new HttpErrorException(
-                $this->errorFactory()->for(ErrorCode::VALIDATION_ERROR)
+                $this->factory->for(ErrorCode::VALIDATION_ERROR)
                     ->detail($detail)
                     ->meta([
                         'reason' => 'pipeline_validation_failed',
@@ -44,7 +46,7 @@ final class PipelineDomainFailureHttpMapper
         }
 
         return new HttpErrorException(
-            $this->errorFactory()->for($result->failedStage->defaultErrorCode())
+            $this->factory->for($result->failedStage->defaultErrorCode())
                 ->detail($detail)
                 ->meta([
                     'reason' => 'pipeline_execution_failed',
@@ -90,11 +92,5 @@ final class PipelineDomainFailureHttpMapper
         }
 
         return [];
-    }
-
-    private function errorFactory(): ErrorFactory
-    {
-        // Единый общий ErrorFactory из контейнера, без пересборки из config.
-        return $this->cachedErrorFactory ??= app(ErrorFactory::class);
     }
 }

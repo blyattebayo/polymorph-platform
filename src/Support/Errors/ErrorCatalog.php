@@ -65,16 +65,6 @@ final class ErrorCatalog
         return $this->types[$code->value];
     }
 
-    public function has(ErrorCode $code): bool
-    {
-        return isset($this->types[$code->value]);
-    }
-
-    public function all(): array
-    {
-        return $this->types;
-    }
-
     private static function codeFromString(string $code): ErrorCode
     {
         return ErrorCode::from($code);

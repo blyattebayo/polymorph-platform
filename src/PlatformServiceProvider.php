@@ -47,19 +47,6 @@ final class PlatformServiceProvider extends ServiceProvider
         Domain\Materialization\Providers\MaterializationServiceProvider::class,
     ];
 
-    /**
-     * Config files that live in the package's config/ directory but are NOT merged
-     * into the config repository.
-     *
-     * 'errors' stores exception-builder Closures as values, which are not
-     * var_export-serializable — merging it would make `php artisan config:cache` /
-     * `optimize` throw Closure::__set_state(). AppServiceProvider loads that file
-     * directly instead, so the app stays fully config-cacheable.
-     *
-     * @var array<int, string>
-     */
-    private const UNMERGED_CONFIGS = ['errors'];
-
     public function register(): void
     {
         $this->mergePlatformConfigs();
@@ -70,19 +57,19 @@ final class PlatformServiceProvider extends ServiceProvider
     }
 
     /**
-     * Merge every config file shipped in the package (config key = file basename),
-     * except the UNMERGED_CONFIGS exceptions. The 11 host-owned configs (app, auth,
-     * cache, cors, database, filesystems, logging, mail, queue, services, session)
-     * live in the host and are not present here.
+     * Merge every config file shipped in the package (config key = file basename).
+     * The 11 host-owned configs (app, auth, cache, cors, database, filesystems,
+     * logging, mail, queue, services, session) live in the host and are not here.
+     *
+     * There used to be an exception list: config/errors.php held exception-builder
+     * Closures, which are not var_export-serializable, so merging it broke
+     * `config:cache`. Those Closures became code (FrameworkErrorResolver,
+     * ErrorReportPolicy) and the file is plain data again — no exception needed.
      */
     private function mergePlatformConfigs(): void
     {
         foreach (glob(__DIR__.'/../config/*.php') ?: [] as $file) {
-            $key = basename($file, '.php');
-
-            if (! in_array($key, self::UNMERGED_CONFIGS, true)) {
-                $this->mergeConfigFrom($file, $key);
-            }
+            $this->mergeConfigFrom($file, basename($file, '.php'));
         }
     }
 

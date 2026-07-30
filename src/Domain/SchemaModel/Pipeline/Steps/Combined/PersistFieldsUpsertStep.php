@@ -12,6 +12,7 @@ use Polymorph\Platform\Domain\SchemaModel\Pipeline\Data\UpdateFieldData;
 use Polymorph\Platform\PipelineCore\Runtime\AbstractStep;
 use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\StepResult;
+use Polymorph\Platform\SharedKernel\Contracts\DomainErrorDescriptor;
 
 final class PersistFieldsUpsertStep extends AbstractStep
 {
@@ -75,6 +76,17 @@ final class PersistFieldsUpsertStep extends AbstractStep
                 } else {
                     return StepResult::failure('Unsupported upsert payload item type');
                 }
+            } catch (DomainErrorDescriptor $e) {
+                // Доменный сбой с известным кодом: отдаём его через штатный канал
+                // пайплайна (rollback + атрибуция стадии), но с errorCode/meta,
+                // чтобы PipelineDomainFailureHttpMapper вернул 409 со структурным
+                // телом, а не общий 422 по мотивам getMessage().
+                return StepResult::failure(
+                    error: $e->getMessage(),
+                    metadata: $e->errorMeta(),
+                    errorCode: $e->errorCode(),
+                    cause: $e,
+                );
             } catch (\DomainException $e) {
                 return StepResult::failure($e->getMessage(), cause: $e);
             }

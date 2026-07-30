@@ -6,16 +6,18 @@ namespace Polymorph\Platform\Domain\Media\Core\Exceptions;
 
 use InvalidArgumentException;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
+use Polymorph\Platform\SharedKernel\Contracts\DomainErrorDescriptor;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
+use Polymorph\Platform\Support\Errors\ConvertsToErrorPayload;
 use Polymorph\Platform\Support\Errors\ErrorCode;
-use Polymorph\Platform\Support\Errors\ErrorFactory;
-use Polymorph\Platform\Support\Errors\ErrorPayload;
 
 /**
  * Исключение: недопустимый тип медиа
  */
-class InvalidMediaTypeException extends InvalidArgumentException implements ErrorConvertible
+class InvalidMediaTypeException extends InvalidArgumentException implements DomainErrorDescriptor, ErrorConvertible
 {
+    use ConvertsToErrorPayload;
+
     private ?string $mimeType = null;
 
     private ?string $expectedKind = null;
@@ -88,17 +90,19 @@ class InvalidMediaTypeException extends InvalidArgumentException implements Erro
         return $this->expectedKind;
     }
 
-    /**
-     * Конвертировать в ErrorPayload для API
-     */
-    public function toError(ErrorFactory $factory): ErrorPayload
+    public function errorCode(): ErrorCode
     {
-        return $factory->for(ErrorCode::VALIDATION_ERROR)
-            ->detail($this->getMessage())
-            ->meta([
-                'mime_type' => $this->mimeType,
-                'expected_kind' => $this->expectedKind,
-            ])
-            ->build();
+        return ErrorCode::VALIDATION_ERROR;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function errorMeta(): array
+    {
+        return [
+            'mime_type' => $this->mimeType,
+            'expected_kind' => $this->expectedKind,
+        ];
     }
 }

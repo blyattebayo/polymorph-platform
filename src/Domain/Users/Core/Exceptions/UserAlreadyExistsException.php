@@ -4,17 +4,19 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Users\Core\Exceptions;
 
+use Polymorph\Platform\SharedKernel\Contracts\DomainErrorDescriptor;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
+use Polymorph\Platform\Support\Errors\ConvertsToErrorPayload;
 use Polymorph\Platform\Support\Errors\ErrorCode;
-use Polymorph\Platform\Support\Errors\ErrorFactory;
-use Polymorph\Platform\Support\Errors\ErrorPayload;
 use RuntimeException;
 
 /**
  * Исключение: email адрес уже используется.
  */
-class UserAlreadyExistsException extends RuntimeException implements ErrorConvertible
+class UserAlreadyExistsException extends RuntimeException implements DomainErrorDescriptor, ErrorConvertible
 {
+    use ConvertsToErrorPayload;
+
     private ?string $email = null;
 
     /**
@@ -28,17 +30,19 @@ class UserAlreadyExistsException extends RuntimeException implements ErrorConver
         return $exception;
     }
 
-    /**
-     * Конвертировать в ErrorPayload для API.
-     */
-    public function toError(ErrorFactory $factory): ErrorPayload
+    public function errorCode(): ErrorCode
     {
-        return $factory->for(ErrorCode::CONFLICT)
-            ->detail($this->getMessage())
-            ->meta([
-                'resource' => 'user',
-                'email' => $this->email,
-            ])
-            ->build();
+        return ErrorCode::CONFLICT;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function errorMeta(): array
+    {
+        return [
+            'resource' => 'user',
+            'email' => $this->email,
+        ];
     }
 }

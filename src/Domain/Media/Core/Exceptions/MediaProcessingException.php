@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Core\Exceptions;
 
+use Polymorph\Platform\SharedKernel\Contracts\DomainErrorDescriptor;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
+use Polymorph\Platform\Support\Errors\ConvertsToErrorPayload;
 use Polymorph\Platform\Support\Errors\ErrorCode;
-use Polymorph\Platform\Support\Errors\ErrorFactory;
-use Polymorph\Platform\Support\Errors\ErrorPayload;
 use RuntimeException;
 use Throwable;
 
 /**
  * Исключение: ошибка обработки медиа-файла
  */
-class MediaProcessingException extends RuntimeException implements ErrorConvertible
+class MediaProcessingException extends RuntimeException implements DomainErrorDescriptor, ErrorConvertible
 {
+    use ConvertsToErrorPayload;
+
     private ?string $mediaId = null;
 
     private ?string $processingStage = null;
@@ -74,18 +76,20 @@ class MediaProcessingException extends RuntimeException implements ErrorConverti
         return $this->processingStage;
     }
 
-    /**
-     * Конвертировать в ErrorPayload для API
-     */
-    public function toError(ErrorFactory $factory): ErrorPayload
+    public function errorCode(): ErrorCode
     {
-        return $factory->for(ErrorCode::INTERNAL_SERVER_ERROR)
-            ->detail($this->getMessage())
-            ->meta([
-                'resource' => 'media',
-                'media_id' => $this->mediaId,
-                'processing_stage' => $this->processingStage,
-            ])
-            ->build();
+        return ErrorCode::INTERNAL_SERVER_ERROR;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function errorMeta(): array
+    {
+        return [
+            'resource' => 'media',
+            'media_id' => $this->mediaId,
+            'processing_stage' => $this->processingStage,
+        ];
     }
 }

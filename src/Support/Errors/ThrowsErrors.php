@@ -4,29 +4,22 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Support\Errors;
 
-use Illuminate\Http\JsonResponse;
-
 trait ThrowsErrors
 {
     private ?ErrorFactory $localErrorFactory = null;
 
     protected function errorFactory(): ErrorFactory
     {
-        // Единый общий ErrorFactory из контейнера (singleton поверх ErrorKernel),
-        // а не пересборка из config в каждом классе — единый источник каталога ошибок.
+        // Единый общий ErrorFactory из контейнера — единый источник каталога ошибок,
+        // а не пересборка из config в каждом классе.
         return $this->localErrorFactory ??= app(ErrorFactory::class);
     }
 
     /**
      * @param  array<string, mixed>  $meta
-     * @param  callable(JsonResponse):JsonResponse|null  $responseConfigurator
      */
-    protected function throwError(
-        ErrorCode $code,
-        ?string $detail = null,
-        array $meta = [],
-        ?callable $responseConfigurator = null,
-    ): never {
+    protected function throwError(ErrorCode $code, ?string $detail = null, array $meta = []): never
+    {
         $builder = $this->errorFactory()->for($code);
 
         if ($detail !== null) {
@@ -37,40 +30,21 @@ trait ThrowsErrors
             $builder = $builder->meta($meta);
         }
 
-        throw new HttpErrorException($builder->build(), $responseConfigurator);
+        throw new HttpErrorException($builder->build());
     }
 
     /**
-     * @param  array<string, mixed>  $meta
-     * @param  array<string, string>  $headers
-     */
-    protected function throwErrorWithHeaders(
-        ErrorCode $code,
-        ?string $detail = null,
-        array $meta = [],
-        array $headers = [],
-    ): never {
-        $configurator = $headers === []
-            ? null
-            : static function (JsonResponse $response) use ($headers): JsonResponse {
-                foreach ($headers as $name => $value) {
-                    $response->headers->set($name, $value);
-                }
-
-                return $response;
-            };
-
-        $this->throwError($code, $detail, $meta, $configurator);
-    }
-
-    /**
+     * Здесь был ещё throwErrorWithHeaders(): он собирал замыкание-донастройщик
+     * ответа, чтобы проставить заголовки. Единственным его потребителем был отказ
+     * аутентификации с `WWW-Authenticate` и `Pragma`, а эти два заголовка теперь
+     * выводятся из статуса 401 в {@see ErrorResponseFactory} — одинаково для всех
+     * путей, включая те, что раньше их теряли. Механизм стал не нужен.
+     *
      * @param  array<string, mixed>  $meta
      */
-    protected function unauthorized(?string $detail = null, array $meta = [], array $headers = []): never
+    protected function unauthorized(?string $detail = null, array $meta = []): never
     {
-        $headers = ['WWW-Authenticate' => 'Bearer', ...$headers];
-
-        $this->throwErrorWithHeaders(ErrorCode::UNAUTHORIZED, $detail, $meta, $headers);
+        $this->throwError(ErrorCode::UNAUTHORIZED, $detail, $meta);
     }
 
     /**

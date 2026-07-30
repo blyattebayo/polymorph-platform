@@ -8,7 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionRepository;
-use Polymorph\Platform\Domain\RecordDefinitions\Core\Exceptions\RecordDefinitionNotFoundErrorFactory;
+use Polymorph\Platform\Domain\RecordDefinitions\Core\Exceptions\RecordDefinitionNotFoundException;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use Polymorph\Platform\Domain\RecordDefinitions\Http\Requests\IndexRecordDefinitionsRequest;
 use Polymorph\Platform\Domain\RecordDefinitions\Http\Requests\StoreRecordDefinitionRequest;
@@ -26,7 +26,6 @@ use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
 use Polymorph\Platform\Infrastructure\Pagination\V2\LaravelPaginatorAdapter;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwnershipService;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceType;
-use Polymorph\Platform\Support\Errors\ErrorFactory;
 
 /**
  * Контроллер для управления типами записей (RecordDefinition) в админ-панели.
@@ -40,7 +39,6 @@ final class RecordDefinitionController extends Controller
         private readonly UpdateRecordDefinitionHandler $updateRecordDefinitionHandler,
         private readonly DeleteRecordDefinitionHandler $deleteRecordDefinitionHandler,
         private readonly RecordDefinitionRepository $repository,
-        private readonly ErrorFactory $errorFactory,
         private readonly LaravelPaginatorAdapter $paginatorAdapter,
         private readonly ResourceOwnershipService $ownershipService,
     ) {}
@@ -104,7 +102,7 @@ final class RecordDefinitionController extends Controller
     private function resolveRecordDefinition(int $id): RecordDefinition
     {
         return $this->repository->find($id)
-            ?? throw RecordDefinitionNotFoundErrorFactory::byId($this->errorFactory, $id);
+            ?? throw RecordDefinitionNotFoundException::byId($id);
     }
 
     private function serializeRecordDefinition(RecordDefinition $recordDefinition, IndexRecordDefinitionsRequest $request): array

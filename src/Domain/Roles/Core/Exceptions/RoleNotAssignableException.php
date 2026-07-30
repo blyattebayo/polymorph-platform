@@ -4,18 +4,25 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Roles\Core\Exceptions;
 
+use Polymorph\Platform\SharedKernel\Contracts\DomainErrorDescriptor;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
+use Polymorph\Platform\Support\Errors\ConvertsToErrorPayload;
 use Polymorph\Platform\Support\Errors\ErrorCode;
-use Polymorph\Platform\Support\Errors\ErrorFactory;
-use Polymorph\Platform\Support\Errors\ErrorPayload;
 
-final class RoleNotAssignableException extends \DomainException implements ErrorConvertible
+final class RoleNotAssignableException extends \DomainException implements DomainErrorDescriptor, ErrorConvertible
 {
-    public function toError(ErrorFactory $factory): ErrorPayload
+    use ConvertsToErrorPayload;
+
+    public function errorCode(): ErrorCode
     {
-        return $factory->for(ErrorCode::VALIDATION_ERROR)
-            ->detail($this->getMessage())
-            ->meta(['resource' => 'role'])
-            ->build();
+        return ErrorCode::VALIDATION_ERROR;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function errorMeta(): array
+    {
+        return ['resource' => 'role'];
     }
 }

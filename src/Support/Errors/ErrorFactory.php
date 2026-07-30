@@ -12,9 +12,4 @@ final class ErrorFactory
     {
         return new ErrorBuilder($this->catalog->get($code));
     }
-
-    public function catalog(): ErrorCatalog
-    {
-        return $this->catalog;
-    }
 }

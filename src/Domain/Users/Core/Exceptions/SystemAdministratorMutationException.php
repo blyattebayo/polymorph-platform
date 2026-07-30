@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Users\Core\Exceptions;
 
+use Polymorph\Platform\SharedKernel\Contracts\DomainErrorDescriptor;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
+use Polymorph\Platform\Support\Errors\ConvertsToErrorPayload;
 use Polymorph\Platform\Support\Errors\ErrorCode;
-use Polymorph\Platform\Support\Errors\ErrorFactory;
-use Polymorph\Platform\Support\Errors\ErrorPayload;
 
-final class SystemAdministratorMutationException extends \DomainException implements ErrorConvertible
+final class SystemAdministratorMutationException extends \DomainException implements DomainErrorDescriptor, ErrorConvertible
 {
+    use ConvertsToErrorPayload;
+
     private ?int $userId = null;
 
     public static function forUser(int $userId): self
@@ -21,14 +23,19 @@ final class SystemAdministratorMutationException extends \DomainException implem
         return $exception;
     }
 
-    public function toError(ErrorFactory $factory): ErrorPayload
+    public function errorCode(): ErrorCode
     {
-        return $factory->for(ErrorCode::CONFLICT)
-            ->detail($this->getMessage())
-            ->meta([
-                'resource' => 'user',
-                'user_id' => $this->userId,
-            ])
-            ->build();
+        return ErrorCode::CONFLICT;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function errorMeta(): array
+    {
+        return [
+            'resource' => 'user',
+            'user_id' => $this->userId,
+        ];
     }
 }

@@ -26,7 +26,9 @@ final class FieldMutationService implements FieldWriteService
     ) {}
 
     /**
-     * @throws \DomainException
+     * @throws DuplicateFieldPathException путь уже занят в схеме (409)
+     * @throws InvalidParentFieldException родитель не найден/чужой/не контейнер
+     * @throws \DomainException DSL валидации полей не прошёл
      */
     public function create(SchemaModel $schema, CreateFieldData $data): Field
     {
@@ -34,9 +36,7 @@ final class FieldMutationService implements FieldWriteService
 
         $fullPath = $this->pathCalculator->calculatePath($parent, $data->name);
         if ($this->fieldRepository->pathExists($schema, $fullPath)) {
-            throw new \DomainException(
-                DuplicateFieldPathException::create($fullPath->toString(), (string) $schema->code)->getMessage(),
-            );
+            throw DuplicateFieldPathException::create($fullPath->toString(), (string) $schema->code);
         }
 
         $dslResult = $this->dslValidator->validate(
@@ -71,7 +71,10 @@ final class FieldMutationService implements FieldWriteService
     }
 
     /**
-     * @throws \DomainException
+     * @throws DuplicateFieldPathException новый путь уже занят в схеме (409)
+     * @throws CircularDependencyException смена родителя создала бы цикл
+     * @throws InvalidParentFieldException родитель не найден/чужой/не контейнер
+     * @throws \DomainException DSL валидации полей не прошёл
      */
     public function update(SchemaModel $schema, Field $field, UpdateFieldData $data): Field
     {
@@ -86,9 +89,7 @@ final class FieldMutationService implements FieldWriteService
             $newParent = $this->resolveParentForUpdate($schema, $field, $newParentId);
             $newPath = $this->pathCalculator->calculatePath($newParent, $newName);
             if ($this->fieldRepository->pathExists($schema, $newPath, (int) $field->id)) {
-                throw new \DomainException(
-                    DuplicateFieldPathException::create($newPath->toString(), (string) $schema->code)->getMessage(),
-                );
+                throw DuplicateFieldPathException::create($newPath->toString(), (string) $schema->code);
             }
 
             $updateData['name'] = $newName;
@@ -156,7 +157,7 @@ final class FieldMutationService implements FieldWriteService
     }
 
     /**
-     * @throws \DomainException
+     * @throws InvalidParentFieldException
      */
     private function resolveParentForCreate(SchemaModel $schema, ?int $parentId): ?Field
     {
@@ -168,7 +169,8 @@ final class FieldMutationService implements FieldWriteService
     }
 
     /**
-     * @throws \DomainException
+     * @throws CircularDependencyException
+     * @throws InvalidParentFieldException
      */
     private function resolveParentForUpdate(SchemaModel $schema, Field $field, ?int $parentId): ?Field
     {
@@ -178,36 +180,32 @@ final class FieldMutationService implements FieldWriteService
 
         $parent = $this->resolveParentById($schema, $parentId);
         if ($this->pathCalculator->wouldCreateCircularDependency($field, $parent)) {
-            throw new \DomainException(CircularDependencyException::create((int) $field->id, (int) $parent->id)->getMessage());
+            throw CircularDependencyException::create((int) $field->id, (int) $parent->id);
         }
 
         return $parent;
     }
 
     /**
-     * @throws \DomainException
+     * @throws InvalidParentFieldException
      */
     private function resolveParentById(SchemaModel $schema, int $parentId): Field
     {
         $parent = $this->fieldRepository->find($parentId);
         if (! $parent instanceof Field) {
-            throw new \DomainException('parent_id not found');
+            throw InvalidParentFieldException::notFound($parentId);
         }
 
         if ((int) $parent->schema_id !== (int) $schema->id) {
-            throw new \DomainException(
-                InvalidParentFieldException::wrongSchema(
-                    (int) $parent->id,
-                    (string) $schema->code,
-                    (string) $parent->schema->code,
-                )->getMessage(),
+            throw InvalidParentFieldException::wrongSchema(
+                (int) $parent->id,
+                (string) $schema->code,
+                (string) $parent->schema->code,
             );
         }
 
         if (! $parent->type->isContainer()) {
-            throw new \DomainException(
-                InvalidParentFieldException::notContainer((int) $parent->id, $parent->type->value)->getMessage(),
-            );
+            throw InvalidParentFieldException::notContainer((int) $parent->id, $parent->type->value);
         }
 
         return $parent;

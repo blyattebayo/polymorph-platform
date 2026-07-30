@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Core\Exceptions;
 
+use Polymorph\Platform\SharedKernel\Contracts\DomainErrorDescriptor;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
+use Polymorph\Platform\Support\Errors\ConvertsToErrorPayload;
 use Polymorph\Platform\Support\Errors\ErrorCode;
-use Polymorph\Platform\Support\Errors\ErrorFactory;
-use Polymorph\Platform\Support\Errors\ErrorPayload;
 use RuntimeException;
 use Throwable;
 
 /**
  * Исключение: ошибка генерации варианта медиа
  */
-class VariantGenerationException extends RuntimeException implements ErrorConvertible
+class VariantGenerationException extends RuntimeException implements DomainErrorDescriptor, ErrorConvertible
 {
+    use ConvertsToErrorPayload;
+
     private ?string $variantName = null;
 
     private ?string $mediaId = null;
@@ -89,18 +91,25 @@ class VariantGenerationException extends RuntimeException implements ErrorConver
         return $this->mediaId;
     }
 
-    /**
-     * Конвертировать в ErrorPayload для API
-     */
-    public function toError(ErrorFactory $factory): ErrorPayload
+    public function errorCode(): ErrorCode
     {
-        return $factory->for(ErrorCode::MEDIA_VARIANT_ERROR)
-            ->detail('Failed to generate media variant.')
-            ->meta([
-                'resource' => 'media_variant',
-                'variant' => $this->variantName,
-                'media_id' => $this->mediaId,
-            ])
-            ->build();
+        return ErrorCode::MEDIA_VARIANT_ERROR;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function errorMeta(): array
+    {
+        return [
+            'resource' => 'media_variant',
+            'variant' => $this->variantName,
+            'media_id' => $this->mediaId,
+        ];
+    }
+
+    protected function errorDetail(): string
+    {
+        return 'Failed to generate media variant.';
     }
 }

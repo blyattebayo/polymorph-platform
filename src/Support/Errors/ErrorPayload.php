@@ -66,14 +66,6 @@ final class ErrorPayload implements JsonSerializable
         );
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function meta(): array
-    {
-        return $this->meta;
-    }
-
     public function withTraceId(?string $traceId): self
     {
         if ($traceId !== null && trim($traceId) === '') {
@@ -89,36 +81,6 @@ final class ErrorPayload implements JsonSerializable
             meta: $this->meta,
             traceId: $traceId,
         );
-    }
-
-    /**
-     * @param  array<string, mixed>  $meta
-     */
-    public function withMeta(array $meta): self
-    {
-        $this->assertMeta($meta);
-
-        return new self(
-            type: $this->type,
-            title: $this->title,
-            status: $this->status,
-            code: $this->code,
-            detail: $this->detail,
-            meta: $meta,
-            traceId: $this->traceId,
-        );
-    }
-
-    public function withAddedMeta(string $key, mixed $value): self
-    {
-        if ($key === '') {
-            throw new InvalidArgumentException('Meta key cannot be empty.');
-        }
-
-        $meta = $this->meta;
-        $meta[$key] = $value;
-
-        return $this->withMeta($meta);
     }
 
     /**
@@ -168,7 +130,8 @@ final class ErrorPayload implements JsonSerializable
     private function assertMeta(array $meta): void
     {
         foreach ($meta as $key => $value) {
-            if (! is_string($key) || $key === '') {
+            // trim, а не сравнение с '': ключ из одних пробелов — та же ошибка.
+            if (! is_string($key) || trim($key) === '') {
                 throw new InvalidArgumentException('Meta keys must be non-empty strings.');
             }
 

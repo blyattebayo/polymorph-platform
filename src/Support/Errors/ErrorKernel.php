@@ -4,178 +4,68 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Support\Errors;
 
-use Closure;
-use Illuminate\Contracts\Container\Container;
-use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
+use Illuminate\Http\Request;
+use Throwable;
 
-use function is_string;
-
+/**
+ * Единственная точка превращения исключения в ErrorPayload.
+ *
+ * Схема одна и видна целиком: спросить резолверы по порядку, первый опознавший
+ * выигрывает, не опознал никто — 500. На любом пути ровно один вызов репортера.
+ *
+ * Порядок резолверов задаёт тот, кто собирает ядро (сервис-провайдер приложения), и
+ * он важен: последний в цепочке — FrameworkErrorResolver с подстраховочной ветвью
+ * `RuntimeException`, предком почти всего. Провайдер здесь намеренно не назван даже
+ * комментарием: Support — нижний слой, вверх он не смотрит, в том числе ссылками.
+ *
+ * Прежде ядро знало только про две вещи — ErrorConvertible и фреймворковый маппер, —
+ * а конвертеры, которые нельзя было захардкодить в Support (ошибки SDK расширений,
+ * сбои пайплайна), оставались ветвлениями в HostBootstrap, каждое со своим вызовом
+ * репортера и своей раздачей заголовков. До этого конвертеры регистрировались
+ * замыканиями в config/errors.php: реестр был, но нетестируемый и с приоритетом по
+ * порядку ключей массива.
+ */
 final class ErrorKernel
 {
     /**
-     * @var list<ErrorMapping>
+     * @var list<ResolvesError>
      */
-    private readonly array $mappings;
+    private readonly array $resolvers;
 
-    /**
-     * @param  Closure(\Throwable, ErrorFactory): ErrorPayload  $fallback
-     */
     public function __construct(
         private readonly ErrorFactory $factory,
-        private readonly Closure $fallback,
-        private readonly ?ErrorReportDefinition $fallbackReport,
-        ErrorMapping ...$mappings,
+        private readonly ErrorReportPolicy $policy,
+        private readonly ErrorReporter $reporter,
+        ResolvesError ...$resolvers,
     ) {
-        $this->mappings = $mappings;
+        $this->resolvers = $resolvers;
     }
 
-    /**
-     * @param  array<string, mixed>  $config
-     */
-    public static function fromConfig(array $config, ?Container $container = null): self
+    public function resolve(Throwable $throwable, ?Request $request = null): ErrorPayload
     {
-        $typesConfig = $config['types'] ?? [];
-        $catalog = ErrorCatalog::fromConfig($typesConfig);
-        $factory = new ErrorFactory($catalog);
+        foreach ($this->resolvers as $resolver) {
+            $resolution = $resolver->resolve($throwable, $request);
 
-        $mappingsConfig = $config['mappings'] ?? [];
-        $mappings = [];
-
-        foreach ($mappingsConfig as $class => $definition) {
-            $builder = $definition['builder'] ?? null;
-
-            if (! $builder instanceof Closure) {
-                throw new \InvalidArgumentException(sprintf(
-                    'Error mapping for "%s" must define a builder closure.',
-                    $class,
-                ));
+            if (! $resolution instanceof ErrorResolution) {
+                continue;
             }
 
-            $builder = self::bindClosure($builder, $container);
-
-            $reportDefinition = self::buildReportDefinition(
-                throwableClass: (string) $class,
-                definition: $definition['report'] ?? null,
-                container: $container,
-            );
-
-            $mappings[] = new ErrorMapping(
-                throwableClass: (string) $class,
-                builder: $builder,
-                reportDefinition: $reportDefinition,
+            return $this->reported(
+                $throwable,
+                $resolution->payload,
+                $resolution->report ?? $this->policy->for($throwable, $resolution->payload),
             );
         }
 
-        $fallback = $config['fallback']['builder'] ?? null;
+        $payload = $this->factory->for(ErrorCode::INTERNAL_SERVER_ERROR)->build();
 
-        if (! $fallback instanceof Closure) {
-            throw new \InvalidArgumentException('Fallback builder must be a closure.');
-        }
-
-        $fallback = self::bindClosure($fallback, $container);
-
-        $fallbackReport = self::buildReportDefinition(
-            throwableClass: null,
-            definition: $config['fallback']['report'] ?? null,
-            container: $container,
-        );
-
-        return new self($factory, $fallback, $fallbackReport, ...$mappings);
+        return $this->reported($throwable, $payload, $this->policy->forUnhandled($throwable, $payload));
     }
 
-    public function resolve(\Throwable $throwable): ErrorPayload
+    private function reported(Throwable $throwable, ErrorPayload $payload, ErrorReport $report): ErrorPayload
     {
-        if ($throwable instanceof ErrorConvertible) {
-            $payload = $throwable->toError($this->factory);
-            ErrorReporter::report($throwable, $payload, null);
-
-            return $payload;
-        }
-
-        $reportDefinition = $this->fallbackReport;
-
-        foreach ($this->mappings as $mapping) {
-            if ($mapping->matches($throwable)) {
-                $payload = $mapping->build($throwable, $this->factory);
-                $reportDefinition = $mapping->reportDefinition() ?? $reportDefinition;
-
-                ErrorReporter::report($throwable, $payload, $reportDefinition);
-
-                return $payload;
-            }
-        }
-
-        $fallback = $this->fallback;
-
-        $payload = $fallback($throwable, $this->factory);
-
-        ErrorReporter::report($throwable, $payload, $reportDefinition);
+        $this->reporter->report($throwable, $payload, $report);
 
         return $payload;
-    }
-
-    public function factory(): ErrorFactory
-    {
-        return $this->factory;
-    }
-
-    /**
-     * @param  Closure(\Throwable, ErrorFactory): ErrorPayload  $fallback
-     */
-    public function withFallback(Closure $fallback): self
-    {
-        return new self($this->factory, $fallback, $this->fallbackReport, ...$this->mappings);
-    }
-
-    private static function bindClosure(Closure $closure, ?Container $container): Closure
-    {
-        if ($container === null) {
-            return $closure;
-        }
-
-        $reflection = new \ReflectionFunction($closure);
-
-        if ($reflection->isStatic()) {
-            return $closure;
-        }
-
-        return $closure->bindTo($container, $container);
-    }
-
-    /**
-     * @param  array<string, mixed>|null  $definition
-     */
-    private static function buildReportDefinition(?string $throwableClass, ?array $definition, ?Container $container): ?ErrorReportDefinition
-    {
-        if ($definition === null) {
-            return null;
-        }
-
-        $level = $definition['level'] ?? 'error';
-
-        if (! is_string($level)) {
-            throw new \InvalidArgumentException('Report level must be a string.');
-        }
-
-        $message = $definition['message'] ?? null;
-
-        if ($message !== null && ! is_string($message)) {
-            throw new \InvalidArgumentException('Report message must be a string or null.');
-        }
-
-        $context = $definition['context'] ?? null;
-
-        if ($context !== null && ! $context instanceof Closure) {
-            throw new \InvalidArgumentException('Report context must be a closure.');
-        }
-
-        $definition = new ErrorReportDefinition(
-            throwableClass: $throwableClass,
-            level: $level,
-            message: $message,
-            contextResolver: $context,
-        );
-
-        return $definition->bind($container);
     }
 }

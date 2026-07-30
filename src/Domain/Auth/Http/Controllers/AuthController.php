@@ -27,6 +27,7 @@ use Polymorph\Platform\Domain\Auth\Infrastructure\Http\AuthCookieFactory;
 use Polymorph\Platform\Domain\Users\Http\Resources\UserResource;
 use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
 use Polymorph\Platform\Support\Errors\ErrorCode;
+use Polymorph\Platform\Support\Errors\ErrorFactory;
 use Polymorph\Platform\Support\Errors\ErrorKernel;
 use Polymorph\Platform\Support\Errors\ErrorResponseFactory;
 use Symfony\Component\HttpFoundation\Cookie;
@@ -52,6 +53,7 @@ final class AuthController
         private readonly UserCapabilitiesPresenter $capabilities,
         private readonly AuthCookieFactory $cookies,
         private readonly ErrorKernel $errors,
+        private readonly ErrorFactory $errorFactory,
     ) {}
 
     public function register(RegisterRequest $request): JsonResponse
@@ -59,7 +61,7 @@ final class AuthController
         if (! (bool) config('auth.self_registration.enabled', false)) {
             // Фича выключена — не раскрываем существование эндпоинта.
             return ErrorResponseFactory::make(
-                $this->errors->factory()->for(ErrorCode::NOT_FOUND)->build(),
+                $this->errorFactory->for(ErrorCode::NOT_FOUND)->build(),
             );
         }
 
