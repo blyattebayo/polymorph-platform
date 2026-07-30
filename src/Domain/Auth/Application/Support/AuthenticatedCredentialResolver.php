@@ -6,7 +6,6 @@ namespace Polymorph\Platform\Domain\Auth\Application\Support;
 
 use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
-use Polymorph\Platform\Domain\Auth\Core\ValueObjects\CredentialKind;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
 
@@ -27,7 +26,7 @@ final class AuthenticatedCredentialResolver
         $user = $this->currentActor->user();
 
         if ($user instanceof User) {
-            return new AuthenticatedCredential($user, CredentialKind::JwtSession);
+            return AuthenticatedCredential::assumedSession($user);
         }
 
         return null;

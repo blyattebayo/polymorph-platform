@@ -17,7 +17,7 @@ use Polymorph\Platform\Support\Errors\ErrorCode;
  * нередактируемым, роль неснимаемой). Теперь предикат — флаг is_platform_admin,
  * который ставит только AdminUserSeeder.
  */
-final class SystemAdministratorMutationException extends \DomainException implements DomainErrorDescriptor, ErrorConvertible
+final class PlatformAdminImmutableException extends \DomainException implements DomainErrorDescriptor, ErrorConvertible
 {
     use ConvertsToErrorPayload;
 

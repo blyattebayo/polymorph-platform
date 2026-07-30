@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Route;
 use Polymorph\Platform\Domain\EntryView\Http\Controllers\EntryViewController;
 use Polymorph\Platform\Domain\RecordDefinitions\Http\Controllers\RecordDefinitionController;
 use Polymorph\Platform\Domain\SchemaModel\Access\SchemaCapabilities;
-use Polymorph\Platform\Http\Middleware\RequireCapability;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 
 /**
@@ -24,7 +23,7 @@ Route::prefix('record-definitions')
         Route::get('/{record_definition_id}/form-config/{schema}', [EntryViewController::class, 'show'])
             ->name('form-config.show');
 
-        Route::middleware(RequireCapability::forRoute(SchemaCapabilities::RESOURCE, CapabilityCatalog::ACTION_MANAGE))->group(function (): void {
+        Route::middleware(SchemaCapabilities::requireManage())->group(function (): void {
             Route::post('/', [RecordDefinitionController::class, 'store'])->name('store');
             Route::put('/{id}', [RecordDefinitionController::class, 'update'])->name('update');
             Route::delete('/{id}', [RecordDefinitionController::class, 'destroy'])->name('destroy');

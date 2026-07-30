@@ -8,7 +8,6 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
-use Polymorph\Platform\Domain\Auth\Core\ValueObjects\CredentialKind;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\RequestCredentialAuthenticator;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
@@ -127,7 +126,7 @@ final class ApiGuard implements Guard
         if ($user instanceof User && ! $this->credential instanceof AuthenticatedCredential) {
             $this->request->attributes->set(
                 AuthenticatedCredential::REQUEST_ATTRIBUTE,
-                new AuthenticatedCredential($user, CredentialKind::JwtSession),
+                AuthenticatedCredential::assumedSession($user),
             );
         }
     }

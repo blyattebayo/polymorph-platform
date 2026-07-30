@@ -18,6 +18,19 @@ final readonly class AuthenticatedCredential
         public ?int $sessionId = null,
     ) {}
 
+    /**
+     * «Реального credential нет, но пользователь аутентифицирован — считаем
+     * интерактивной сессией». Единственная точка этого допущения: раньше оно
+     * синтезировалось независимо в ApiGuard::syncUserAttributes и
+     * AuthenticatedCredentialResolver и однажды разъехалось бы.
+     * Штатные пути (RequestCredentialAuthenticator) сюда не ходят —
+     * это фолбэк для setUser()/actingAs.
+     */
+    public static function assumedSession(User $user): self
+    {
+        return new self($user, CredentialKind::JwtSession);
+    }
+
     public function isPat(): bool
     {
         return $this->kind === CredentialKind::PersonalAccessToken;

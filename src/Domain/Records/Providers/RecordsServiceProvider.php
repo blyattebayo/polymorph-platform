@@ -16,6 +16,7 @@ use Polymorph\Platform\Domain\Records\Listeners\CleanupRecordDependenciesOnRecor
 use Polymorph\Platform\Domain\Records\Query\RecordQueryCriteriaFactory;
 use Polymorph\Platform\Domain\Records\Services\RecordDisplayValueService;
 use Polymorph\Platform\Domain\Records\Services\RecordIncludedDataAssembler;
+use Polymorph\Platform\Domain\Records\Services\RecordReadProfileResolver;
 use Polymorph\Platform\Domain\Records\Services\RecordRelationshipResolver;
 use Polymorph\Platform\Domain\Records\Support\RecordSchemaScalarValueNormalizer;
 use Polymorph\Platform\Domain\Records\Support\RecordSchemaValueNormalizer;
@@ -34,6 +35,11 @@ class RecordsServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Scoped явно: резолвер держит FieldAccessService с кэшами видимости —
+        // их время жизни должно быть «один запрос», а не «сколько проживёт
+        // случайно созданный экземпляр».
+        $this->app->scoped(RecordReadProfileResolver::class);
+
         // Регистрация сервисов.
         $this->app->singleton(RecordSchemaScalarValueNormalizer::class);
         $this->app->singleton(RecordSchemaValueNormalizer::class);

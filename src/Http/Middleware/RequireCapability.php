@@ -6,7 +6,6 @@ namespace Polymorph\Platform\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use InvalidArgumentException;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 use Polymorph\Platform\SharedKernel\Access\ResourceRef;
@@ -19,20 +18,13 @@ final class RequireCapability
 {
     use ThrowsErrors;
 
-    public const ALIAS = 'capability.require';
+    public const ALIAS = CapabilityCatalog::MIDDLEWARE_ALIAS;
 
     public static function forRoute(
         string $resource,
         string $action = CapabilityCatalog::ACTION_ACCESS,
     ): string {
-        $normalizedResource = trim($resource);
-        $normalizedAction = trim($action);
-
-        if ($normalizedResource === '' || $normalizedAction === '') {
-            throw new InvalidArgumentException('Capability resource and action must not be empty.');
-        }
-
-        return self::ALIAS.':'.$normalizedResource.','.$normalizedAction;
+        return CapabilityCatalog::requirement($resource, $action);
     }
 
     public function __construct(

@@ -9,11 +9,11 @@ use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\CapabilityDefiniti
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 
 /**
- * Access-манифест домена: ресурсы, определения capability и дефолтные роли —
- * в одном файле (раньше пара Capabilities + CapabilityProvider).
+ * Access-манифест домена: ресурсы, определения capability, дефолтные роли и
+ * route-требования — в одном файле.
  *
  * Два ресурса, потому что это два разных полномочия: править политики и
- * раздавать их субъектам. Было: 'policy.manage'/'policy.assign' с action 'access'.
+ * раздавать их субъектам.
  */
 final class AccessControlCapabilities implements CapabilityDefinitionProvider
 {
@@ -33,9 +33,19 @@ final class AccessControlCapabilities implements CapabilityDefinitionProvider
     {
         return [
             BuiltInRoleCatalog::ROLE_ACCESS_POLICY_MANAGER => [
-                CapabilityCatalog::capabilityKey(self::POLICY, CapabilityCatalog::ACTION_MANAGE),
-                CapabilityCatalog::capabilityKey(self::ASSIGNMENT, CapabilityCatalog::ACTION_MANAGE),
+                ...CapabilityCatalog::keys(self::POLICY, 'manage'),
+                ...CapabilityCatalog::keys(self::ASSIGNMENT, 'manage'),
             ],
         ];
+    }
+
+    public static function requirePolicyManage(): string
+    {
+        return CapabilityCatalog::requirement(self::POLICY, CapabilityCatalog::ACTION_MANAGE);
+    }
+
+    public static function requireAssignmentManage(): string
+    {
+        return CapabilityCatalog::requirement(self::ASSIGNMENT, CapabilityCatalog::ACTION_MANAGE);
     }
 }

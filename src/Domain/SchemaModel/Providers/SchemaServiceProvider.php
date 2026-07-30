@@ -31,6 +31,7 @@ use Polymorph\Platform\Domain\SchemaModel\Observers\SchemaObserver;
 use Polymorph\Platform\Domain\SchemaModel\ReadModel\Contracts\SchemaSnapshotServiceInterface;
 use Polymorph\Platform\Domain\SchemaModel\ReadModel\SchemaSnapshotService;
 use Polymorph\Platform\Domain\SchemaModel\Services\ConstraintManager;
+use Polymorph\Platform\Domain\SchemaModel\Services\FieldAccessService;
 use Polymorph\Platform\Domain\SchemaModel\Services\FieldMutationService;
 use Polymorph\Platform\Domain\SchemaModel\Services\FieldPathCalculator;
 use Polymorph\Platform\Domain\SchemaModel\Services\SchemaViewRebuildScheduler;
@@ -47,6 +48,11 @@ class SchemaServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Scoped явно: сервис кэширует видимые пути полей per-user — кэш должен
+        // жить ровно один запрос (singleton протухал бы под Octane, transient
+        // фрагментировал бы кэш по потребителям).
+        $this->app->scoped(FieldAccessService::class);
+
         // Repository bindings
         $this->app->singleton(SchemaRepository::class, EloquentSchemaRepository::class);
         $this->app->singleton(FieldRepository::class, EloquentFieldRepository::class);

@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Records\Access;
 
 use Polymorph\Platform\Domain\AccessControl\Access\BuiltInRoleCatalog;
+use Polymorph\Platform\Domain\AccessControl\Access\CapabilitySet;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\CapabilityDefinitionProvider;
-use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\CapabilityDefinition;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 
 /**
- * Access-манифест домена: ресурс, определения capability и дефолтные роли —
- * в одном файле (раньше пара Capabilities + CapabilityProvider).
+ * Access-манифест домена: ресурс, определения capability, дефолтные роли и
+ * route-требования — в одном файле.
  */
 final class RecordsCapabilities implements CapabilityDefinitionProvider
 {
@@ -19,25 +19,33 @@ final class RecordsCapabilities implements CapabilityDefinitionProvider
 
     public function capabilities(): array
     {
-        return [
-            new CapabilityDefinition(self::RESOURCE, CapabilityCatalog::ACTION_READ, 'Read records'),
-            new CapabilityDefinition(self::RESOURCE, CapabilityCatalog::ACTION_WRITE, 'Write records'),
-            new CapabilityDefinition(self::RESOURCE, CapabilityCatalog::ACTION_DELETE, 'Delete records'),
-        ];
+        return CapabilitySet::for(self::RESOURCE)
+            ->read('Read records')
+            ->write('Write records')
+            ->delete('Delete records')
+            ->all();
     }
 
     public function defaultRoleAssignments(): array
     {
         return [
-            BuiltInRoleCatalog::ROLE_RECORDS_EDITOR => [
-                CapabilityCatalog::capabilityKey(self::RESOURCE, CapabilityCatalog::ACTION_READ),
-                CapabilityCatalog::capabilityKey(self::RESOURCE, CapabilityCatalog::ACTION_WRITE),
-            ],
-            BuiltInRoleCatalog::ROLE_RECORDS_ADMIN => [
-                CapabilityCatalog::capabilityKey(self::RESOURCE, CapabilityCatalog::ACTION_READ),
-                CapabilityCatalog::capabilityKey(self::RESOURCE, CapabilityCatalog::ACTION_WRITE),
-                CapabilityCatalog::capabilityKey(self::RESOURCE, CapabilityCatalog::ACTION_DELETE),
-            ],
+            BuiltInRoleCatalog::ROLE_RECORDS_EDITOR => CapabilityCatalog::keys(self::RESOURCE, 'read', 'write'),
+            BuiltInRoleCatalog::ROLE_RECORDS_ADMIN => CapabilityCatalog::keys(self::RESOURCE, 'read', 'write', 'delete'),
         ];
+    }
+
+    public static function requireRead(): string
+    {
+        return CapabilityCatalog::requirement(self::RESOURCE, CapabilityCatalog::ACTION_READ);
+    }
+
+    public static function requireWrite(): string
+    {
+        return CapabilityCatalog::requirement(self::RESOURCE, CapabilityCatalog::ACTION_WRITE);
+    }
+
+    public static function requireDelete(): string
+    {
+        return CapabilityCatalog::requirement(self::RESOURCE, CapabilityCatalog::ACTION_DELETE);
     }
 }

@@ -7,7 +7,7 @@ namespace Polymorph\Platform\Domain\Users\Providers;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Polymorph\Platform\Domain\Users\Access\UsersCapabilities;
-use Polymorph\Platform\Domain\Users\Core\Contracts\SystemAdministratorGuard;
+use Polymorph\Platform\Domain\Users\Core\Contracts\UserMutationGuard;
 use Polymorph\Platform\Domain\Users\Core\Contracts\UserRepository;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Domain\Users\Events\PasswordChanged;
@@ -26,7 +26,7 @@ final class UsersServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(UserRepository::class, EloquentUserRepository::class);
-        $this->app->singleton(SystemAdministratorGuard::class, PlatformAdminMutationGuard::class);
+        $this->app->singleton(UserMutationGuard::class, PlatformAdminMutationGuard::class);
     }
 
     public function boot(): void

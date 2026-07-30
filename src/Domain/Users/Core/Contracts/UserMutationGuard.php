@@ -6,7 +6,7 @@ namespace Polymorph\Platform\Domain\Users\Core\Contracts;
 
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 
-interface SystemAdministratorGuard
+interface UserMutationGuard
 {
     public function assertCanMutate(User $user): void;
 }

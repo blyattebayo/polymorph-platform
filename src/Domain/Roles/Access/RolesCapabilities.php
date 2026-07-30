@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Roles\Access;
 
 use Polymorph\Platform\Domain\AccessControl\Access\BuiltInRoleCatalog;
+use Polymorph\Platform\Domain\AccessControl\Access\CapabilitySet;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\CapabilityDefinitionProvider;
-use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\CapabilityDefinition;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 
 /**
- * Access-манифест домена: ресурс, определения capability и дефолтные роли —
- * в одном файле (раньше пара Capabilities + CapabilityProvider).
+ * Access-манифест домена: ресурс, определения capability, дефолтные роли и
+ * route-требования — в одном файле.
  */
 final class RolesCapabilities implements CapabilityDefinitionProvider
 {
@@ -19,19 +19,26 @@ final class RolesCapabilities implements CapabilityDefinitionProvider
 
     public function capabilities(): array
     {
-        return [
-            new CapabilityDefinition(self::RESOURCE, CapabilityCatalog::ACTION_READ, 'Read roles'),
-            new CapabilityDefinition(self::RESOURCE, CapabilityCatalog::ACTION_MANAGE, 'Manage roles'),
-        ];
+        return CapabilitySet::for(self::RESOURCE)
+            ->read('Read roles')
+            ->manage('Manage roles')
+            ->all();
     }
 
     public function defaultRoleAssignments(): array
     {
         return [
-            BuiltInRoleCatalog::ROLE_USERS_MANAGER => [
-                CapabilityCatalog::capabilityKey(self::RESOURCE, CapabilityCatalog::ACTION_READ),
-                CapabilityCatalog::capabilityKey(self::RESOURCE, CapabilityCatalog::ACTION_MANAGE),
-            ],
+            BuiltInRoleCatalog::ROLE_USERS_MANAGER => CapabilityCatalog::keys(self::RESOURCE, 'read', 'manage'),
         ];
+    }
+
+    public static function requireRead(): string
+    {
+        return CapabilityCatalog::requirement(self::RESOURCE, CapabilityCatalog::ACTION_READ);
+    }
+
+    public static function requireManage(): string
+    {
+        return CapabilityCatalog::requirement(self::RESOURCE, CapabilityCatalog::ACTION_MANAGE);
     }
 }

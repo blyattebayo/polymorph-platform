@@ -6,17 +6,14 @@ namespace Polymorph\Platform\Domain\Auth\Application\Policies;
 
 use Polymorph\Platform\Domain\Auth\Application\Exceptions\TokenManagementDeniedException;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
-use Polymorph\Platform\Domain\Auth\Core\ValueObjects\CredentialKind;
 
 final class TokenManagementPolicy
 {
     public function canManageTokens(?AuthenticatedCredential $credential): bool
     {
-        if ($credential === null) {
-            return false;
-        }
-
-        return $credential->kind === CredentialKind::JwtSession;
+        // Тот же предикат, что у middleware session.credential: правило
+        // «только интерактивная сессия» живёт на credential, не в сравнениях.
+        return $credential instanceof AuthenticatedCredential && $credential->isJwtSession();
     }
 
     public function assertCanManageTokens(?AuthenticatedCredential $credential): void

@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Users\Services;
 
 use Polymorph\Platform\Domain\Users\Core\Contracts\PrivilegedUserMembership;
-use Polymorph\Platform\Domain\Users\Core\Contracts\SystemAdministratorGuard;
-use Polymorph\Platform\Domain\Users\Core\Exceptions\SystemAdministratorMutationException;
+use Polymorph\Platform\Domain\Users\Core\Contracts\UserMutationGuard;
+use Polymorph\Platform\Domain\Users\Core\Exceptions\PlatformAdminImmutableException;
 use Polymorph\Platform\Domain\Users\Core\Exceptions\SystemAdminPrivilegeRequiredException;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
 /**
- * Два правила мутации пользователей (заменил RoleBasedSystemAdministratorGuard):
+ * Два правила мутации пользователей (заменил RoleBasedUserMutationGuard):
  *
  * 1. Встроенный платформенный администратор (is_platform_admin) неприкасаем
  *    для всех — включая других системных админов.
@@ -23,7 +23,7 @@ use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
  * Прежний guard запрещал мутацию ЛЮБОГО носителя роли system.admin кому угодно,
  * из-за чего выдача роли была необратимой: снять её мог только прямой SQL.
  */
-final class PlatformAdminMutationGuard implements SystemAdministratorGuard
+final class PlatformAdminMutationGuard implements UserMutationGuard
 {
     public function __construct(
         private readonly PrivilegedUserMembership $privilegedUserMembership,
@@ -33,7 +33,7 @@ final class PlatformAdminMutationGuard implements SystemAdministratorGuard
     public function assertCanMutate(User $user): void
     {
         if ($user->isPlatformAdmin()) {
-            throw SystemAdministratorMutationException::forUser($user->userId());
+            throw PlatformAdminImmutableException::forUser($user->userId());
         }
 
         if (! $this->privilegedUserMembership->isSystemAdministrator($user->userId())) {

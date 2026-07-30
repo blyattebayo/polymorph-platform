@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\Users\Actions\ChangePasswordAction;
 use Polymorph\Platform\Domain\Users\Actions\CreateUserAction;
 use Polymorph\Platform\Domain\Users\Actions\UpdateUserAction;
-use Polymorph\Platform\Domain\Users\Core\Contracts\SystemAdministratorGuard;
+use Polymorph\Platform\Domain\Users\Core\Contracts\UserMutationGuard;
 use Polymorph\Platform\Domain\Users\Core\Contracts\UserRoleManager;
 use Polymorph\Platform\Domain\Users\Core\Exceptions\UserAlreadyExistsException;
 use Polymorph\Platform\Domain\Users\Core\Exceptions\UserNotFoundException;
@@ -24,7 +24,7 @@ final class AdminUserManagementService
         private readonly UpdateUserAction $updateUserAction,
         private readonly ChangePasswordAction $changePasswordAction,
         private readonly UserRoleManager $userRoleManager,
-        private readonly SystemAdministratorGuard $systemAdministratorGuard,
+        private readonly UserMutationGuard $mutationGuard,
         private readonly FindUserByIdQuery $findUserByIdQuery,
         private readonly CurrentActorResolver $currentActor,
     ) {}
@@ -59,7 +59,7 @@ final class AdminUserManagementService
     public function update(int $userId, array $validated): User
     {
         $user = $this->findUserByIdQuery->executeOrFail($userId);
-        $this->systemAdministratorGuard->assertCanMutate($user);
+        $this->mutationGuard->assertCanMutate($user);
 
         $roleIds = array_key_exists('role_ids', $validated)
             ? RoleIdsNormalizer::normalize($validated['role_ids'])
@@ -90,7 +90,7 @@ final class AdminUserManagementService
     public function setPassword(int $userId, string $password): void
     {
         $user = $this->findUserByIdQuery->executeOrFail($userId);
-        $this->systemAdministratorGuard->assertCanMutate($user);
+        $this->mutationGuard->assertCanMutate($user);
         $this->changePasswordAction->execute($user, $password);
     }
 }
