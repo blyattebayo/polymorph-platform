@@ -23,9 +23,9 @@ final class AdminUserReadService
         private readonly LaravelPaginatorAdapter $paginatorAdapter,
     ) {}
 
-    public function list(PageRequest $page, ?string $search = null): PageResult
+    public function list(PageRequest $page, ?string $search = null, ?int $excludeUserId = null): PageResult
     {
-        $result = $this->paginatorAdapter->toPageResult($this->userRepository->paginate($page, $search));
+        $result = $this->paginatorAdapter->toPageResult($this->userRepository->paginate($page, $search, $excludeUserId));
         $rolesByUser = $this->userRoleReadModel->rolesByUserIds(
             $result->ids(static fn (User $user): int => (int) $user->id)
         );

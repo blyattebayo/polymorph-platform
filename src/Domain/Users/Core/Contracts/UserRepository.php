@@ -46,11 +46,13 @@ interface UserRepository
     public function update(User $user, array $data): User;
 
     /**
-     * Страница пользователей; $search — фильтр по подстроке имени или email.
+     * Страница пользователей; $search — фильтр по подстроке имени или email,
+     * $excludeUserId — пользователь, которого страница не должна содержать
+     * (админка исключает так самого вызывающего).
      *
      * @return LengthAwarePaginator<int, User>
      */
-    public function paginate(PageRequest $pagination, ?string $search = null): LengthAwarePaginator;
+    public function paginate(PageRequest $pagination, ?string $search = null, ?int $excludeUserId = null): LengthAwarePaginator;
 
     /**
      * Проверить существование пользователя с данным email.

@@ -14,6 +14,7 @@ use Polymorph\Platform\Domain\Users\Services\AdminUserReadService;
 use Polymorph\Platform\Http\Controllers\Controller;
 use Polymorph\Platform\Http\Pagination\V2\PaginatedJsonResponse;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
+use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
 use Symfony\Component\HttpFoundation\Response;
 
 final class UserController extends Controller
@@ -21,11 +22,16 @@ final class UserController extends Controller
     public function __construct(
         private readonly AdminUserManagementService $adminUserManagementService,
         private readonly AdminUserReadService $adminUserReadService,
+        private readonly CurrentActorResolver $currentActor,
     ) {}
 
     public function index(IndexUsersRequest $request): JsonResponse
     {
-        return PaginatedJsonResponse::from($this->adminUserReadService->list($request->pageRequest(), $request->searchQuery()));
+        return PaginatedJsonResponse::from($this->adminUserReadService->list(
+            $request->pageRequest(),
+            $request->searchQuery(),
+            $request->excludesSelf() ? $this->currentActor->actor()?->userId() : null,
+        ));
     }
 
     public function show(int $userId): JsonResponse

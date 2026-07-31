@@ -65,9 +65,13 @@ final class EloquentUserRepository implements UserRepository
         return $user->fresh();
     }
 
-    public function paginate(PageRequest $pagination, ?string $search = null): LengthAwarePaginator
+    public function paginate(PageRequest $pagination, ?string $search = null, ?int $excludeUserId = null): LengthAwarePaginator
     {
         $query = User::query();
+
+        if ($excludeUserId !== null) {
+            $query->whereKeyNot($excludeUserId);
+        }
 
         if ($search !== null && $search !== '') {
             $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $search);
