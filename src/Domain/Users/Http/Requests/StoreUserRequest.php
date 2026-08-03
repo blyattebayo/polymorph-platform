@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Users\Http\Requests;
 
+use Illuminate\Validation\Rule;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Domain\Users\Http\Requests\Rules\AssignableRoleIdsRule;
 use Polymorph\Platform\Domain\Users\Http\Requests\Rules\ValidUserStatusRule;
 use Polymorph\Platform\Http\Requests\ApiFormRequest;
@@ -18,7 +20,10 @@ final class StoreUserRequest extends ApiFormRequest
     {
         return [
             'name' => ['nullable', 'string', 'max:255'],
-            'email' => ValidationRules::email(),
+            // Занятый email — ошибка ПОЛЯ, а не конфликт ресурса: клиенту нужно
+            // подсветить input, а не показывать общее уведомление. Домен всё
+            // равно перепроверит (гонка двух запросов) и ответит 409.
+            'email' => [...ValidationRules::email(), Rule::unique(User::class, 'email')],
             'password' => ValidationRules::password(),
             'status' => ['nullable', new ValidUserStatusRule],
             'role_ids' => ['nullable', 'array', app(AssignableRoleIdsRule::class)],
