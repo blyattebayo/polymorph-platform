@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Services;
 
 use Illuminate\Http\Request;
-use Polymorph\Platform\Http\Middleware\Concerns\ExtractsJwtAccessToken;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\PresentedToken;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Http\PresentedTokenExtractor;
 use Polymorph\Platform\SharedKernel\Identity\AuthenticatedCredential;
 use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Platform\SharedKernel\Identity\RequestCredentialResolver;
 
 /**
- * Разбор учётных данных запроса. Метод НИКОГДА не бросает 401 сам: неудача
- * записывается в атрибуты запроса и возвращается null.
+ * Разбор учётных данных запроса: достать токен -> найти способ -> проверить,
+ * что аккаунт активен. Сам метод НИКОГДА не бросает 401: неудача записывается
+ * в атрибуты запроса и возвращается null.
  *
  * 401 собирается дальше по цепочке — Authenticate бросает AuthenticationException,
  * а FrameworkErrorResolver достаёт причину из этих атрибутов. Раньше рядом жил
@@ -20,15 +22,12 @@ use Polymorph\Platform\SharedKernel\Identity\RequestCredentialResolver;
  * не был подключён ни к одному вызову и только создавал впечатление, что 401 с
  * meta.reason формируется здесь.
  *
- * Результат разбора здесь НЕ публикуется: его держит
- * {@see AuthenticationContext}.
+ * Результат разбора здесь НЕ публикуется: его держит {@see AuthenticationContext}.
  * В атрибутах запроса остаётся только диагностика отказа — её читает слой
  * ошибок, и к идентичности она отношения не имеет.
  */
 final class RequestCredentialAuthenticator implements RequestCredentialResolver
 {
-    use ExtractsJwtAccessToken;
-
     public const FAILURE_REASON_ATTRIBUTE = 'auth.failure_reason';
 
     public const FAILURE_MESSAGE_ATTRIBUTE = 'auth.failure_message';
@@ -40,13 +39,14 @@ final class RequestCredentialAuthenticator implements RequestCredentialResolver
     ];
 
     public function __construct(
-        private readonly CompositeCredentialAuthenticator $credentials,
+        private readonly PresentedTokenExtractor $tokens,
+        private readonly CredentialAuthenticatorRegistry $credentials,
     ) {}
 
     public function authenticate(Request $request): ?AuthenticatedCredential
     {
-        $token = $this->extractAccessToken($request);
-        if ($token === '') {
+        $token = $this->tokens->fromRequest($request);
+        if (! $token instanceof PresentedToken) {
             $this->markFailure($request, 'missing_token');
 
             return null;

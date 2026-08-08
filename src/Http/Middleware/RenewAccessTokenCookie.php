@@ -6,9 +6,10 @@ namespace Polymorph\Platform\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\PresentedToken;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\AuthCookieFactory;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Http\PresentedTokenExtractor;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\JwtService;
-use Polymorph\Platform\Http\Middleware\Concerns\ExtractsJwtAccessToken;
 use Polymorph\Platform\SharedKernel\Identity\AuthenticatedCredential;
 use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,12 +28,11 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final class RenewAccessTokenCookie
 {
-    use ExtractsJwtAccessToken;
-
     public function __construct(
         private readonly JwtService $jwt,
         private readonly AuthCookieFactory $cookies,
         private readonly AuthenticationContext $context,
+        private readonly PresentedTokenExtractor $tokens,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
@@ -53,8 +53,10 @@ final class RenewAccessTokenCookie
             return $response;
         }
 
-        // Bearer-клиенты не используют куку — продлевать нечего.
-        if (trim((string) $request->bearerToken()) !== '') {
+        // Bearer-клиенты не используют куку — продлевать нечего. Канал доставки
+        // теперь спрашиваем у самого токена, а не вторым обращением к запросу.
+        $token = $this->tokens->fromRequest($request);
+        if (! $token instanceof PresentedToken || ! $token->isCookie()) {
             return $response;
         }
 
@@ -63,13 +65,8 @@ final class RenewAccessTokenCookie
             return $response;
         }
 
-        $token = $this->extractAccessToken($request);
-        if ($token === '') {
-            return $response;
-        }
-
         try {
-            $claims = $this->jwt->verify($token, 'access')['claims'] ?? [];
+            $claims = $this->jwt->verify($token->value, 'access')['claims'] ?? [];
         } catch (\Throwable) {
             return $response;
         }

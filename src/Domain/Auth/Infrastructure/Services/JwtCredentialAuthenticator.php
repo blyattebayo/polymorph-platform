@@ -4,23 +4,37 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Services;
 
+use Polymorph\Platform\Domain\Auth\Core\Contracts\CredentialAuthenticator;
 use Polymorph\Platform\Domain\Auth\Core\Exceptions\JwtConfigurationException;
 use Polymorph\Platform\Domain\Auth\Core\Exceptions\JwtVerificationException;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\PresentedToken;
 use Polymorph\Platform\Domain\Users\Queries\FindUserByIdQuery;
 use Polymorph\Platform\SharedKernel\Identity\AuthenticatedCredential;
 
-final class JwtCredentialAuthenticator
+final class JwtCredentialAuthenticator implements CredentialAuthenticator
 {
+    /**
+     * JWS Compact Serialization: три сегмента base64url через точку. Подпись
+     * пустой быть может (`alg: none`) — такие токены намеренно доходят сюда и
+     * отвергаются проверкой, а не отсеиваются молча формой.
+     */
+    private const COMPACT_JWS = '/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*$/';
+
     public function __construct(
         private readonly JwtService $jwt,
         private readonly FindUserByIdQuery $findUserById,
         private readonly AccessTokenDenylist $denylist,
     ) {}
 
-    public function authenticate(string $token): ?AuthenticatedCredential
+    public function supports(PresentedToken $token): bool
+    {
+        return preg_match(self::COMPACT_JWS, $token->value) === 1;
+    }
+
+    public function attempt(PresentedToken $token): ?AuthenticatedCredential
     {
         try {
-            $verified = $this->jwt->verify($token, 'access');
+            $verified = $this->jwt->verify($token->value, 'access');
             $claims = is_array($verified['claims'] ?? null) ? $verified['claims'] : [];
             $subject = $claims['sub'] ?? null;
 

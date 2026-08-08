@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Services;
 
+use Polymorph\Platform\Domain\Auth\Core\Contracts\CredentialAuthenticator;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\PresentedToken;
 use Polymorph\Platform\Domain\Users\Queries\FindUserByIdQuery;
 use Polymorph\Platform\SharedKernel\Identity\AuthenticatedCredential;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 
-final class PatCredentialAuthenticator
+final class PatCredentialAuthenticator implements CredentialAuthenticator
 {
     public function __construct(
         private readonly PersonalAccessTokenService $personalAccessTokens,
@@ -16,24 +18,25 @@ final class PatCredentialAuthenticator
         private readonly AppLogger $logger,
     ) {}
 
-    public function looksLikePat(string $token): bool
+    /**
+     * Что такое «похоже на PAT», знает сервис, который эти токены и выпускает.
+     * Раньше тот же предикат был публичным ещё и здесь — и диспетчер спрашивал
+     * его отдельно, до вызова authenticate().
+     */
+    public function supports(PresentedToken $token): bool
     {
-        return $this->personalAccessTokens->looksLikePat($token);
+        return $this->personalAccessTokens->looksLikePat($token->value);
     }
 
-    public function authenticate(string $token): ?AuthenticatedCredential
+    public function attempt(PresentedToken $token): ?AuthenticatedCredential
     {
-        if (! $this->looksLikePat($token)) {
-            return null;
-        }
-
         if (! (bool) config('pat.enabled', true)) {
             $this->logAuthDenied('disabled');
 
             return null;
         }
 
-        $pat = $this->personalAccessTokens->authenticate($token);
+        $pat = $this->personalAccessTokens->authenticate($token->value);
         if ($pat === null) {
             return null;
         }

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Polymorph\Platform\Domain\Auth\Application\Support\UserCapabilitiesPresenter;
 use Polymorph\Platform\Domain\Auth\Console\PruneAuthSessionsCommand;
+use Polymorph\Platform\Domain\Auth\Core\Contracts\CredentialAuthenticator;
 use Polymorph\Platform\Domain\Auth\Core\Contracts\EmailVerificationNotifier;
 use Polymorph\Platform\Domain\Auth\Core\Contracts\PersonalAccessTokenRepository;
 use Polymorph\Platform\Domain\Auth\Core\Contracts\RefreshSessionRepository;
@@ -22,11 +23,12 @@ use Polymorph\Platform\Domain\Auth\Events\PersonalAccessTokenRevoked;
 use Polymorph\Platform\Domain\Auth\Events\UserLoggedIn;
 use Polymorph\Platform\Domain\Auth\Events\UserLoggedOut;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Guard\ApiGuard;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Http\PresentedTokenExtractor;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Notifications\LaravelEmailVerificationNotifier;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Repositories\EloquentPersonalAccessTokenRepository;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Repositories\EloquentRefreshSessionRepository;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\AccessTokenDenylist;
-use Polymorph\Platform\Domain\Auth\Infrastructure\Services\CompositeCredentialAuthenticator;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Services\CredentialAuthenticatorRegistry;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\JwtCredentialAuthenticator;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\JwtService;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\PatCredentialAuthenticator;
@@ -51,9 +53,25 @@ class AuthServiceProvider extends ServiceProvider
         $this->app->singleton(PersonalAccessTokenRepository::class, EloquentPersonalAccessTokenRepository::class);
         $this->app->singleton(PersonalAccessTokenService::class);
         $this->app->scoped(UserCapabilitiesPresenter::class);
+        $this->app->singleton(PresentedTokenExtractor::class);
         $this->app->singleton(JwtCredentialAuthenticator::class);
         $this->app->singleton(PatCredentialAuthenticator::class);
-        $this->app->singleton(CompositeCredentialAuthenticator::class);
+
+        // Порядок реестра = порядок этого списка: побеждает первый способ,
+        // чей supports() опознал токен. Третий способ добавляется сюда (или
+        // тегом из провайдера расширения), а не правкой условия в диспетчере.
+        $this->app->tag([
+            PatCredentialAuthenticator::class,
+            JwtCredentialAuthenticator::class,
+        ], CredentialAuthenticator::TAG);
+
+        $this->app->singleton(
+            CredentialAuthenticatorRegistry::class,
+            static fn ($app): CredentialAuthenticatorRegistry => new CredentialAuthenticatorRegistry(
+                $app->tagged(CredentialAuthenticator::TAG),
+            ),
+        );
+
         $this->app->singleton(RequestCredentialAuthenticator::class);
         $this->app->singleton(RequestCredentialResolver::class, RequestCredentialAuthenticator::class);
 
