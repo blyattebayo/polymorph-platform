@@ -30,19 +30,9 @@ final readonly class PresentedToken
         return self::make($value, TokenTransport::Cookie);
     }
 
-    public function isBearer(): bool
-    {
-        return $this->transport === TokenTransport::Bearer;
-    }
-
     public function isCookie(): bool
     {
         return $this->transport === TokenTransport::Cookie;
-    }
-
-    public function startsWith(string $prefix): bool
-    {
-        return $prefix !== '' && str_starts_with($this->value, $prefix);
     }
 
     private static function make(string $value, TokenTransport $transport): ?self

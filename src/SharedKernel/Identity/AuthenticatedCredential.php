@@ -24,11 +24,24 @@ final readonly class AuthenticatedCredential
         public CredentialKind $kind,
         /** Id строки auth_sessions — только у интерактивной сессии. */
         public ?int $sessionId = null,
+        /** Когда истекает сам credential, unix-время. */
+        public ?int $expiresAt = null,
+        /** Потолок жизни семьи сессий, unix-время; null — не задан. */
+        public ?int $absoluteExpiresAt = null,
     ) {}
 
-    public static function session(User $user, ?int $sessionId = null): self
-    {
-        return new self($user, CredentialKind::Session, $sessionId);
+    /**
+     * Сроки принимаются здесь, а не вычитываются повторно теми, кому они нужны:
+     * тот, кто credential выдал, эти значения уже проверил. Из-за их отсутствия
+     * продление куки перепроверяло тот же токен вторым HMAC на каждом запросе.
+     */
+    public static function session(
+        User $user,
+        ?int $sessionId = null,
+        ?int $expiresAt = null,
+        ?int $absoluteExpiresAt = null,
+    ): self {
+        return new self($user, CredentialKind::Session, $sessionId, $expiresAt, $absoluteExpiresAt);
     }
 
     public static function personalAccessToken(User $user): self
@@ -53,15 +66,5 @@ final readonly class AuthenticatedCredential
     public function isSession(): bool
     {
         return $this->kind === CredentialKind::Session;
-    }
-
-    public function isPersonalAccessToken(): bool
-    {
-        return $this->kind === CredentialKind::PersonalAccessToken;
-    }
-
-    public function isAssumed(): bool
-    {
-        return $this->kind === CredentialKind::Assumed;
     }
 }

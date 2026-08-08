@@ -57,7 +57,6 @@ class AuthServiceProvider extends ServiceProvider
         $this->app->singleton(PatConfig::class, static fn (): PatConfig => PatConfig::fromArray((array) config('pat', [])));
         $this->app->singleton(AuthCookieConfig::class, static fn (): AuthCookieConfig => AuthCookieConfig::fromArray(
             (array) config('jwt.cookies', []),
-            secureByDefault: config('app.env') !== 'local',
         ));
 
         $this->app->singleton(JwtService::class);

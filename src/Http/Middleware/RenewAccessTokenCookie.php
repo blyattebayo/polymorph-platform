@@ -69,24 +69,21 @@ final class RenewAccessTokenCookie
             return $response;
         }
 
-        try {
-            $claims = $this->jwt->verify($token->value, 'access')['claims'] ?? [];
-        } catch (\Throwable) {
-            return $response;
-        }
-
+        // Сроки берём у credential: токен уже верифицирован при аутентификации
+        // этого же запроса. Раньше здесь стоял второй JWT::decode с полным HMAC
+        // на КАЖДЫЙ запрос cookie-сессии — и try/catch вокруг него, гасивший
+        // расхождение между двумя проверками одного и того же токена.
         $now = time();
-        $accessTtl = $this->jwtConfig->accessTtl;
 
         // Порог: продлеваем только во второй половине жизни токена — чтобы не
         // слать Set-Cookie на каждый запрос активной сессии.
-        $exp = isset($claims['exp']) ? (int) $claims['exp'] : 0;
-        if ($exp > 0 && ($exp - $now) > intdiv($accessTtl, 2)) {
+        $expiresAt = $credential->expiresAt ?? 0;
+        if ($expiresAt > 0 && ($expiresAt - $now) > intdiv($this->jwtConfig->accessTtl, 2)) {
             return $response;
         }
 
         // Абсолютный потолок: если задан и достигнут — даём токену истечь.
-        $absoluteExpiresAt = isset($claims['aex']) ? (int) $claims['aex'] : $this->fallbackAbsoluteExpiry($now);
+        $absoluteExpiresAt = $credential->absoluteExpiresAt ?? $this->fallbackAbsoluteExpiry($now);
         if ($absoluteExpiresAt > 0 && $now >= $absoluteExpiresAt) {
             return $response;
         }

@@ -25,7 +25,6 @@ use Polymorph\Platform\Http\Middleware\AddCacheVary;
 use Polymorph\Platform\Http\Middleware\CanonicalUrl;
 use Polymorph\Platform\Http\Middleware\EnsureSessionCredential;
 use Polymorph\Platform\Http\Middleware\NoCacheAuth;
-use Polymorph\Platform\Http\Middleware\OptionalApiAuth;
 use Polymorph\Platform\Http\Middleware\RenewAccessTokenCookie;
 use Polymorph\Platform\Http\Middleware\RequireCapability;
 use Polymorph\Platform\Http\Middleware\VerifyApiCsrf;
@@ -91,7 +90,6 @@ final class HostBootstrap
         $middleware->appendToGroup('api', RenewAccessTokenCookie::class);
 
         $middleware->alias([
-            OptionalApiAuth::ALIAS => OptionalApiAuth::class,
             'session.credential' => EnsureSessionCredential::class,
             'no-cache-auth' => NoCacheAuth::class,
             RequireCapability::ALIAS => RequireCapability::class,

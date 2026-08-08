@@ -27,7 +27,7 @@ final readonly class AuthCookieConfig
     /**
      * @param  array<string, mixed>  $cookies  секция jwt.cookies
      */
-    public static function fromArray(array $cookies, bool $secureByDefault = true): self
+    public static function fromArray(array $cookies): self
     {
         $domain = $cookies['domain'] ?? null;
 
@@ -35,7 +35,9 @@ final readonly class AuthCookieConfig
             accessName: self::text($cookies['access'] ?? null, 'cms_at'),
             refreshName: self::text($cookies['refresh'] ?? null, 'cms_rt'),
             domain: is_string($domain) && trim($domain) !== '' ? $domain : null,
-            secure: (bool) ($cookies['secure'] ?? $secureByDefault),
+            // Дефолт по окружению задан в config/jwt.php; здесь — только
+            // страховка на случай пустой секции, и она в безопасную сторону.
+            secure: (bool) ($cookies['secure'] ?? true),
             sameSite: self::text($cookies['samesite'] ?? null, 'Strict'),
             path: self::text($cookies['path'] ?? null, '/'),
             refreshPath: self::text($cookies['refresh_path'] ?? null, '/api/v1/auth/refresh'),

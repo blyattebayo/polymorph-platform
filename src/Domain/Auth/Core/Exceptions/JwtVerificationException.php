@@ -26,11 +26,15 @@ class JwtVerificationException extends RuntimeException implements DomainErrorDe
 
     /**
      * Создать исключение для несоответствия типа токена.
+     *
+     * Фактическое значение — mixed, а не string: claim мог отсутствовать или
+     * оказаться не строкой. Под strict_types такой аргумент в string-параметре
+     * давал TypeError, то есть 500 вместо 401 на подписанном, но неполном токене.
      */
-    public static function invalidTokenType(string $expected, string $actual): self
+    public static function invalidTokenType(string $expected, mixed $actual): self
     {
         return new self(
-            "Expected token type '{$expected}', got '{$actual}'",
+            sprintf("Expected token type '%s', got '%s'", $expected, self::describe($actual)),
             'invalid_token_type'
         );
     }
@@ -38,27 +42,21 @@ class JwtVerificationException extends RuntimeException implements DomainErrorDe
     /**
      * Создать исключение для невалидного issuer.
      */
-    public static function invalidIssuer(string $issuer): self
+    public static function invalidIssuer(mixed $issuer): self
     {
         return new self(
-            "Invalid issuer: {$issuer}",
+            'Invalid issuer: '.self::describe($issuer),
             'invalid_issuer'
         );
     }
 
     /**
      * Создать исключение для невалидной audience.
-     *
-     * @param  string|array<int, string>|null  $audience
      */
-    public static function invalidAudience(string|array|null $audience): self
+    public static function invalidAudience(mixed $audience): self
     {
-        $actual = is_array($audience)
-            ? implode(',', array_map(static fn (mixed $value): string => (string) $value, $audience))
-            : (string) ($audience ?? '');
-
         return new self(
-            "Invalid audience: {$actual}",
+            'Invalid audience: '.self::describe($audience),
             'invalid_audience'
         );
     }
@@ -79,5 +77,23 @@ class JwtVerificationException extends RuntimeException implements DomainErrorDe
     protected function errorDetail(): string
     {
         return 'Invalid or malformed authentication token';
+    }
+
+    /**
+     * Диагностическое представление значения claim'а для сообщения исключения.
+     * Наружу оно не идёт — клиент получает errorDetail() и reason, — поэтому
+     * здесь важна не безопасность, а то, чтобы приведение типа не падало само.
+     */
+    private static function describe(mixed $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        if (is_array($value)) {
+            return implode(',', array_map(static fn (mixed $item): string => self::describe($item), $value));
+        }
+
+        return is_scalar($value) ? (string) $value : get_debug_type($value);
     }
 }

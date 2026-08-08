@@ -163,19 +163,23 @@ final class LogContextEnricher
             return $context;
         }
 
-        // КРИТИЧНО: заменяем ЖИВОЙ объект исключения на ограниченное представление.
-        // Иначе formatter (JsonFormatter) при сериализации уходит в объектный граф
-        // трейса — а для исключений из scoped-плагинов он бывает гигантским/цикличным,
-        // что валит запрос в OOM/«max call stack» ПРЯМО в Monolog и маскирует реальную
-        // ошибку. Здесь: плоские метаданные + трейс как ОБРЕЗАННАЯ строка (без живых
-        // объектов и args), размер записи детерминированно ограничен.
-        $context['exception'] = [
-            'class' => $exception::class,
-            'message' => $this->truncate($exception->getMessage(), 2000),
-            'code' => $exception->getCode(),
-            'file' => $exception->getFile().':'.$exception->getLine(),
-            'trace' => $this->truncate($exception->getTraceAsString(), 8000),
-        ];
+        // КРИТИЧНО: ЖИВОЙ объект исключения в контексте оставлять нельзя. Иначе
+        // formatter (JsonFormatter) при сериализации уходит в объектный граф
+        // трейса — а для исключений из scoped-плагинов он бывает гигантским/
+        // цикличным, что валит запрос в OOM/«max call stack» ПРЯМО в Monolog и
+        // маскирует реальную ошибку.
+        //
+        // Ключ снимаем целиком, а не подменяем массивом: `exception` — конвенция
+        // фреймворка. Под тестами Laravel слушает MessageLogged и складывает
+        // context['exception'] в LoggedExceptionCollection, считая, что там
+        // Throwable; любое НЕ-Throwable значение потом ломает рендер сообщения о
+        // провале ассерта (TestResponseAssert зовёт ->getMessage()). Стоило это
+        // того, что на путях ошибок вместо настоящей причины падения теста было
+        // видно «Call to a member function getMessage() on array».
+        //
+        // Всё представление — плоское: живых объектов нет, трейс обрезан,
+        // размер записи ограничен детерминированно, чужой ключ не занят.
+        unset($context['exception']);
 
         return array_merge([
             'exception_class' => $exception::class,
@@ -183,6 +187,7 @@ final class LogContextEnricher
             'exception_code' => $exception->getCode(),
             'exception_file' => $exception->getFile(),
             'exception_line' => $exception->getLine(),
+            'exception_trace' => $this->truncate($exception->getTraceAsString(), 8000),
         ], $context);
     }
 

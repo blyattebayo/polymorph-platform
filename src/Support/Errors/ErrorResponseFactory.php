@@ -16,7 +16,7 @@ use Polymorph\Platform\Support\Logging\TraceId;
  * `$payload->status` в ветви расширений, вывод из `$e instanceof AuthenticationException`
  * в ветви ядра и `throwErrorWithHeaders()` в трейте. Расхождение стоило двух
  * дефектов: 503 от Symfony отдавал `retry_after` в теле и терял заголовок
- * `Retry-After`, а свои 401 (`AuthSessionUnauthorizedException`, `TokenExpiredException`,
+ * `Retry-After`, а свои 401 (`AuthSessionUnauthorizedException`,
  * `JwtVerificationException`) приезжали без `WWW-Authenticate`, обязательного по
  * RFC 7235 — при том что тот же 401 из middleware его ставил.
  */

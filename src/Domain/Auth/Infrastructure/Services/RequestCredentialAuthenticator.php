@@ -71,14 +71,12 @@ final class RequestCredentialAuthenticator implements RequestCredentialResolver
         return $credential;
     }
 
-    public static function failureMessage(string $reason): string
-    {
-        return self::MESSAGES[$reason] ?? 'Unknown authentication failure.';
-    }
-
     private function markFailure(Request $request, string $reason): void
     {
         $request->attributes->set(self::FAILURE_REASON_ATTRIBUTE, $reason);
-        $request->attributes->set(self::FAILURE_MESSAGE_ATTRIBUTE, self::failureMessage($reason));
+        $request->attributes->set(
+            self::FAILURE_MESSAGE_ATTRIBUTE,
+            self::MESSAGES[$reason] ?? 'Unknown authentication failure.',
+        );
     }
 }

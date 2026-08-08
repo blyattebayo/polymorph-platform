@@ -113,12 +113,12 @@ final class JwtService
 
         // Verify token type if specified
         if ($expectType !== null && ($claims['typ'] ?? null) !== $expectType) {
-            throw JwtVerificationException::invalidTokenType($expectType, $claims['typ']);
+            throw JwtVerificationException::invalidTokenType($expectType, $claims['typ'] ?? null);
         }
 
         // Verify issuer (must match)
         if (($claims['iss'] ?? '') !== $this->config->issuer) {
-            throw JwtVerificationException::invalidIssuer($claims['iss']);
+            throw JwtVerificationException::invalidIssuer($claims['iss'] ?? null);
         }
 
         // Verify audience (must include configured audience).

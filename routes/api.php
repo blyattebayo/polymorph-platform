@@ -11,7 +11,6 @@ use Polymorph\Platform\Domain\Auth\Http\Controllers\PasswordResetController;
 use Polymorph\Platform\Domain\Media\Http\Controllers\MediaPreviewController;
 use Polymorph\Platform\Domain\Menu\Http\Controllers\MenuController;
 use Polymorph\Platform\Http\Middleware\EnsureSessionCredential;
-use Polymorph\Platform\Http\Middleware\OptionalApiAuth;
 use Polymorph\Platform\Support\Validation\Http\ValidationRulesController;
 
 /**
@@ -85,9 +84,10 @@ Route::middleware('api')->prefix('api/v1')->group(function (): void {
         ->middleware('auth:api')
         ->name('api.v1.menu.show');
 
-    // Публичная выдача медиа: доступ решает контроллер, поэтому аутентификация
-    // опциональная — анонимный запрос не должен получать 401 на публичный файл.
+    // Публичная выдача медиа: доступ решает контроллер, поэтому auth-middleware
+    // здесь нет — анонимный запрос не должен получать 401 на публичный файл.
+    // Актора контроллер спрашивает у AuthenticationContext, который разбирает
+    // запрос по требованию; отдельный «опциональный» middleware для этого не нужен.
     Route::get('/media/{id}', [MediaPreviewController::class, 'show'])
-        ->middleware(OptionalApiAuth::ALIAS)
         ->name('api.v1.media.show');
 });

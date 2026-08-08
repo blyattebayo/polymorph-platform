@@ -75,8 +75,12 @@ final class ExtensionsCapabilityProvider implements CapabilityDefinitionProvider
             // Каталог не должен падать из-за одного битого плагина, но и молчать
             // нельзя: раньше capability плагинов просто исчезали из /auth/current
             // без следа в логах (аудит, C5).
+            // Передаём само исключение, а не его текст: LogContextEnricher
+            // разложит его в плоские exception_* и снимет ключ. Раньше здесь
+            // была строка — запись выпадала из общей схемы (ни класса, ни
+            // трейса) и занимала ключ, который фреймворк считает Throwable.
             app(AppLogger::class)->error('extensions.capability_catalog_failed', [
-                'exception' => $exception->getMessage(),
+                'exception' => $exception,
             ]);
 
             return [];

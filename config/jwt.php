@@ -3,8 +3,9 @@
 declare(strict_types=1);
 
 return [
-    'default_guard' => env('JWT_GUARD', 'api'),
-
+    // Гард задаётся в config/auth.php (auth.defaults.guard / AUTH_GUARD).
+    // Здесь дубля больше нет: ключ jwt.default_guard не читался ниоткуда и
+    // выглядел рабочей ручкой, ничего не меняя.
     'algo' => env('JWT_ALGO', 'HS256'),
     'access_ttl' => (int) env('JWT_ACCESS_TTL', 15 * 60),
     'refresh_ttl' => (int) env('JWT_REFRESH_TTL', 30 * 24 * 60 * 60),

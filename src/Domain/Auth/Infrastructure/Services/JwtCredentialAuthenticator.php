@@ -54,7 +54,12 @@ final class JwtCredentialAuthenticator implements CredentialAuthenticator
                 return null;
             }
 
-            return AuthenticatedCredential::session($user, $sessionId);
+            return AuthenticatedCredential::session(
+                $user,
+                $sessionId,
+                expiresAt: $this->epochClaim($claims, 'exp'),
+                absoluteExpiresAt: $this->epochClaim($claims, 'aex'),
+            );
         } catch (JwtConfigurationException $exception) {
             throw $exception;
         } catch (JwtVerificationException|\UnexpectedValueException|\InvalidArgumentException|\DomainException) {
@@ -65,5 +70,15 @@ final class JwtCredentialAuthenticator implements CredentialAuthenticator
             // намеренно НЕ глотаем — они должны всплывать как 500, не как 401.
             return null;
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $claims
+     */
+    private function epochClaim(array $claims, string $name): ?int
+    {
+        $value = $claims[$name] ?? null;
+
+        return is_numeric($value) ? (int) $value : null;
     }
 }

@@ -30,16 +30,6 @@ final class AuthCookieFactory
         return $this->make($this->config->refreshName, $token, $this->minutes($this->jwt->refreshTtl), $this->config->refreshPath);
     }
 
-    public function forgetAccess(): Cookie
-    {
-        return $this->make($this->config->accessName, '', -1, $this->config->path);
-    }
-
-    public function forgetRefresh(): Cookie
-    {
-        return $this->make($this->config->refreshName, '', -1, $this->config->refreshPath);
-    }
-
     public function accessName(): string
     {
         return $this->config->accessName;
@@ -67,8 +57,8 @@ final class AuthCookieFactory
     public function forgetPair(): array
     {
         return [
-            $this->forgetAccess(),
-            $this->forgetRefresh(),
+            $this->make($this->config->accessName, '', -1, $this->config->path),
+            $this->make($this->config->refreshName, '', -1, $this->config->refreshPath),
         ];
     }
 

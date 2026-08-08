@@ -12,13 +12,12 @@ use InvalidArgumentException;
 use Polymorph\Platform\Domain\Auth\Core\Contracts\PersonalAccessTokenRepository;
 use Polymorph\Platform\Domain\Auth\Core\Models\PersonalAccessToken;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\PatConfig;
-use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 
 final class PersonalAccessTokenService
 {
     public function __construct(
         private readonly PersonalAccessTokenRepository $repository,
-        private readonly AppLogger $logger,
+        private readonly PersonalAccessTokenDenialLogger $denials,
         private readonly PatConfig $config,
     ) {}
 
@@ -61,19 +60,19 @@ final class PersonalAccessTokenService
         $token = $this->repository->findByHash($this->hash($plaintext));
 
         if (! $token instanceof PersonalAccessToken) {
-            $this->logAuthDenied('not_found');
+            $this->denials->denied('not_found');
 
             return null;
         }
 
         if ($token->isRevoked()) {
-            $this->logAuthDenied('revoked', (int) $token->id);
+            $this->denials->denied('revoked', (int) $token->id);
 
             return null;
         }
 
         if ($token->isExpired()) {
-            $this->logAuthDenied('expired', (int) $token->id);
+            $this->denials->denied('expired', (int) $token->id);
 
             return null;
         }
@@ -120,13 +119,5 @@ final class PersonalAccessTokenService
     private function visiblePrefix(string $plaintext): string
     {
         return substr($plaintext, 0, min($this->config->visiblePrefixLength(), strlen($plaintext)));
-    }
-
-    private function logAuthDenied(string $reason, ?int $tokenId = null): void
-    {
-        $this->logger->event('auth.personal_access_token.denied', array_filter([
-            'reason' => $reason,
-            'token_id' => $tokenId,
-        ], static fn (mixed $value): bool => $value !== null));
     }
 }
