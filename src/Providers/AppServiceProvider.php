@@ -8,6 +8,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthCookieConfig;
 use Polymorph\Platform\Domain\Extensions\Http\ExtensionErrorResolver;
 use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
@@ -110,7 +111,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('auth-refresh', static function (Request $request): Limit {
-            $refreshCookieName = (string) config('jwt.cookies.refresh', 'cms_rt');
+            $refreshCookieName = app(AuthCookieConfig::class)->refreshName;
             $fingerprint = hash('sha256', (string) $request->cookie($refreshCookieName, ''));
             $key = sha1($request->ip().'|'.$fingerprint);
 

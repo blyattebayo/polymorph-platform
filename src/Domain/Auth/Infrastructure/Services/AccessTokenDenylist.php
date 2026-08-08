@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Services;
 
 use Illuminate\Support\Facades\Cache;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\JwtConfig;
 
 /**
  * Мгновенный отзыв access-токенов по claim `sid`.
@@ -14,6 +15,10 @@ use Illuminate\Support\Facades\Cache;
  */
 final class AccessTokenDenylist
 {
+    public function __construct(
+        private readonly JwtConfig $jwt,
+    ) {}
+
     /**
      * @param  list<int>  $sessionIds
      */
@@ -31,13 +36,14 @@ final class AccessTokenDenylist
         return Cache::get($this->key($sessionId)) === true;
     }
 
+    /** Тот же запас, что и у отсечки в EloquentRefreshSessionRepository. */
+    public function ttlSeconds(): int
+    {
+        return $this->jwt->accessTtl + $this->jwt->leeway + 60;
+    }
+
     private function key(int $sessionId): string
     {
         return 'auth:revoked_session:'.$sessionId;
-    }
-
-    private function ttlSeconds(): int
-    {
-        return (int) config('jwt.access_ttl', 900) + (int) config('jwt.leeway', 5) + 60;
     }
 }

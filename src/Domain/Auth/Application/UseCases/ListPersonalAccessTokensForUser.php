@@ -7,7 +7,12 @@ namespace Polymorph\Platform\Domain\Auth\Application\UseCases;
 use Polymorph\Platform\Domain\Auth\Application\DTO\PersonalAccessTokenView;
 use Polymorph\Platform\Domain\Auth\Core\Contracts\PersonalAccessTokenRepository;
 
-final class ListOwnPersonalAccessTokens
+/**
+ * Токены одного пользователя. Назывался ListOwn, хотя админский контроллер
+ * зовёт его же для чужого userId — «own» задавало границу, которой у него нет:
+ * чей список отдавать, решает вызывающий, а право на это — capability маршрута.
+ */
+final class ListPersonalAccessTokensForUser
 {
     public function __construct(
         private readonly PersonalAccessTokenRepository $repository,

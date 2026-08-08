@@ -6,21 +6,25 @@ namespace Polymorph\Platform\Domain\Auth\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Polymorph\Platform\Domain\Auth\Application\DTO\CreatePersonalAccessTokenCommand;
-use Polymorph\Platform\Domain\Auth\Application\UseCases\CreateOwnPersonalAccessToken;
-use Polymorph\Platform\Domain\Auth\Application\UseCases\ListOwnPersonalAccessTokens;
-use Polymorph\Platform\Domain\Auth\Application\UseCases\RevokeOwnPersonalAccessToken;
+use Polymorph\Platform\Domain\Auth\Application\UseCases\CreatePersonalAccessToken;
+use Polymorph\Platform\Domain\Auth\Application\UseCases\ListPersonalAccessTokensForUser;
+use Polymorph\Platform\Domain\Auth\Application\UseCases\RevokePersonalAccessToken;
 use Polymorph\Platform\Domain\Auth\Http\Requests\StorePersonalAccessTokenRequest;
 use Polymorph\Platform\Domain\Auth\Http\Resources\CreatedPersonalAccessTokenResource;
 use Polymorph\Platform\Domain\Auth\Http\Resources\PersonalAccessTokenResource;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
 use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 
+/**
+ * Свои токены. «Свой» здесь — не отдельный use-case, а подставленный userId
+ * текущего актора: сами операции общие с админским контроллером.
+ */
 final class MePersonalAccessTokenController
 {
     public function __construct(
-        private readonly ListOwnPersonalAccessTokens $listOwn,
-        private readonly CreateOwnPersonalAccessToken $createOwn,
-        private readonly RevokeOwnPersonalAccessToken $revokeOwn,
+        private readonly ListPersonalAccessTokensForUser $list,
+        private readonly CreatePersonalAccessToken $create,
+        private readonly RevokePersonalAccessToken $revoke,
         private readonly AuthenticationContext $auth,
     ) {}
 
@@ -30,7 +34,7 @@ final class MePersonalAccessTokenController
 
         return AdminResponse::json([
             'data' => PersonalAccessTokenResource::collection(
-                $this->listOwn->execute($user->userId()),
+                $this->list->execute($user->userId()),
             ),
         ]);
     }
@@ -40,7 +44,7 @@ final class MePersonalAccessTokenController
         $user = $this->auth->requireUser();
         $validated = $request->validated();
 
-        $created = $this->createOwn->execute(
+        $created = $this->create->execute(
             new CreatePersonalAccessTokenCommand(
                 userId: $user->userId(),
                 name: (string) $validated['name'],
@@ -59,7 +63,13 @@ final class MePersonalAccessTokenController
     {
         $user = $this->auth->requireUser();
 
-        if (! $this->revokeOwn->execute($tokenId, $user->userId(), $this->auth->credential())) {
+        $revoked = $this->revoke->execute(
+            $tokenId,
+            restrictToUserId: $user->userId(),
+            actorCredential: $this->auth->credential(),
+        );
+
+        if (! $revoked) {
             abort(404);
         }
 

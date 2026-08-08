@@ -13,6 +13,8 @@ use Polymorph\Platform\Domain\Auth\Application\Exceptions\AuthSessionUnauthorize
 use Polymorph\Platform\Domain\Auth\Application\Policies\SessionRotationDecision;
 use Polymorph\Platform\Domain\Auth\Application\Policies\SessionRotationPolicy;
 use Polymorph\Platform\Domain\Auth\Core\Contracts\RefreshSessionRepository;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthSessionConfig;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\JwtConfig;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\AccessTokenDenylist;
 use Polymorph\Platform\Domain\Users\Core\Contracts\UserSessionRevoker;
 
@@ -21,6 +23,8 @@ final class EloquentRefreshSessionRepository implements RefreshSessionRepository
     public function __construct(
         private readonly SessionRotationPolicy $rotationPolicy,
         private readonly AccessTokenDenylist $denylist,
+        private readonly JwtConfig $jwt,
+        private readonly AuthSessionConfig $sessions,
     ) {}
 
     public function createForUser(int $userId, ?string $ip = null, ?string $userAgent = null): RefreshSessionRotation
@@ -241,7 +245,7 @@ final class EloquentRefreshSessionRepository implements RefreshSessionRepository
      */
     private function evictSessionsOverLimit(int $userId): void
     {
-        $max = max(1, (int) config('jwt.max_sessions_per_user', 20));
+        $max = $this->sessions->maxSessionsPerUser;
 
         $active = DB::table('auth_sessions')
             ->where('user_id', $userId)
@@ -288,9 +292,9 @@ final class EloquentRefreshSessionRepository implements RefreshSessionRepository
      */
     private function denylistRecentSessionIds(Builder $query): void
     {
-        $cutoff = CarbonImmutable::now('UTC')->subSeconds(
-            (int) config('jwt.access_ttl', 900) + (int) config('jwt.leeway', 5) + 60,
-        );
+        // Та же отсечка, что и TTL denylist: смысла держать в нём сессию дольше,
+        // чем живёт её access-токен, нет — и наоборот, короче нельзя.
+        $cutoff = CarbonImmutable::now('UTC')->subSeconds($this->denylist->ttlSeconds());
 
         $sessionIds = (clone $query)
             ->where('created_at', '>=', $cutoff)
@@ -315,7 +319,7 @@ final class EloquentRefreshSessionRepository implements RefreshSessionRepository
 
     private function expiresAt(?CarbonImmutable $absoluteExpiresAt): CarbonImmutable
     {
-        $expiresAt = CarbonImmutable::now('UTC')->addSeconds((int) config('jwt.refresh_ttl', 2592000));
+        $expiresAt = CarbonImmutable::now('UTC')->addSeconds($this->jwt->refreshTtl);
 
         if ($absoluteExpiresAt !== null && $absoluteExpiresAt->lessThan($expiresAt)) {
             return $absoluteExpiresAt;
@@ -326,7 +330,7 @@ final class EloquentRefreshSessionRepository implements RefreshSessionRepository
 
     private function familyTtl(): int
     {
-        return (int) config('jwt.refresh_family_ttl', 90 * 24 * 60 * 60);
+        return $this->sessions->refreshFamilyTtl;
     }
 
     private function parseNullableTimestamp(mixed $value): ?CarbonImmutable

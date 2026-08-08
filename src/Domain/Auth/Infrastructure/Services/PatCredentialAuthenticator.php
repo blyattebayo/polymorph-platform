@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Services;
 
 use Polymorph\Platform\Domain\Auth\Core\Contracts\CredentialAuthenticator;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\PatConfig;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\PresentedToken;
 use Polymorph\Platform\Domain\Users\Queries\FindUserByIdQuery;
 use Polymorph\Platform\SharedKernel\Identity\AuthenticatedCredential;
@@ -16,6 +17,7 @@ final class PatCredentialAuthenticator implements CredentialAuthenticator
         private readonly PersonalAccessTokenService $personalAccessTokens,
         private readonly FindUserByIdQuery $findUserById,
         private readonly AppLogger $logger,
+        private readonly PatConfig $config,
     ) {}
 
     /**
@@ -30,7 +32,7 @@ final class PatCredentialAuthenticator implements CredentialAuthenticator
 
     public function attempt(PresentedToken $token): ?AuthenticatedCredential
     {
-        if (! (bool) config('pat.enabled', true)) {
+        if (! $this->config->enabled) {
             $this->logAuthDenied('disabled');
 
             return null;

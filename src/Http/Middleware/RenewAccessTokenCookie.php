@@ -6,6 +6,8 @@ namespace Polymorph\Platform\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthSessionConfig;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\JwtConfig;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\PresentedToken;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\AuthCookieFactory;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\PresentedTokenExtractor;
@@ -33,6 +35,8 @@ final class RenewAccessTokenCookie
         private readonly AuthCookieFactory $cookies,
         private readonly AuthenticationContext $context,
         private readonly PresentedTokenExtractor $tokens,
+        private readonly JwtConfig $jwtConfig,
+        private readonly AuthSessionConfig $sessions,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
@@ -72,7 +76,7 @@ final class RenewAccessTokenCookie
         }
 
         $now = time();
-        $accessTtl = (int) config('jwt.access_ttl', 900);
+        $accessTtl = $this->jwtConfig->accessTtl;
 
         // Порог: продлеваем только во второй половине жизни токена — чтобы не
         // слать Set-Cookie на каждый запрос активной сессии.
@@ -113,6 +117,6 @@ final class RenewAccessTokenCookie
     /** Потолок для legacy-токенов без claim `aex` (graceful-миграция). */
     private function fallbackAbsoluteExpiry(int $now): int
     {
-        return $now + (int) config('jwt.refresh_family_ttl', 90 * 24 * 60 * 60);
+        return $now + $this->sessions->refreshFamilyTtl;
     }
 }

@@ -4,90 +4,50 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Http;
 
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthCookieConfig;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\JwtConfig;
 use Symfony\Component\HttpFoundation\Cookie;
 
+/**
+ * Выписывает и гасит auth-куки. Параметры приходят типизированными: приватный
+ * config()-метод, который на каждый вызов пересобирал массив из config('jwt.*')
+ * со своими дефолтами, больше не нужен.
+ */
 final class AuthCookieFactory
 {
-    /**
-     * @return array{access: string, refresh: string, domain: mixed, secure: bool, samesite: string, path: string, refresh_path: string}
-     */
-    private function config(): array
-    {
-        $jwtCookies = (array) config('jwt.cookies', []);
-
-        return [
-            'access' => (string) ($jwtCookies['access'] ?? 'cms_at'),
-            'refresh' => (string) ($jwtCookies['refresh'] ?? 'cms_rt'),
-            'domain' => $jwtCookies['domain'] ?? null,
-            'secure' => (bool) ($jwtCookies['secure'] ?? config('app.env') !== 'local'),
-            'samesite' => (string) ($jwtCookies['samesite'] ?? 'Strict'),
-            'path' => (string) ($jwtCookies['path'] ?? '/'),
-            'refresh_path' => (string) ($jwtCookies['refresh_path'] ?? '/api/v1/auth/refresh'),
-        ];
-    }
+    public function __construct(
+        private readonly AuthCookieConfig $config,
+        private readonly JwtConfig $jwt,
+    ) {}
 
     public function access(string $token): Cookie
     {
-        $config = $this->config();
-        $minutes = (int) ceil(((int) config('jwt.access_ttl', 900)) / 60);
-        $sameSite = $this->normalizeSameSite((string) $config['samesite']);
-
-        return Cookie::create($config['access'], $token, now()->addMinutes($minutes))
-            ->withSecure($this->secure($sameSite, (bool) $config['secure']))
-            ->withHttpOnly(true)
-            ->withSameSite($sameSite)
-            ->withPath($config['path'])
-            ->withDomain($config['domain']);
+        return $this->make($this->config->accessName, $token, $this->minutes($this->jwt->accessTtl), $this->config->path);
     }
 
     public function refresh(string $token): Cookie
     {
-        $config = $this->config();
-        $minutes = (int) ceil(((int) config('jwt.refresh_ttl', 2592000)) / 60);
-        $sameSite = $this->normalizeSameSite((string) $config['samesite']);
-
-        return Cookie::create($config['refresh'], $token, now()->addMinutes($minutes))
-            ->withSecure($this->secure($sameSite, (bool) $config['secure']))
-            ->withHttpOnly(true)
-            ->withSameSite($sameSite)
-            ->withPath($config['refresh_path'])
-            ->withDomain($config['domain']);
-    }
-
-    public function refreshName(): string
-    {
-        return $this->config()['refresh'];
-    }
-
-    public function accessName(): string
-    {
-        return $this->config()['access'];
+        return $this->make($this->config->refreshName, $token, $this->minutes($this->jwt->refreshTtl), $this->config->refreshPath);
     }
 
     public function forgetAccess(): Cookie
     {
-        $config = $this->config();
-        $sameSite = $this->normalizeSameSite((string) $config['samesite']);
-
-        return Cookie::create($config['access'], '', now()->subMinutes(1))
-            ->withSecure($this->secure($sameSite, (bool) $config['secure']))
-            ->withHttpOnly(true)
-            ->withSameSite($sameSite)
-            ->withPath($config['path'])
-            ->withDomain($config['domain']);
+        return $this->make($this->config->accessName, '', -1, $this->config->path);
     }
 
     public function forgetRefresh(): Cookie
     {
-        $config = $this->config();
-        $sameSite = $this->normalizeSameSite((string) $config['samesite']);
+        return $this->make($this->config->refreshName, '', -1, $this->config->refreshPath);
+    }
 
-        return Cookie::create($config['refresh'], '', now()->subMinutes(1))
-            ->withSecure($this->secure($sameSite, (bool) $config['secure']))
-            ->withHttpOnly(true)
-            ->withSameSite($sameSite)
-            ->withPath($config['refresh_path'])
-            ->withDomain($config['domain']);
+    public function accessName(): string
+    {
+        return $this->config->accessName;
+    }
+
+    public function refreshName(): string
+    {
+        return $this->config->refreshName;
     }
 
     /**
@@ -112,6 +72,23 @@ final class AuthCookieFactory
         ];
     }
 
+    private function make(string $name, string $value, int $minutes, string $path): Cookie
+    {
+        $sameSite = $this->normalizeSameSite($this->config->sameSite);
+
+        return Cookie::create($name, $value, now()->addMinutes($minutes))
+            ->withSecure($this->secure($sameSite))
+            ->withHttpOnly(true)
+            ->withSameSite($sameSite)
+            ->withPath($path)
+            ->withDomain($this->config->domain);
+    }
+
+    private function minutes(int $ttlSeconds): int
+    {
+        return (int) ceil($ttlSeconds / 60);
+    }
+
     private function normalizeSameSite(string $sameSite): string
     {
         return match (strtolower(trim($sameSite))) {
@@ -122,8 +99,9 @@ final class AuthCookieFactory
         };
     }
 
-    private function secure(string $sameSite, bool $configured): bool
+    /** SameSite=None без Secure браузер отвергает — поднимаем флаг принудительно. */
+    private function secure(string $sameSite): bool
     {
-        return $sameSite === Cookie::SAMESITE_NONE || $configured;
+        return $sameSite === Cookie::SAMESITE_NONE || $this->config->secure;
     }
 }

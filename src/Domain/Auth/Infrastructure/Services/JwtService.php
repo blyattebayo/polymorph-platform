@@ -22,14 +22,13 @@ use Polymorph\Platform\Domain\Auth\Core\ValueObjects\JwtConfig;
  */
 final class JwtService
 {
-    private readonly JwtConfig $config;
-
-    /**
-     * @param  JwtConfig|array<string, mixed>  $config
-     */
-    public function __construct(JwtConfig|array $config)
-    {
-        $this->config = is_array($config) ? JwtConfig::fromArray($config) : $config;
+    public function __construct(
+        private readonly JwtConfig $config,
+    ) {
+        // Допуск часов у Firebase JWT — статика, задать её можно только глобально.
+        // Делаем это здесь, а не в boot() провайдера: там пришлось бы резолвить
+        // конфиг до того, как приложение (и тесты) успеют его задать.
+        JWT::$leeway = $this->config->leeway;
     }
 
     /**

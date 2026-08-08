@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Polymorph\Platform\Domain\Auth\Core\Contracts\PersonalAccessTokenRepository;
 use Polymorph\Platform\Domain\Auth\Core\Models\PersonalAccessToken;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\PatConfig;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 
 final class PersonalAccessTokenService
@@ -18,6 +19,7 @@ final class PersonalAccessTokenService
     public function __construct(
         private readonly PersonalAccessTokenRepository $repository,
         private readonly AppLogger $logger,
+        private readonly PatConfig $config,
     ) {}
 
     /**
@@ -34,7 +36,7 @@ final class PersonalAccessTokenService
             throw new InvalidArgumentException('Personal access token name is required.');
         }
 
-        $plaintext = $this->generatePlaintext();
+        $plaintext = $this->config->prefix.Str::random(40);
 
         return DB::transaction(function () use ($userId, $name, $createdByUserId, $expiresAt, $plaintext): array {
             $token = $this->repository->create(
@@ -42,7 +44,7 @@ final class PersonalAccessTokenService
                 name: $name,
                 createdByUserId: $createdByUserId,
                 tokenHash: $this->hash($plaintext),
-                tokenPrefix: $this->prefix($plaintext),
+                tokenPrefix: $this->visiblePrefix($plaintext),
                 expiresAt: $expiresAt,
             );
 
@@ -81,17 +83,20 @@ final class PersonalAccessTokenService
         return $token;
     }
 
+    /**
+     * Единственное определение «похоже на PAT» в системе: его спрашивает и
+     * реестр способов аутентификации (через PatCredentialAuthenticator::supports),
+     * и этот сервис как собственную страховку для прямых вызовов.
+     */
     public function looksLikePat(string $plaintext): bool
     {
-        $prefix = (string) config('pat.prefix', 'pmph_pat_');
-
-        return $prefix !== '' && str_starts_with($plaintext, $prefix);
+        return str_starts_with($plaintext, $this->config->prefix);
     }
 
     public function resolveExpiresAt(?string $ttl = null): ?DateTimeImmutable
     {
-        $resolvedTtl = $ttl ?? config('pat.default_ttl');
-        if (! is_string($resolvedTtl) || trim($resolvedTtl) === '') {
+        $resolvedTtl = $ttl ?? $this->config->defaultTtl;
+        if ($resolvedTtl === null || trim($resolvedTtl) === '') {
             return null;
         }
 
@@ -103,20 +108,7 @@ final class PersonalAccessTokenService
      */
     public function ttlOptions(): array
     {
-        return array_values(array_filter(
-            array_map(
-                static fn (mixed $ttl): string => trim((string) $ttl),
-                (array) config('pat.ttl_options', []),
-            ),
-            static fn (string $ttl): bool => $ttl !== '',
-        ));
-    }
-
-    private function generatePlaintext(): string
-    {
-        $prefix = (string) config('pat.prefix', 'pmph_pat_');
-
-        return $prefix.Str::random(40);
+        return $this->config->ttlOptions;
     }
 
     private function hash(string $plaintext): string
@@ -124,11 +116,10 @@ final class PersonalAccessTokenService
         return hash('sha256', $plaintext);
     }
 
-    private function prefix(string $plaintext): string
+    /** Видимый в списках огрызок токена. */
+    private function visiblePrefix(string $plaintext): string
     {
-        $prefix = (string) config('pat.prefix', 'pmph_pat_');
-
-        return substr($plaintext, 0, min(strlen($prefix) + 6, strlen($plaintext)));
+        return substr($plaintext, 0, min($this->config->visiblePrefixLength(), strlen($plaintext)));
     }
 
     private function logAuthDenied(string $reason, ?int $tokenId = null): void

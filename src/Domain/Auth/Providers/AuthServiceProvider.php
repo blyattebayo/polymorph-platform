@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Providers;
 
-use Firebase\JWT\JWT;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +16,10 @@ use Polymorph\Platform\Domain\Auth\Core\Contracts\EmailVerificationNotifier;
 use Polymorph\Platform\Domain\Auth\Core\Contracts\PersonalAccessTokenRepository;
 use Polymorph\Platform\Domain\Auth\Core\Contracts\RefreshSessionRepository;
 use Polymorph\Platform\Domain\Auth\Core\Exceptions\JwtConfigurationException;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthCookieConfig;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthSessionConfig;
 use Polymorph\Platform\Domain\Auth\Core\ValueObjects\JwtConfig;
+use Polymorph\Platform\Domain\Auth\Core\ValueObjects\PatConfig;
 use Polymorph\Platform\Domain\Auth\Events\PersonalAccessTokenCreated;
 use Polymorph\Platform\Domain\Auth\Events\PersonalAccessTokenRevoked;
 use Polymorph\Platform\Domain\Auth\Events\UserLoggedIn;
@@ -46,9 +48,19 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->assertProductionJwtSecretConfigured();
 
-        $this->app->singleton(JwtService::class, function () {
-            return new JwtService(JwtConfig::fromArray((array) config('jwt', [])));
-        });
+        // Единственное место, где читается config('jwt.*') и config('pat.*').
+        // Замыкания ленивые: снимок конфига делается при первом обращении, а не
+        // на регистрации, — иначе тесты, подменяющие секрет и TTL в beforeEach,
+        // получали бы значения, снятые до подмены.
+        $this->app->singleton(JwtConfig::class, static fn (): JwtConfig => JwtConfig::fromArray((array) config('jwt', [])));
+        $this->app->singleton(AuthSessionConfig::class, static fn (): AuthSessionConfig => AuthSessionConfig::fromArray((array) config('jwt', [])));
+        $this->app->singleton(PatConfig::class, static fn (): PatConfig => PatConfig::fromArray((array) config('pat', [])));
+        $this->app->singleton(AuthCookieConfig::class, static fn (): AuthCookieConfig => AuthCookieConfig::fromArray(
+            (array) config('jwt.cookies', []),
+            secureByDefault: config('app.env') !== 'local',
+        ));
+
+        $this->app->singleton(JwtService::class);
 
         $this->app->singleton(PersonalAccessTokenRepository::class, EloquentPersonalAccessTokenRepository::class);
         $this->app->singleton(PersonalAccessTokenService::class);
@@ -87,8 +99,9 @@ class AuthServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        JWT::$leeway = (int) config('jwt.leeway', 5);
-
+        // JWT::$leeway ставит сам JwtService из своего JwtConfig: здесь пришлось
+        // бы резолвить конфиг на boot, то есть снимать его до того, как код
+        // (и тесты) успеют его задать.
         $this->registerApiGuard();
         $this->registerEventListeners();
         $this->registerSchedule();
@@ -134,6 +147,11 @@ class AuthServiceProvider extends ServiceProvider
         });
     }
 
+    /**
+     * Читает config напрямую намеренно: это проверка на регистрации, до того
+     * как хоть кто-то успел резолвить JwtConfig. Резолвить его здесь значило бы
+     * зафиксировать снимок конфига на этапе загрузки провайдеров.
+     */
     private function assertProductionJwtSecretConfigured(): void
     {
         if (! $this->app->environment('production')) {

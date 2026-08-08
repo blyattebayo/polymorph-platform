@@ -15,6 +15,8 @@ final readonly class JwtConfig
         public array $keys,
         public string $issuer,
         public string $audience,
+        /** Допуск часов при проверке exp/nbf, секунды. */
+        public int $leeway = 5,
     ) {}
 
     /**
@@ -31,6 +33,7 @@ final readonly class JwtConfig
             keys: self::normalizeKeys($config),
             issuer: (string) ($config['issuer'] ?? ''),
             audience: (string) ($config['audience'] ?? ''),
+            leeway: (int) ($config['leeway'] ?? 5),
         );
     }
 
