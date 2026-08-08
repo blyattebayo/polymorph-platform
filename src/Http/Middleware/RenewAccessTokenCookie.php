@@ -6,10 +6,11 @@ namespace Polymorph\Platform\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\AuthCookieFactory;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\JwtService;
 use Polymorph\Platform\Http\Middleware\Concerns\ExtractsJwtAccessToken;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticatedCredential;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -31,6 +32,7 @@ final class RenewAccessTokenCookie
     public function __construct(
         private readonly JwtService $jwt,
         private readonly AuthCookieFactory $cookies,
+        private readonly AuthenticationContext $context,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
@@ -41,12 +43,12 @@ final class RenewAccessTokenCookie
             return $response;
         }
 
-        $credential = $request->attributes->get(AuthenticatedCredential::REQUEST_ATTRIBUTE);
+        $credential = $this->context->credential();
 
         // Только cookie-сессии (не PAT) и только когда запрос реально прошёл
         // аутентификацию ядра (denylist по sid уже проверен гардом).
         if (! $credential instanceof AuthenticatedCredential
-            || ! $credential->isJwtSession()
+            || ! $credential->isSession()
             || $credential->sessionId === null) {
             return $response;
         }

@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Services;
 
-use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
-use Polymorph\Platform\Domain\Auth\Core\ValueObjects\CredentialKind;
 use Polymorph\Platform\Domain\Users\Queries\FindUserByIdQuery;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticatedCredential;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 
 final class PatCredentialAuthenticator
@@ -46,7 +45,7 @@ final class PatCredentialAuthenticator
             return null;
         }
 
-        return new AuthenticatedCredential($user, CredentialKind::PersonalAccessToken, $pat);
+        return AuthenticatedCredential::personalAccessToken($user);
     }
 
     private function logAuthDenied(string $reason, ?int $tokenId = null): void

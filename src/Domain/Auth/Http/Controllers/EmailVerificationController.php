@@ -12,7 +12,7 @@ use Polymorph\Platform\Domain\Auth\Application\DTO\VerifyEmailViaSignedLinkComma
 use Polymorph\Platform\Domain\Auth\Application\UseCases\ResendEmailVerificationNotification;
 use Polymorph\Platform\Domain\Auth\Application\UseCases\VerifyEmailViaSignedLink;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\EmailVerificationRedirectFactory;
-use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 
 /**
  * Подтверждение email по подписанной ссылке из письма + повторная отправка.
@@ -23,7 +23,7 @@ use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
 final readonly class EmailVerificationController
 {
     public function __construct(
-        private CurrentActorResolver $currentActor,
+        private AuthenticationContext $auth,
         private VerifyEmailViaSignedLink $verifyEmail,
         private ResendEmailVerificationNotification $resendVerification,
         private EmailVerificationRedirectFactory $redirects,
@@ -43,7 +43,7 @@ final readonly class EmailVerificationController
     public function resend(): JsonResponse
     {
         $this->resendVerification->execute(new ResendEmailVerificationNotificationCommand(
-            userId: $this->currentActor->requireUser()->userId(),
+            userId: $this->auth->requireUser()->userId(),
         ));
 
         // Идемпотентно и без раскрытия статуса: всегда 202.

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Services;
 
-use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticatedCredential;
 
 final class CompositeCredentialAuthenticator
 {

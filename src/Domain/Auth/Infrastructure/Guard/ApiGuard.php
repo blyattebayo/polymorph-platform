@@ -6,25 +6,23 @@ namespace Polymorph\Platform\Domain\Auth\Infrastructure\Guard;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Guard;
-use Illuminate\Http\Request;
-use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
-use Polymorph\Platform\Domain\Auth\Infrastructure\Services\RequestCredentialAuthenticator;
+use InvalidArgumentException;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 
+/**
+ * Адаптер контракта Laravel к {@see AuthenticationContext}. Собственного
+ * состояния у гарда нет: и «кто», и «чем доказано» держит контекст.
+ *
+ * Отсюда ушли поля $user/$credential/$resolved/$manualUser, ручная
+ * синхронизация атрибутов запроса и setRequest() вместе с
+ * `$app->refresh('request', ...)`: контекст сам смотрит на текущий запрос,
+ * поэтому подмена объекта Request больше не требует ничего переносить руками.
+ */
 final class ApiGuard implements Guard
 {
-    private ?Authenticatable $user = null;
-
-    private ?AuthenticatedCredential $credential = null;
-
-    private bool $resolved = false;
-
-    private bool $manualUser = false;
-
     public function __construct(
-        private readonly RequestCredentialAuthenticator $credentials,
-        private Request $request,
+        private readonly AuthenticationContext $context,
     ) {}
 
     public function check(): bool
@@ -39,20 +37,12 @@ final class ApiGuard implements Guard
 
     public function user(): ?Authenticatable
     {
-        if ($this->user instanceof Authenticatable) {
-            $this->syncUserAttributes($this->user);
-
-            return $this->user;
-        }
-
-        return $this->authenticate(required: false)?->user;
+        return $this->context->user();
     }
 
     public function id(): int|string|null
     {
-        $user = $this->user();
-
-        return $user instanceof Authenticatable ? $user->getAuthIdentifier() : null;
+        return $this->context->authIdentifier();
     }
 
     /**
@@ -65,69 +55,19 @@ final class ApiGuard implements Guard
 
     public function hasUser(): bool
     {
-        return $this->user instanceof Authenticatable;
+        return $this->context->hasCredential();
     }
 
     public function setUser(Authenticatable $user): static
     {
-        $this->user = $user;
-        $this->resolved = true;
-        $this->manualUser = true;
-        $this->syncUserAttributes($user);
-
-        return $this;
-    }
-
-    public function setRequest(Request $request): void
-    {
-        $this->request = $request;
-
-        if ($this->manualUser && $this->user instanceof Authenticatable) {
-            $this->syncUserAttributes($this->user);
-
-            return;
-        }
-
-        $this->forgetResolvedUser();
-    }
-
-    public function credential(): ?AuthenticatedCredential
-    {
-        return $this->credential;
-    }
-
-    public function authenticate(bool $required = false): ?AuthenticatedCredential
-    {
-        if ($this->resolved) {
-            return $this->credential;
-        }
-
-        $this->credential = $this->credentials->authenticate($this->request, $required);
-        $this->user = $this->credential?->user;
-        $this->resolved = true;
-
-        return $this->credential;
-    }
-
-    private function forgetResolvedUser(): void
-    {
-        $this->user = null;
-        $this->credential = null;
-        $this->resolved = false;
-        $this->manualUser = false;
-    }
-
-    private function syncUserAttributes(Authenticatable $user): void
-    {
-        if ($user instanceof UserIdentity) {
-            $this->request->attributes->set(UserIdentity::class, $user);
-        }
-
-        if ($user instanceof User && ! $this->credential instanceof AuthenticatedCredential) {
-            $this->request->attributes->set(
-                AuthenticatedCredential::REQUEST_ATTRIBUTE,
-                AuthenticatedCredential::assumedSession($user),
+        if (! $user instanceof User) {
+            throw new InvalidArgumentException(
+                'ApiGuard authenticates '.User::class.' only, got '.$user::class.'.',
             );
         }
+
+        $this->context->assume($user);
+
+        return $this;
     }
 }

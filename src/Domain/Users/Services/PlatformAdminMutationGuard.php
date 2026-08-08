@@ -9,7 +9,7 @@ use Polymorph\Platform\Domain\Users\Core\Contracts\UserMutationGuard;
 use Polymorph\Platform\Domain\Users\Core\Exceptions\PlatformAdminImmutableException;
 use Polymorph\Platform\Domain\Users\Core\Exceptions\SystemAdminPrivilegeRequiredException;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
-use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
 /**
@@ -27,7 +27,7 @@ final class PlatformAdminMutationGuard implements UserMutationGuard
 {
     public function __construct(
         private readonly PrivilegedUserMembership $privilegedUserMembership,
-        private readonly CurrentActorResolver $currentActor,
+        private readonly AuthenticationContext $auth,
     ) {}
 
     public function assertCanMutate(User $user): void
@@ -40,7 +40,7 @@ final class PlatformAdminMutationGuard implements UserMutationGuard
             return;
         }
 
-        $actor = $this->currentActor->actor();
+        $actor = $this->auth->actor();
 
         // Fail-closed: нет актора — нет и права трогать системного админа.
         if ($actor instanceof UserIdentity && $this->privilegedUserMembership->isSystemAdministrator($actor->userId())) {

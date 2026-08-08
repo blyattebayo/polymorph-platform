@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\Event;
 use Polymorph\Platform\Domain\Auth\Application\DTO\CreatedPersonalAccessTokenResult;
 use Polymorph\Platform\Domain\Auth\Application\DTO\CreatePersonalAccessTokenCommand;
 use Polymorph\Platform\Domain\Auth\Application\Policies\TokenManagementPolicy;
-use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
 use Polymorph\Platform\Domain\Auth\Events\PersonalAccessTokenCreated;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\PersonalAccessTokenService;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticatedCredential;
 
 final class AdminCreatePersonalAccessToken
 {

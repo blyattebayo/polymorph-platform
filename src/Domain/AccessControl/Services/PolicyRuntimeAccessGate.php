@@ -9,7 +9,7 @@ use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRuntime;
 use Polymorph\Platform\SharedKernel\Access\AccessCheck;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\ResourceRef;
-use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
 /**
@@ -21,7 +21,7 @@ final class PolicyRuntimeAccessGate implements AccessGate
     public function __construct(
         private readonly PolicyRuntime $runtime,
         private readonly AccessSubjectProvider $subjectProvider,
-        private readonly CurrentActorResolver $currentActor,
+        private readonly AuthenticationContext $auth,
     ) {}
 
     public function allows(?UserIdentity $actor, ResourceRef $resource, string $action): bool
@@ -35,7 +35,7 @@ final class PolicyRuntimeAccessGate implements AccessGate
 
     public function currentActorAllows(ResourceRef $resource, string $action): bool
     {
-        return $this->allows($this->currentActor->actor(), $resource, $action);
+        return $this->allows($this->auth->actor(), $resource, $action);
     }
 
     public function allowsEach(?UserIdentity $actor, array $checks): array

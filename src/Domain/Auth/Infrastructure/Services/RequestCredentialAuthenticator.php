@@ -5,16 +5,29 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Services;
 
 use Illuminate\Http\Request;
-use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
 use Polymorph\Platform\Http\Middleware\Concerns\ExtractsJwtAccessToken;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
-use Polymorph\Platform\Support\Errors\ErrorCode;
-use Polymorph\Platform\Support\Errors\ThrowsErrors;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticatedCredential;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
+use Polymorph\Platform\SharedKernel\Identity\RequestCredentialResolver;
 
-final class RequestCredentialAuthenticator
+/**
+ * Разбор учётных данных запроса. Метод НИКОГДА не бросает 401 сам: неудача
+ * записывается в атрибуты запроса и возвращается null.
+ *
+ * 401 собирается дальше по цепочке — Authenticate бросает AuthenticationException,
+ * а FrameworkErrorResolver достаёт причину из этих атрибутов. Раньше рядом жил
+ * второй, альтернативный путь (флаг $required + respondUnauthorized), который
+ * не был подключён ни к одному вызову и только создавал впечатление, что 401 с
+ * meta.reason формируется здесь.
+ *
+ * Результат разбора здесь НЕ публикуется: его держит
+ * {@see AuthenticationContext}.
+ * В атрибутах запроса остаётся только диагностика отказа — её читает слой
+ * ошибок, и к идентичности она отношения не имеет.
+ */
+final class RequestCredentialAuthenticator implements RequestCredentialResolver
 {
     use ExtractsJwtAccessToken;
-    use ThrowsErrors;
 
     public const FAILURE_REASON_ATTRIBUTE = 'auth.failure_reason';
 
@@ -30,15 +43,11 @@ final class RequestCredentialAuthenticator
         private readonly CompositeCredentialAuthenticator $credentials,
     ) {}
 
-    public function authenticate(Request $request, bool $required = false): ?AuthenticatedCredential
+    public function authenticate(Request $request): ?AuthenticatedCredential
     {
         $token = $this->extractAccessToken($request);
         if ($token === '') {
             $this->markFailure($request, 'missing_token');
-
-            if ($required) {
-                $this->respondUnauthorized('missing_token');
-            }
 
             return null;
         }
@@ -47,29 +56,13 @@ final class RequestCredentialAuthenticator
         if ($credential === null) {
             $this->markFailure($request, 'invalid_token');
 
-            if ($required) {
-                $this->respondUnauthorized('invalid_token');
-            }
-
             return null;
         }
 
         if (! $credential->user->isActiveAccount()) {
             $this->markFailure($request, 'inactive_user');
 
-            if ($required) {
-                $this->respondUnauthorized('inactive_user');
-            }
-
             return null;
-        }
-
-        $request->attributes->set(UserIdentity::class, $credential->user);
-        $request->attributes->set(AuthenticatedCredential::REQUEST_ATTRIBUTE, $credential);
-        $request->attributes->set('auth_method', $credential->method());
-
-        if ($credential->isPat() && $credential->personalAccessToken !== null) {
-            $request->attributes->set('pat_token_id', (int) $credential->personalAccessToken->id);
         }
 
         $request->attributes->remove(self::FAILURE_REASON_ATTRIBUTE);
@@ -87,22 +80,5 @@ final class RequestCredentialAuthenticator
     {
         $request->attributes->set(self::FAILURE_REASON_ATTRIBUTE, $reason);
         $request->attributes->set(self::FAILURE_MESSAGE_ATTRIBUTE, self::failureMessage($reason));
-    }
-
-    /**
-     * `WWW-Authenticate` и `Pragma: no-cache` здесь больше не перечисляются: они
-     * выводятся из статуса 401 в ErrorResponseFactory и потому приезжают со всеми
-     * 401 одинаково, включая те, что раньше их не получали.
-     */
-    private function respondUnauthorized(string $reason): never
-    {
-        $this->throwError(
-            ErrorCode::UNAUTHORIZED,
-            detail: null,
-            meta: [
-                'reason' => $reason,
-                'message' => self::failureMessage($reason),
-            ],
-        );
     }
 }

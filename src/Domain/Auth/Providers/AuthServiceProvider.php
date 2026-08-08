@@ -10,7 +10,6 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use Polymorph\Platform\Domain\Auth\Application\Support\AuthenticatedCredentialResolver;
 use Polymorph\Platform\Domain\Auth\Application\Support\UserCapabilitiesPresenter;
 use Polymorph\Platform\Domain\Auth\Console\PruneAuthSessionsCommand;
 use Polymorph\Platform\Domain\Auth\Core\Contracts\EmailVerificationNotifier;
@@ -36,6 +35,8 @@ use Polymorph\Platform\Domain\Auth\Infrastructure\Services\RequestCredentialAuth
 use Polymorph\Platform\Domain\Auth\Listeners\LogAuthEvent;
 use Polymorph\Platform\Domain\Auth\Listeners\LogPersonalAccessTokenEvent;
 use Polymorph\Platform\Domain\Users\Core\Contracts\UserSessionRevoker;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
+use Polymorph\Platform\SharedKernel\Identity\RequestCredentialResolver;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -49,12 +50,16 @@ class AuthServiceProvider extends ServiceProvider
 
         $this->app->singleton(PersonalAccessTokenRepository::class, EloquentPersonalAccessTokenRepository::class);
         $this->app->singleton(PersonalAccessTokenService::class);
-        $this->app->singleton(AuthenticatedCredentialResolver::class);
         $this->app->scoped(UserCapabilitiesPresenter::class);
         $this->app->singleton(JwtCredentialAuthenticator::class);
         $this->app->singleton(PatCredentialAuthenticator::class);
         $this->app->singleton(CompositeCredentialAuthenticator::class);
         $this->app->singleton(RequestCredentialAuthenticator::class);
+        $this->app->singleton(RequestCredentialResolver::class, RequestCredentialAuthenticator::class);
+
+        // Scoped, не singleton: контекст помнит актора, назначенного вручную
+        // (Auth::setUser), и под Octane это не должно протекать между запросами.
+        $this->app->scoped(AuthenticationContext::class);
 
         $this->app->singleton(AccessTokenDenylist::class);
         $this->app->singleton(RefreshSessionRepository::class, EloquentRefreshSessionRepository::class);
@@ -97,16 +102,11 @@ class AuthServiceProvider extends ServiceProvider
 
     private function registerApiGuard(): void
     {
-        Auth::extend('api', function ($app, string $name, array $config): ApiGuard {
-            $guard = new ApiGuard(
-                $app->make(RequestCredentialAuthenticator::class),
-                $app['request'],
-            );
-
-            $app->refresh('request', $guard, 'setRequest');
-
-            return $guard;
-        });
+        // Гард не держит ни пользователя, ни запрос, поэтому ему не нужен
+        // $app->refresh('request', ...): за текущим запросом следит контекст.
+        Auth::extend('api', static fn ($app): ApiGuard => new ApiGuard(
+            $app->make(AuthenticationContext::class),
+        ));
     }
 
     private function registerSchedule(): void

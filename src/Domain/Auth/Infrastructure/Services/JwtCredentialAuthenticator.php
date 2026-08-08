@@ -6,9 +6,8 @@ namespace Polymorph\Platform\Domain\Auth\Infrastructure\Services;
 
 use Polymorph\Platform\Domain\Auth\Core\Exceptions\JwtConfigurationException;
 use Polymorph\Platform\Domain\Auth\Core\Exceptions\JwtVerificationException;
-use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthenticatedCredential;
-use Polymorph\Platform\Domain\Auth\Core\ValueObjects\CredentialKind;
 use Polymorph\Platform\Domain\Users\Queries\FindUserByIdQuery;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticatedCredential;
 
 final class JwtCredentialAuthenticator
 {
@@ -41,11 +40,7 @@ final class JwtCredentialAuthenticator
                 return null;
             }
 
-            return new AuthenticatedCredential(
-                $user,
-                CredentialKind::JwtSession,
-                sessionId: $sessionId,
-            );
+            return AuthenticatedCredential::session($user, $sessionId);
         } catch (JwtConfigurationException $exception) {
             throw $exception;
         } catch (JwtVerificationException|\UnexpectedValueException|\InvalidArgumentException|\DomainException) {

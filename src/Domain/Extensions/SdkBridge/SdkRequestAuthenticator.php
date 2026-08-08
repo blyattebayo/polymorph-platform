@@ -7,7 +7,6 @@ namespace Polymorph\Platform\Domain\Extensions\SdkBridge;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 use Polymorph\Sdk\Identity\Actor;
 use Polymorph\Sdk\Identity\RequestAuthenticator;
@@ -45,8 +44,10 @@ final class SdkRequestAuthenticator implements RequestAuthenticator
             return null;
         }
 
+        // Единственная публикация актора — через гард: он кладёт его в
+        // AuthenticationContext, откуда его видит весь остальной код. Отдельного
+        // атрибута запроса, который надо было держать в синхроне, больше нет.
         Auth::setUser($user);
-        $request->attributes->set(UserIdentity::class, $user);
 
         $this->log($request)->info('extension.impersonation_granted', [
             'extension_id' => $request->attributes->get(self::EXTENSION_ID_ATTRIBUTE),

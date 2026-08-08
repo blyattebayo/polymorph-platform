@@ -12,7 +12,7 @@ use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Effect;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\ResourceRef;
-use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
 /**
@@ -35,7 +35,7 @@ final class PolicyScopeAuthority
 {
     public function __construct(
         private readonly AccessGate $gate,
-        private readonly CurrentActorResolver $currentActor,
+        private readonly AuthenticationContext $auth,
         private readonly PolicyRepository $policies,
         private readonly AssignmentRepository $assignments,
     ) {}
@@ -214,7 +214,7 @@ final class PolicyScopeAuthority
 
     private function requireActor(): UserIdentity
     {
-        $actor = $this->currentActor->actor();
+        $actor = $this->auth->actor();
 
         // Fail-closed: без актора этот путь недостижим штатно (маршруты за
         // RequireCapability), значит отсутствие актора — отказ, а не пропуск.

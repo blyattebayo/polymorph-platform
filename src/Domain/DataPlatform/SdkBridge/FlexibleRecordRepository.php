@@ -24,7 +24,7 @@ use Polymorph\Platform\Domain\Records\Support\RecordSystemFields;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 use Polymorph\Platform\Domain\SchemaModel\Services\FieldAccessService;
-use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
 use Polymorph\Sdk\Data\Entity;
@@ -60,7 +60,7 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
         private readonly UpdateRecordHandler $updateHandler,
         private readonly DeleteRecordHandler $deleteHandler,
         private readonly RecordRepository $records,
-        private readonly CurrentActorResolver $actors,
+        private readonly AuthenticationContext $auth,
         private readonly RecordQueryCriteriaFactory $criteriaFactory,
         private readonly RecordWriteAccessService $writeAccess,
         private readonly FieldAccessService $fieldAccess,
@@ -387,7 +387,7 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
      */
     private function readableData(array $data): array
     {
-        $actor = $this->actors->actor();
+        $actor = $this->auth->actor();
         if (! $actor instanceof UserIdentity) {
             return $data;
         }
@@ -405,7 +405,7 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
      */
     private function assertActorMayWrite(array $data): void
     {
-        $actor = $this->actors->actor();
+        $actor = $this->auth->actor();
         if (! $actor instanceof UserIdentity) {
             return;
         }
@@ -426,7 +426,7 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
 
     private function actorId(): ?int
     {
-        $identifier = $this->actors->authIdentifier();
+        $identifier = $this->auth->authIdentifier();
 
         if (is_int($identifier)) {
             return $identifier;

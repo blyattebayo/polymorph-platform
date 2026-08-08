@@ -10,7 +10,7 @@ use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
  * Единственный порт вопроса «можно ли актору Х делать Y с ресурсом Z».
  *
  * До него каждый потребитель инжектил тройку PolicyRuntime +
- * AccessSubjectProvider + CurrentActorResolver и склеивал решение руками —
+ * AccessSubjectProvider + AuthenticationContext и склеивал решение руками —
  * механика «субъекты(актор) × скомпилированные политики» была размазана по
  * семи местам (middleware, контроллеры, полевые сервисы, SDK-мост). Теперь
  * она живёт в одной реализации, а домены знают только свой словарь ресурсов.

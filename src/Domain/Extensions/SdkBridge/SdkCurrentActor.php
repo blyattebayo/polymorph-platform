@@ -7,7 +7,7 @@ namespace Polymorph\Platform\Domain\Extensions\SdkBridge;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\ResourceRef;
-use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Sdk\Access\CapabilityAction;
 use Polymorph\Sdk\Errors\ExtensionError;
 use Polymorph\Sdk\Identity\Actor;
@@ -20,13 +20,13 @@ use Polymorph\Sdk\Identity\CurrentActor;
 final class SdkCurrentActor implements CurrentActor
 {
     public function __construct(
-        private readonly CurrentActorResolver $actors,
+        private readonly AuthenticationContext $auth,
         private readonly AccessGate $gate,
     ) {}
 
     public function actor(): ?Actor
     {
-        $user = $this->actors->user();
+        $user = $this->auth->user();
 
         return $user instanceof User ? ActorMapper::fromUser($user) : null;
     }
@@ -38,7 +38,7 @@ final class SdkCurrentActor implements CurrentActor
 
     public function id(): ?int
     {
-        $identifier = $this->actors->authIdentifier();
+        $identifier = $this->auth->authIdentifier();
 
         if (is_int($identifier)) {
             return $identifier;

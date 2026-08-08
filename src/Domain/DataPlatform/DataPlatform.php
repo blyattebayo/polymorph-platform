@@ -18,7 +18,7 @@ use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
 use Polymorph\Platform\Domain\SchemaModel\Pipeline\Commands\SaveSchemaWithFieldsCommand;
 use Polymorph\Platform\Domain\SchemaModel\Pipeline\Handlers\SaveSchemaWithFieldsHandler;
 use Polymorph\Platform\Domain\SchemaModel\Services\FieldAccessService;
-use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwner;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwnershipService;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceType;
@@ -52,7 +52,7 @@ final class DataPlatform
         private readonly UpdateRecordHandler $updateRecordHandler,
         private readonly DeleteRecordHandler $deleteRecordHandler,
         private readonly RecordRepository $records,
-        private readonly CurrentActorResolver $actors,
+        private readonly AuthenticationContext $auth,
         private readonly RecordQueryCriteriaFactory $queryCriteriaFactory,
         private readonly RecordWriteAccessService $writeAccess,
         private readonly FieldAccessService $fieldAccess,
@@ -72,7 +72,7 @@ final class DataPlatform
             $this->updateRecordHandler,
             $this->deleteRecordHandler,
             $this->records,
-            $this->actors,
+            $this->auth,
             $this->queryCriteriaFactory,
             $this->writeAccess,
             $this->fieldAccess,

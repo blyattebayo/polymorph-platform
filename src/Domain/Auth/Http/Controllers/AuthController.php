@@ -10,7 +10,6 @@ use Polymorph\Platform\Domain\Auth\Application\DTO\LogoutSessionCommand;
 use Polymorph\Platform\Domain\Auth\Application\DTO\RefreshSessionCommand;
 use Polymorph\Platform\Domain\Auth\Application\DTO\RegisterSessionCommand;
 use Polymorph\Platform\Domain\Auth\Application\Exceptions\AuthSessionUnauthorizedException;
-use Polymorph\Platform\Domain\Auth\Application\Support\AuthenticatedCredentialResolver;
 use Polymorph\Platform\Domain\Auth\Application\Support\UserCapabilitiesPresenter;
 use Polymorph\Platform\Domain\Auth\Application\UseCases\LoginSession;
 use Polymorph\Platform\Domain\Auth\Application\UseCases\LogoutSession;
@@ -25,7 +24,7 @@ use Polymorph\Platform\Domain\Auth\Http\Resources\LogoutResource;
 use Polymorph\Platform\Domain\Auth\Http\Resources\TokenRefreshResource;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\AuthCookieFactory;
 use Polymorph\Platform\Domain\Users\Http\Resources\UserResource;
-use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ErrorFactory;
 use Polymorph\Platform\Support\Errors\ErrorKernel;
@@ -48,8 +47,7 @@ final class AuthController
         private readonly LogoutSession $logoutSession,
         private readonly RefreshSession $refreshSession,
         private readonly RegisterSession $registerSession,
-        private readonly CurrentActorResolver $currentActor,
-        private readonly AuthenticatedCredentialResolver $credentialResolver,
+        private readonly AuthenticationContext $auth,
         private readonly UserCapabilitiesPresenter $capabilities,
         private readonly AuthCookieFactory $cookies,
         private readonly ErrorKernel $errors,
@@ -101,8 +99,8 @@ final class AuthController
     public function logout(LogoutRequest $request): JsonResponse
     {
         $logoutAll = (bool) $request->boolean('all', false);
-        $actor = $this->currentActor->requireUser();
-        $credential = $this->credentialResolver->fromRequest($request);
+        $actor = $this->auth->requireUser();
+        $credential = $this->auth->credential();
 
         $this->logoutSession->execute(new LogoutSessionCommand(
             actor: $actor,
@@ -138,7 +136,7 @@ final class AuthController
 
     public function current(): UserResource
     {
-        $user = $this->currentActor->requireUser();
+        $user = $this->auth->requireUser();
 
         return new UserResource(
             $user,

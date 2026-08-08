@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Polymorph\Platform\Domain\Extensions\Http\ExtensionErrorResolver;
-use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\Support\Errors\ErrorCatalog;
 use Polymorph\Platform\Support\Errors\ErrorFactory;
@@ -91,7 +91,7 @@ class AppServiceProvider extends ServiceProvider
 
             return new TraceId($request instanceof Request ? $request : null);
         });
-        $this->app->scoped(UserIdentity::class, static fn ($app): UserIdentity => $app->make(CurrentActorResolver::class)->requireActor());
+        $this->app->scoped(UserIdentity::class, static fn ($app): UserIdentity => $app->make(AuthenticationContext::class)->requireActor());
 
     }
 

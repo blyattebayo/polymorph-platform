@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Auth\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\Auth\Application\DTO\CreatePersonalAccessTokenCommand;
-use Polymorph\Platform\Domain\Auth\Application\Support\AuthenticatedCredentialResolver;
 use Polymorph\Platform\Domain\Auth\Application\UseCases\AdminCreatePersonalAccessToken;
 use Polymorph\Platform\Domain\Auth\Application\UseCases\AdminListPersonalAccessTokens;
 use Polymorph\Platform\Domain\Auth\Application\UseCases\AdminRevokePersonalAccessToken;
@@ -20,7 +18,7 @@ use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Domain\Users\Queries\FindUserByIdQuery;
 use Polymorph\Platform\Http\Pagination\V2\PaginatedJsonResponse;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
-use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
 
 final class AdminPersonalAccessTokenController
@@ -31,8 +29,7 @@ final class AdminPersonalAccessTokenController
         private readonly AdminCreatePersonalAccessToken $createForUser,
         private readonly AdminRevokePersonalAccessToken $revoke,
         private readonly FindUserByIdQuery $findUserByIdQuery,
-        private readonly CurrentActorResolver $currentActor,
-        private readonly AuthenticatedCredentialResolver $credentialResolver,
+        private readonly AuthenticationContext $auth,
     ) {}
 
     public function indexAll(IndexAdminPersonalAccessTokenRequest $request): JsonResponse
@@ -59,7 +56,7 @@ final class AdminPersonalAccessTokenController
     public function storeForUser(StorePersonalAccessTokenRequest $request, int $userId): JsonResponse
     {
         $targetUser = $this->requireUser($userId);
-        $createdBy = $this->currentActor->requireUser();
+        $createdBy = $this->auth->requireUser();
         $validated = $request->validated();
 
         $created = $this->createForUser->execute(
@@ -70,7 +67,7 @@ final class AdminPersonalAccessTokenController
                 ttl: isset($validated['ttl']) ? (string) $validated['ttl'] : null,
             ),
             $targetUser,
-            $this->credentialResolver->fromRequest($request),
+            $this->auth->credential(),
         );
 
         return AdminResponse::json([
@@ -78,9 +75,9 @@ final class AdminPersonalAccessTokenController
         ], 201);
     }
 
-    public function destroy(Request $request, int $tokenId): JsonResponse
+    public function destroy(int $tokenId): JsonResponse
     {
-        $this->revoke->execute($tokenId, $this->credentialResolver->fromRequest($request));
+        $this->revoke->execute($tokenId, $this->auth->credential());
 
         return AdminResponse::json([
             'data' => ['revoked' => true],

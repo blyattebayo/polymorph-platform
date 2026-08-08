@@ -6,7 +6,7 @@ namespace Polymorph\Platform\Domain\SchemaModel\Services;
 
 use Illuminate\Support\Collection;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
-use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
 /**
@@ -26,7 +26,7 @@ final class SchemaFieldVisibility
 {
     public function __construct(
         private readonly FieldAccessService $fieldAccess,
-        private readonly CurrentActorResolver $actors,
+        private readonly AuthenticationContext $auth,
     ) {}
 
     /**
@@ -98,7 +98,7 @@ final class SchemaFieldVisibility
 
     private function actor(): ?UserIdentity
     {
-        $actor = $this->actors->actor();
+        $actor = $this->auth->actor();
 
         return $actor instanceof UserIdentity ? $actor : null;
     }

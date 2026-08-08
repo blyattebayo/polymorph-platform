@@ -15,7 +15,7 @@ use Polymorph\Platform\Domain\Users\Core\Exceptions\UserNotFoundException;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Domain\Users\Queries\FindUserByIdQuery;
 use Polymorph\Platform\Domain\Users\Support\RoleIdsNormalizer;
-use Polymorph\Platform\SharedKernel\Identity\CurrentActorResolver;
+use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 
 final class AdminUserManagementService
 {
@@ -26,7 +26,7 @@ final class AdminUserManagementService
         private readonly UserRoleManager $userRoleManager,
         private readonly UserMutationGuard $mutationGuard,
         private readonly FindUserByIdQuery $findUserByIdQuery,
-        private readonly CurrentActorResolver $currentActor,
+        private readonly AuthenticationContext $auth,
     ) {}
 
     /**
@@ -40,7 +40,7 @@ final class AdminUserManagementService
 
         // Симметрично update(): создать пользователя сразу системным админом
         // может только системный админ. Раньше create() guard не звал вовсе.
-        $this->userRoleManager->assertRoleChangeAllowed($this->currentActor->requireActor(), null, $roleIds);
+        $this->userRoleManager->assertRoleChangeAllowed($this->auth->requireActor(), null, $roleIds);
 
         return DB::transaction(function () use ($validated, $roleIds): User {
             $user = $this->createUserAction->execute($validated);
@@ -68,7 +68,7 @@ final class AdminUserManagementService
         if ($roleIds !== null) {
             // Диff по членству в system.admin: выдать или снять роль может
             // только действующий системный админ.
-            $this->userRoleManager->assertRoleChangeAllowed($this->currentActor->requireActor(), $userId, $roleIds);
+            $this->userRoleManager->assertRoleChangeAllowed($this->auth->requireActor(), $userId, $roleIds);
         }
 
         // Ревок сессий при смене статуса на ограничивающий выполняет
