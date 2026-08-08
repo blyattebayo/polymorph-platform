@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\SharedKernel\Identity;
 
 use Polymorph\Platform\Domain\Users\Core\Models\User;
+use Polymorph\Platform\SharedKernel\Access\CredentialScopes;
 
 /**
  * Кто аутентифицирован в запросе и чем это доказано.
@@ -22,6 +23,8 @@ final readonly class AuthenticatedCredential
     private function __construct(
         public User $user,
         public CredentialKind $kind,
+        /** Какой частью прав субъекта разрешено пользоваться этому credential. */
+        public CredentialScopes $scopes,
         /** Id строки auth_sessions — только у интерактивной сессии. */
         public ?int $sessionId = null,
         /** Когда истекает сам credential, unix-время. */
@@ -41,12 +44,30 @@ final readonly class AuthenticatedCredential
         ?int $expiresAt = null,
         ?int $absoluteExpiresAt = null,
     ): self {
-        return new self($user, CredentialKind::Session, $sessionId, $expiresAt, $absoluteExpiresAt);
+        // Интерактивный вход не ограничен: человек и так может ровно то, что
+        // ему разрешено политиками.
+        return new self(
+            $user,
+            CredentialKind::Session,
+            CredentialScopes::unrestricted(),
+            $sessionId,
+            $expiresAt,
+            $absoluteExpiresAt,
+        );
     }
 
-    public static function personalAccessToken(User $user): self
+    /**
+     * Токены, выпущенные до появления ограничений, приходят сюда без scopes и
+     * сохраняют полные права владельца — сужение должно быть осознанным
+     * действием, а не побочным эффектом деплоя.
+     */
+    public static function personalAccessToken(User $user, ?CredentialScopes $scopes = null): self
     {
-        return new self($user, CredentialKind::PersonalAccessToken);
+        return new self(
+            $user,
+            CredentialKind::PersonalAccessToken,
+            $scopes ?? CredentialScopes::unrestricted(),
+        );
     }
 
     /**
@@ -54,7 +75,7 @@ final readonly class AuthenticatedCredential
      */
     public static function assumed(User $user): self
     {
-        return new self($user, CredentialKind::Assumed);
+        return new self($user, CredentialKind::Assumed, CredentialScopes::unrestricted());
     }
 
     /**
