@@ -5,7 +5,7 @@
     "license": "proprietary",
     "require": {
         "php": "^8.2",
-        "blyattebayo/polymorph-sdk": "^2.0"
+        "blyattebayo/polymorph-sdk": "^4.0"
     },
     "autoload": {
         "psr-4": {
@@ -18,20 +18,13 @@
         }
     },
     "require-dev": {
-        "blyattebayo/polymorph-sdk-laravel": "^2.0",
-        "blyattebayo/polymorph-plugin-test-kit": "^2.0"
+        "blyattebayo/polymorph-sdk-laravel": "^4.0",
+        "blyattebayo/polymorph-plugin-test-kit": "^4.0"
     },
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "http://127.0.0.1:8081"
-        }
-    ],
     "scripts": {
         "test": "vendor/bin/pest be/tests --bootstrap=vendor/autoload.php"
     },
     "config": {
-        "secure-http": false,
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true

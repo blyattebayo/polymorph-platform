@@ -7,7 +7,6 @@ use Polymorph\Platform\Domain\Auth\Http\Controllers\CurrentUserController;
 use Polymorph\Platform\Domain\Auth\Http\Controllers\LoginController;
 use Polymorph\Platform\Domain\Auth\Http\Controllers\LogoutController;
 use Polymorph\Platform\Domain\Auth\Http\Controllers\MeAuthSessionController;
-use Polymorph\Platform\Domain\Auth\Http\PersonalAccessToken\Controllers\OwnPersonalAccessTokenController;
 use Polymorph\Platform\Domain\Media\Http\Controllers\MediaPreviewController;
 use Polymorph\Platform\Domain\Menu\Http\Controllers\MenuController;
 use Polymorph\Platform\Http\Middleware\ResolveSessionCredential;
@@ -35,23 +34,12 @@ Route::middleware('api')->prefix('api/v1')->group(function (): void {
         ->middleware(['auth:session', 'no-cache-auth'])
         ->where([
             'sessionId' => '[0-9a-fA-F-]{36}',
-            'tokenId' => '[0-9a-fA-F-]{36}',
         ])
         ->group(function (): void {
             Route::get('/sessions', [MeAuthSessionController::class, 'index'])->name('sessions.index');
             Route::delete('/sessions/{sessionId}', [MeAuthSessionController::class, 'destroy'])
                 ->whereUuid('sessionId')
                 ->name('sessions.destroy');
-
-            Route::name('personal-access-tokens.')->group(function (): void {
-                Route::get('/personal-access-tokens', [OwnPersonalAccessTokenController::class, 'index'])->name('index');
-                Route::post('/personal-access-tokens', [OwnPersonalAccessTokenController::class, 'store'])
-                    ->middleware('throttle:pat-create')
-                    ->name('store');
-                Route::delete('/personal-access-tokens/{tokenId}', [OwnPersonalAccessTokenController::class, 'destroy'])
-                    ->whereUuid('tokenId')
-                    ->name('destroy');
-            });
         });
 
     // Меню навигации по ключу: дефолты и ACL-фильтрацию делает FE.

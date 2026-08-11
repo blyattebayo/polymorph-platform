@@ -12,8 +12,8 @@ use Polymorph\Platform\Support\Errors\HttpErrorException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * CSRF protection for cookie-auth API mutations.
- * Header credentials are excluded; browser cookie requests must come from an allowed origin.
+ * CSRF protection for API mutations. Machine-to-machine routes must opt out explicitly
+ * through their route definition; credentials never disable this middleware implicitly.
  */
 final class VerifyApiCsrf
 {
@@ -25,11 +25,6 @@ final class VerifyApiCsrf
     {
         // Skip idempotent methods (GET, HEAD, OPTIONS)
         if (in_array($request->getMethod(), ['GET', 'HEAD', 'OPTIONS'], true)) {
-            return $next($request);
-        }
-
-        // PAT integrations use Bearer outside the interactive-auth surface.
-        if (! $request->is('api/v1/auth/*') && trim((string) $request->header('Authorization', '')) !== '') {
             return $next($request);
         }
 

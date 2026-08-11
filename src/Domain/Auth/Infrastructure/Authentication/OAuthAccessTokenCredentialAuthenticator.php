@@ -5,20 +5,18 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Authentication;
 
 use Illuminate\Http\Request;
-use Polymorph\Platform\Domain\Auth\Application\Contracts\Clock;
-use Polymorph\Platform\Domain\Auth\Application\Contracts\SessionCredentials;
-use Polymorph\Platform\Domain\Auth\Application\Contracts\SessionRepository;
 use Polymorph\Platform\Domain\Auth\Application\Exceptions\AuthenticationDenied;
+use Polymorph\Platform\Domain\Auth\Application\OAuth\OAuthAuthorizationServer;
+use Polymorph\Platform\Domain\Auth\Application\OAuth\OAuthServerConfig;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\SessionCookie;
 use Polymorph\Platform\SharedKernel\Identity\AuthenticatedCredential;
 use Polymorph\Platform\SharedKernel\Identity\RequestCredentialResolver;
 
-final readonly class SessionCredentialAuthenticator implements RequestCredentialResolver
+final readonly class OAuthAccessTokenCredentialAuthenticator implements RequestCredentialResolver
 {
     public function __construct(
-        private SessionCredentials $credentials,
-        private SessionRepository $sessions,
-        private Clock $clock,
+        private OAuthAuthorizationServer $server,
+        private OAuthServerConfig $config,
     ) {}
 
     public function authenticate(Request $request): ?AuthenticatedCredential
@@ -29,16 +27,24 @@ final readonly class SessionCredentialAuthenticator implements RequestCredential
         if ($cookie !== '' && $bearer !== '') {
             throw AuthenticationDenied::ambiguousCredentials();
         }
-
-        if ($cookie === '') {
+        if ($bearer === '') {
             return null;
         }
 
-        $session = $this->sessions->findAuthenticated($this->credentials->hash($cookie), $this->clock->now());
-        if ($session === null) {
+        $user = $this->server->authenticate($bearer);
+        if ($user === null) {
             return null;
         }
 
-        return AuthenticatedCredential::session($session->user, (string) $session->sessionId);
+        return AuthenticatedCredential::oauthAccessToken($user);
+    }
+
+    public function challenge(): string
+    {
+        return sprintf(
+            'Bearer resource_metadata="%s", scope="%s"',
+            $this->config->protectedResourceMetadataEndpoint(),
+            OAuthServerConfig::SCOPE,
+        );
     }
 }

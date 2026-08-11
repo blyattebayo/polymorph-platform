@@ -21,7 +21,6 @@ Route::middleware(['api', 'auth:session'])
             'acl',
             'media',
             'menu',
-            'personal_access_tokens',
             'plugins',
             'record_definitions',
             'records',

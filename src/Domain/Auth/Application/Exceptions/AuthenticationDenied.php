@@ -31,11 +31,6 @@ final class AuthenticationDenied extends RuntimeException implements DomainError
         return new self('inactive_user', 'Account is not active.');
     }
 
-    public static function invalidAccessToken(): self
-    {
-        return new self('invalid_token', 'Access token is invalid.');
-    }
-
     public static function ambiguousCredentials(): self
     {
         return new self('ambiguous_credentials', 'Send exactly one authentication credential.');

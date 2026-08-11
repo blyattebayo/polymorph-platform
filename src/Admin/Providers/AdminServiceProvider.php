@@ -9,6 +9,7 @@ use Illuminate\Support\ServiceProvider;
 use Polymorph\Platform\Admin\AdminBundle;
 use Polymorph\Platform\Admin\Http\AdminAssetController;
 use Polymorph\Platform\Admin\Http\AdminShellController;
+use Polymorph\Platform\Http\Middleware\PreventClickjacking;
 
 /**
  * Wires the admin SPA into routing at the host-configured mount path
@@ -32,6 +33,7 @@ final class AdminServiceProvider extends ServiceProvider
 
         Route::get($prefix.'/{any?}', AdminShellController::class)
             ->where('any', '.*')
+            ->middleware(PreventClickjacking::class)
             ->name('admin.shell');
     }
 }

@@ -6,11 +6,8 @@ namespace Polymorph\Platform\Domain\AccessControl\Services;
 
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRuntime;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\ResourceMatcher;
 use Polymorph\Platform\SharedKernel\Access\AccessCheck;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
-use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
-use Polymorph\Platform\SharedKernel\Access\CredentialScopes;
 use Polymorph\Platform\SharedKernel\Access\ResourceRef;
 use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
@@ -19,9 +16,8 @@ use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
  * Единственное место, где «тройка» (резолвер актора, субъекты, рантайм политик)
  * склеивается в решение. Биндинг scoped: субъекты кэшируются на запрос.
  *
- * Решение — пересечение двух ограничений: что позволено СУБЪЕКТУ политиками и
- * что позволено CREDENTIAL, которым субъект пришёл ({@see CredentialScopes}).
- * Credential может только сужать: расширить права субъекта им нельзя.
+ * Решение определяется политиками субъекта. Transport credential только устанавливает
+ * текущего актора и не содержит второго параллельного языка прав.
  */
 final class PolicyRuntimeAccessGate implements AccessGate
 {
@@ -29,7 +25,6 @@ final class PolicyRuntimeAccessGate implements AccessGate
         private readonly PolicyRuntime $runtime,
         private readonly AccessSubjectProvider $subjectProvider,
         private readonly AuthenticationContext $auth,
-        private readonly ResourceMatcher $resourceMatcher,
     ) {}
 
     public function allows(?UserIdentity $actor, ResourceRef $resource, string $action): bool
@@ -39,10 +34,6 @@ final class PolicyRuntimeAccessGate implements AccessGate
         }
 
         $action = trim($action);
-
-        if (! $this->credentialAllows($actor, $resource, $action)) {
-            return false;
-        }
 
         return $this->runtime->allows($this->subjectProvider->for($actor), $resource->value, $action);
     }
@@ -73,60 +64,9 @@ final class PolicyRuntimeAccessGate implements AccessGate
             ),
         );
 
-        // Ограничение credential накладывается поверх батча, а не сужает выборку
-        // до него: батч — один SQL, и дробить его ради обычного случая
-        // (ограничений нет) смысла нет.
         return array_map(
-            fn ($decision, AccessCheck $check): bool => $decision->allowed()
-                && $this->credentialAllows($actor, $check->resource, trim($check->action)),
+            static fn ($decision): bool => $decision->allowed(),
             $decisions,
-            $checks,
         );
-    }
-
-    /**
-     * Ограничение credential применяется ТОЛЬКО когда спрашивают про актора
-     * текущего запроса.
-     *
-     * Иначе ломается информационный вопрос «что может пользователь X»:
-     * SdkAccessGrants::userCan() и EffectiveCapabilityResolver зовут гейт для
-     * произвольного субъекта, и сужение чужого ответа областью своего токена
-     * дало бы неверный ответ, а не более безопасный.
-     */
-    private function credentialAllows(UserIdentity $actor, ResourceRef $resource, string $action): bool
-    {
-        $scopes = $this->scopesOfCurrentRequest($actor);
-
-        if ($scopes === null || $scopes->isUnrestricted()) {
-            return true;
-        }
-
-        foreach ($scopes->entries() as $entry) {
-            if ($this->actionCovers($entry->action, $action)
-                && $this->resourceMatcher->matches($entry->resource->value, $resource->value)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function scopesOfCurrentRequest(UserIdentity $actor): ?CredentialScopes
-    {
-        $credential = $this->auth->credential();
-
-        if ($credential === null) {
-            return null;
-        }
-
-        return $credential->actor->userId() === $actor->userId() ? $credential->scopes : null;
-    }
-
-    /** Та же семантика, что у action политики: `*` покрывает всё, иначе точное совпадение. */
-    private function actionCovers(string $granted, string $requested): bool
-    {
-        $granted = trim($granted);
-
-        return $granted === CapabilityCatalog::ACTION_WILDCARD || $granted === $requested;
     }
 }

@@ -40,6 +40,7 @@ final class RoutingServiceProvider extends ServiceProvider
      */
     private const CORE_FILES = [
         'web.php',
+        'oauth.php',
         'api.php',
         'api_plugins.php',
         'api_admin.php',

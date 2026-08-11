@@ -6,18 +6,17 @@ namespace Polymorph\Platform\Domain\Auth\Infrastructure\Services\Shared;
 
 use Illuminate\Support\Str;
 use Polymorph\Platform\Domain\Auth\Application\Contracts\IdGenerator;
-use Polymorph\Platform\Domain\Auth\Domain\PersonalAccessToken\PersonalAccessTokenId;
 use Polymorph\Platform\Domain\Auth\Domain\ValueObjects\SessionId;
 
 final class UuidGenerator implements IdGenerator
 {
     public function sessionId(): SessionId
     {
-        return new SessionId((string) Str::uuid());
+        return new SessionId($this->uuid());
     }
 
-    public function personalAccessTokenId(): PersonalAccessTokenId
+    public function uuid(): string
     {
-        return new PersonalAccessTokenId((string) Str::uuid());
+        return (string) Str::uuid();
     }
 }

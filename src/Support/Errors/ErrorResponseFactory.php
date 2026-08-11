@@ -20,6 +20,9 @@ final class ErrorResponseFactory
         if (is_array($meta) && array_key_exists('errors', $meta) && is_array($meta['errors'])) {
             $data['errors'] = $meta['errors'];
         }
+        if (isset($data['meta']) && is_array($data['meta'])) {
+            unset($data['meta']['www_authenticate']);
+        }
 
         /** @var JsonResponse $response */
         $response = response()->json($data, $payload->status, [], JSON_INVALID_UTF8_SUBSTITUTE);
@@ -39,7 +42,8 @@ final class ErrorResponseFactory
 
         // RFC 7235 requires this header on every 401 response.
         if ($payload->status === 401) {
-            $response->headers->set('WWW-Authenticate', 'Bearer');
+            $challenge = $payload->meta['www_authenticate'] ?? 'Bearer';
+            $response->headers->set('WWW-Authenticate', is_string($challenge) ? $challenge : 'Bearer');
             $response->headers->set('Pragma', 'no-cache');
         }
 

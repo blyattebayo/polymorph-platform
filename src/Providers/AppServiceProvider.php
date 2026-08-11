@@ -104,13 +104,6 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($key);
         });
 
-        RateLimiter::for('pat-create', static function (Request $request): Limit {
-            $userId = optional($request->user())->getAuthIdentifier();
-            $key = $userId !== null ? 'user:'.$userId : 'ip:'.$request->ip();
-
-            return Limit::perMinute(10)->by((string) $key);
-        });
-
         RateLimiter::for('auth-password-reset', static function (Request $request): Limit {
             $email = strtolower(trim((string) $request->input('email', '')));
 

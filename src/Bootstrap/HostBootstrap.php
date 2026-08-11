@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\AccessControl\Console\GenerateFeCapabilityCatalogCommand;
 use Polymorph\Platform\Domain\AccessControl\Console\RebuildAccessControlCommand;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneAuthSessionsCommand;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneOAuthCredentialsCommand;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\SessionCookie;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsBuildCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsDeployCommand;
@@ -22,10 +23,11 @@ use Polymorph\Platform\Domain\Extensions\Console\PluginsUpdateCommand;
 use Polymorph\Platform\Domain\Extensions\Console\ScaffoldPluginCommand;
 use Polymorph\Platform\Http\ApiErrorHandler;
 use Polymorph\Platform\Http\Middleware\AddCacheVary;
+use Polymorph\Platform\Http\Middleware\AuthenticateOAuthResource;
 use Polymorph\Platform\Http\Middleware\CanonicalUrl;
-use Polymorph\Platform\Http\Middleware\ResolveSessionCredential;
 use Polymorph\Platform\Http\Middleware\NoCacheAuth;
 use Polymorph\Platform\Http\Middleware\RequireCapability;
+use Polymorph\Platform\Http\Middleware\ResolveSessionCredential;
 use Polymorph\Platform\Http\Middleware\VerifyApiCsrf;
 use Polymorph\Platform\Support\Console\PreflightCommand;
 use Throwable;
@@ -55,6 +57,7 @@ final class HostBootstrap
             RebuildAccessControlCommand::class,
             GenerateFeCapabilityCatalogCommand::class,
             PruneAuthSessionsCommand::class,
+            PruneOAuthCredentialsCommand::class,
             PluginsListCommand::class,
             PluginsInstallCommand::class,
             PluginsUninstallCommand::class,
@@ -81,6 +84,7 @@ final class HostBootstrap
 
         $middleware->alias([
             ResolveSessionCredential::ALIAS => ResolveSessionCredential::class,
+            AuthenticateOAuthResource::ALIAS => AuthenticateOAuthResource::class,
             'no-cache-auth' => NoCacheAuth::class,
             RequireCapability::ALIAS => RequireCapability::class,
         ]);
