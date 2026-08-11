@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
  *
  * Коллизии method+uri и дубли имён ловит `php artisan routing:lint`.
  */
-Route::middleware(['api', 'auth:api'])
+Route::middleware(['api', 'auth:session'])
     ->prefix('api/v1/admin')
     ->name('admin.v1.')
     ->group(function (): void {

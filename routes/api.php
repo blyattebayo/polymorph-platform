@@ -3,14 +3,14 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
-use Polymorph\Platform\Domain\Auth\Http\Controllers\AuthController;
-use Polymorph\Platform\Domain\Auth\Http\Controllers\EmailVerificationController;
+use Polymorph\Platform\Domain\Auth\Http\Controllers\CurrentUserController;
+use Polymorph\Platform\Domain\Auth\Http\Controllers\LoginController;
+use Polymorph\Platform\Domain\Auth\Http\Controllers\LogoutController;
 use Polymorph\Platform\Domain\Auth\Http\Controllers\MeAuthSessionController;
-use Polymorph\Platform\Domain\Auth\Http\Controllers\MePersonalAccessTokenController;
-use Polymorph\Platform\Domain\Auth\Http\Controllers\PasswordResetController;
+use Polymorph\Platform\Domain\Auth\Http\PersonalAccessToken\Controllers\OwnPersonalAccessTokenController;
 use Polymorph\Platform\Domain\Media\Http\Controllers\MediaPreviewController;
 use Polymorph\Platform\Domain\Menu\Http\Controllers\MenuController;
-use Polymorph\Platform\Http\Middleware\EnsureSessionCredential;
+use Polymorph\Platform\Http\Middleware\ResolveSessionCredential;
 use Polymorph\Platform\Support\Validation\Http\ValidationRulesController;
 
 /**
@@ -19,69 +19,45 @@ use Polymorph\Platform\Support\Validation\Http\ValidationRulesController;
 Route::middleware('api')->prefix('api/v1')->group(function (): void {
     Route::get('/validation-rules', [ValidationRulesController::class, '__invoke'])->name('api.v1.validation-rules');
 
-    // Ссылка из письма: подписанный GET, открывается браузером, отвечает
-    // редиректом в SPA. Стоит вне группы auth по двум причинам: это
-    // единственный маршрут аутентификации без no-cache-auth, и его имя
-    // задано Laravel — MustVerifyEmail строит URL по 'verification.verify'.
-    Route::get('/auth/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
-        ->middleware('throttle:30,1')
-        ->name('verification.verify');
-
     Route::prefix('auth')->name('api.auth.')->middleware('no-cache-auth')->group(function (): void {
-        Route::post('/register', [AuthController::class, 'register'])
-            ->middleware('throttle:auth-register')
-            ->name('register');
-
-        Route::post('/login', [AuthController::class, 'login'])
+        Route::post('/login', [LoginController::class, '__invoke'])
             ->middleware('throttle:auth-login')
             ->name('login');
 
-        Route::post('/refresh', [AuthController::class, 'refresh'])
-            ->middleware('throttle:auth-refresh')
-            ->name('refresh');
-
-        Route::prefix('password')
-            ->name('password.')
-            ->middleware('throttle:auth-password-reset')
-            ->group(function (): void {
-                Route::post('/forgot', [PasswordResetController::class, 'forgot'])->name('forgot');
-                Route::post('/reset', [PasswordResetController::class, 'reset'])->name('reset');
-            });
-
-        Route::middleware('auth:api')->group(function (): void {
-            Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
-                ->middleware('throttle:auth-verify-resend')
-                ->name('email.resend');
-
-            Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-            Route::get('/current', [AuthController::class, 'current'])->name('current');
+        Route::middleware('auth:session')->group(function (): void {
+            Route::post('/logout', [LogoutController::class, '__invoke'])->name('logout');
+            Route::get('/current', [CurrentUserController::class, '__invoke'])->name('current');
         });
     });
 
-    // Управление собственными сессиями и токенами. EnsureSessionCredential
-    // требует, чтобы запрос шёл под сессионной кукой, а не под PAT: иначе
-    // долгоживущим токеном можно было бы отозвать сессии владельца.
     Route::prefix('me')
         ->name('api.me.')
-        ->middleware(['auth:api', EnsureSessionCredential::ALIAS, 'no-cache-auth'])
-        ->whereNumber(['sessionId', 'tokenId'])
+        ->middleware(['auth:session', 'no-cache-auth'])
+        ->where([
+            'sessionId' => '[0-9a-fA-F-]{36}',
+            'tokenId' => '[0-9a-fA-F-]{36}',
+        ])
         ->group(function (): void {
             Route::get('/sessions', [MeAuthSessionController::class, 'index'])->name('sessions.index');
-            Route::delete('/sessions/{sessionId}', [MeAuthSessionController::class, 'destroy'])->name('sessions.destroy');
+            Route::delete('/sessions/{sessionId}', [MeAuthSessionController::class, 'destroy'])
+                ->whereUuid('sessionId')
+                ->name('sessions.destroy');
 
             Route::name('personal-access-tokens.')->group(function (): void {
-                Route::get('/personal-access-tokens', [MePersonalAccessTokenController::class, 'index'])->name('index');
-                Route::post('/personal-access-tokens', [MePersonalAccessTokenController::class, 'store'])
+                Route::get('/personal-access-tokens', [OwnPersonalAccessTokenController::class, 'index'])->name('index');
+                Route::post('/personal-access-tokens', [OwnPersonalAccessTokenController::class, 'store'])
                     ->middleware('throttle:pat-create')
                     ->name('store');
-                Route::delete('/personal-access-tokens/{tokenId}', [MePersonalAccessTokenController::class, 'destroy'])->name('destroy');
+                Route::delete('/personal-access-tokens/{tokenId}', [OwnPersonalAccessTokenController::class, 'destroy'])
+                    ->whereUuid('tokenId')
+                    ->name('destroy');
             });
         });
 
     // Меню навигации по ключу: дефолты и ACL-фильтрацию делает FE.
     Route::get('/menu/{key}', [MenuController::class, 'show'])
         ->where('key', '[a-z][a-z0-9_]*')
-        ->middleware('auth:api')
+        ->middleware('auth:session')
         ->name('api.v1.menu.show');
 
     // Публичная выдача медиа: доступ решает контроллер, поэтому auth-middleware
@@ -89,5 +65,6 @@ Route::middleware('api')->prefix('api/v1')->group(function (): void {
     // Актора контроллер спрашивает у AuthenticationContext, который разбирает
     // запрос по требованию; отдельный «опциональный» middleware для этого не нужен.
     Route::get('/media/{id}', [MediaPreviewController::class, 'show'])
+        ->middleware(ResolveSessionCredential::ALIAS)
         ->name('api.v1.media.show');
 });

@@ -119,7 +119,7 @@ final class PolicyRuntimeAccessGate implements AccessGate
             return null;
         }
 
-        return $credential->user->userId() === $actor->userId() ? $credential->scopes : null;
+        return $credential->actor->userId() === $actor->userId() ? $credential->scopes : null;
     }
 
     /** Та же семантика, что у action политики: `*` покрывает всё, иначе точное совпадение. */

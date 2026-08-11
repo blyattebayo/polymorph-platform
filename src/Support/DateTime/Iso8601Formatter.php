@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Support\DateTime;
 
 use Carbon\CarbonImmutable;
+use DateTimeInterface;
 
 final class Iso8601Formatter
 {
@@ -12,6 +13,10 @@ final class Iso8601Formatter
     {
         if ($value === null || $value === '') {
             return null;
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            return CarbonImmutable::instance($value)->toIso8601String();
         }
 
         return CarbonImmutable::parse((string) $value)->toIso8601String();

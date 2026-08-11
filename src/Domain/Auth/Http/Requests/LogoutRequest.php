@@ -9,14 +9,14 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * Request для выхода из системы.
  *
- * Валидирует опциональный параметр 'all' для отзыва всех refresh токенов.
+ * Валидирует опциональный параметр 'all' для отзыва всех сессий.
  */
 final class LogoutRequest extends FormRequest
 {
     /**
      * Определить, авторизован ли пользователь для выполнения запроса.
      *
-     * Требует аутентификации через middleware маршрута.
+     * Аутентификация выполняется route middleware и use case.
      */
     public function authorize(): bool
     {
@@ -27,7 +27,7 @@ final class LogoutRequest extends FormRequest
      * Получить правила валидации для запроса.
      *
      * Валидирует:
-     * - all: опциональный boolean для отзыва всех refresh токенов (по умолчанию отзывается только текущий)
+     * - all: опциональный boolean для отзыва всех сессий (по умолчанию отзывается только текущая)
      *
      * @return array<string, mixed>
      */

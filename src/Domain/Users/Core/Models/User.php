@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Users\Core\Models;
 
 use Database\Factories\UserFactory;
-use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\DatabaseNotification;
@@ -23,18 +21,16 @@ use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
  * @property int $id
  * @property string $name Имя пользователя
  * @property string $email Email пользователя (уникальный)
- * @property Carbon|null $email_verified_at Дата подтверждения email
  * @property string $password Хеш пароля
  * @property bool $is_platform_admin Встроенная учётка платформенного администратора
- * @property string|null $remember_token Токен для "запомнить меня"
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read DatabaseNotificationCollection<int, DatabaseNotification> $notifications Уведомления пользователя
  */
-class User extends Authenticatable implements MustVerifyEmail, UserIdentity
+class User extends Authenticatable implements UserIdentity
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, MustVerifyEmailTrait, Notifiable;
+    use HasFactory, Notifiable;
 
     public const STATUS_ACTIVE = 'active';
 
@@ -63,7 +59,6 @@ class User extends Authenticatable implements MustVerifyEmail, UserIdentity
         'name',
         'email',
         'password',
-        'email_verified_at',
         'status',
     ];
 
@@ -74,7 +69,6 @@ class User extends Authenticatable implements MustVerifyEmail, UserIdentity
      */
     protected $hidden = [
         'password',
-        'remember_token',
     ];
 
     /**
@@ -85,7 +79,6 @@ class User extends Authenticatable implements MustVerifyEmail, UserIdentity
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_platform_admin' => 'boolean',
         ];

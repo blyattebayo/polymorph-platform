@@ -24,15 +24,14 @@ final readonly class UpdateUserAction
      * @param array{
      *     name?: string,
      *     email?: string,
-     *     status?: string,
-     *     email_verified_at?: \DateTimeInterface|null
+     *     status?: string
      * } $data
      *
      * @throws UserAlreadyExistsException
      */
     public function execute(User $user, array $data): User
     {
-        $data = array_intersect_key($data, array_flip(['name', 'email', 'status', 'email_verified_at']));
+        $data = array_intersect_key($data, array_flip(['name', 'email', 'status']));
 
         if ($data === []) {
             return $user;

@@ -170,7 +170,7 @@ final class PluginRouteMounter
 
         // Fail-closed дефолт админ-зоны: маршрут ADMIN_API, за который ни зона,
         // ни сам маршрут не объявили capability, получает ext.{id}.admin/access.
-        // Раньше зона давала только auth:api, и забытый requires: в манифесте
+        // The admin zone is always browser-session authenticated; a forgotten capability
         // означал админ-эндпоинт, открытый любому аутентифицированному.
         $middleware = $route->middlewareList();
         if ($kind === ZoneKind::ADMIN_API
@@ -233,7 +233,7 @@ final class PluginRouteMounter
     {
         return match ($kind) {
             ZoneKind::API => ['api'],
-            ZoneKind::ADMIN_API => ['api', 'auth:api'],
+            ZoneKind::ADMIN_API => ['api', 'auth:session'],
             ZoneKind::WEB => ['web'],
         };
     }

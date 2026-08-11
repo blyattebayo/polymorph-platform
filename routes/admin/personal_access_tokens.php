@@ -3,42 +3,20 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
-use Polymorph\Platform\Domain\Auth\Http\Controllers\AdminPersonalAccessTokenController;
-use Polymorph\Platform\Domain\Users\Access\UsersCapabilities;
-use Polymorph\Platform\Http\Middleware\EnsureSessionCredential;
+use Polymorph\Platform\Domain\Auth\Http\PersonalAccessToken\Controllers\AdministrativePersonalAccessTokenController;
 
 /**
  * Администрирование персональных токенов.
  *
- * Выдача и отзыв требуют сессионной куки (EnsureSessionCredential): иначе
- * долгоживущим токеном можно было бы выписать себе новый и продлить доступ
- * без повторного входа.
+ * Application use cases enforce the interactive-session and capability rules.
  */
 Route::prefix('personal-access-tokens')
     ->name('personal-access-tokens.')
-    ->whereNumber('tokenId')
+    ->whereUuid('tokenId')
     ->group(function (): void {
-        Route::get('/', [AdminPersonalAccessTokenController::class, 'indexAll'])
-            ->middleware(UsersCapabilities::requireRead())
+        Route::get('/', [AdministrativePersonalAccessTokenController::class, 'index'])
             ->name('index');
 
-        Route::delete('/{tokenId}', [AdminPersonalAccessTokenController::class, 'destroy'])
-            ->middleware([UsersCapabilities::requireManage(), EnsureSessionCredential::ALIAS])
+        Route::delete('/{tokenId}', [AdministrativePersonalAccessTokenController::class, 'destroy'])
             ->name('destroy');
-    });
-
-Route::prefix('users/{userId}/personal-access-tokens')
-    ->name('users.personal-access-tokens.')
-    ->whereNumber('userId')
-    ->middleware(UsersCapabilities::requireRead())
-    ->group(function (): void {
-        Route::get('/', [AdminPersonalAccessTokenController::class, 'indexForUser'])->name('index');
-
-        Route::post('/', [AdminPersonalAccessTokenController::class, 'storeForUser'])
-            ->middleware([
-                'throttle:pat-create',
-                UsersCapabilities::requireManage(),
-                EnsureSessionCredential::ALIAS,
-            ])
-            ->name('store');
     });

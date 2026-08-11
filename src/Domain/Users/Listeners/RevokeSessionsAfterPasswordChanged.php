@@ -15,6 +15,6 @@ final class RevokeSessionsAfterPasswordChanged
 
     public function handle(PasswordChanged $event): void
     {
-        $this->sessionRevoker->revokeAllForUser((int) $event->user->id);
+        $this->sessionRevoker->afterPasswordChange((int) $event->user->id);
     }
 }

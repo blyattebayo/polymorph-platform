@@ -8,7 +8,6 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
-use Polymorph\Platform\Domain\Auth\Core\ValueObjects\AuthCookieConfig;
 use Polymorph\Platform\Domain\Extensions\Http\ExtensionErrorResolver;
 use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
@@ -102,20 +101,7 @@ class AppServiceProvider extends ServiceProvider
             $email = strtolower(trim((string) $request->input('email', '')));
             $key = sha1($request->ip().'|'.$email);
 
-            return Limit::perMinute(5)->by($key)->response(static function () {
-                return response()->json([
-                    'code' => 'RATE_LIMITED',
-                    'message' => 'Too many login attempts.',
-                ], 429)->withHeaders(['Retry-After' => '60']);
-            });
-        });
-
-        RateLimiter::for('auth-refresh', static function (Request $request): Limit {
-            $refreshCookieName = app(AuthCookieConfig::class)->refreshName;
-            $fingerprint = hash('sha256', (string) $request->cookie($refreshCookieName, ''));
-            $key = sha1($request->ip().'|'.$fingerprint);
-
-            return Limit::perMinute(20)->by($key);
+            return Limit::perMinute(5)->by($key);
         });
 
         RateLimiter::for('pat-create', static function (Request $request): Limit {
@@ -135,12 +121,7 @@ class AppServiceProvider extends ServiceProvider
             $email = strtolower(trim((string) $request->input('email', '')));
             $key = sha1($request->ip().'|'.$email);
 
-            return Limit::perMinute(5)->by($key)->response(static function () {
-                return response()->json([
-                    'code' => 'RATE_LIMITED',
-                    'message' => 'Too many registration attempts.',
-                ], 429)->withHeaders(['Retry-After' => '60']);
-            });
+            return Limit::perMinute(5)->by($key);
         });
 
         RateLimiter::for('auth-verify-resend', static function (Request $request): Limit {

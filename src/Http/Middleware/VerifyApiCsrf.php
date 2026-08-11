@@ -28,13 +28,8 @@ final class VerifyApiCsrf
             return $next($request);
         }
 
-        // Header credentials are not vulnerable to browser CSRF and must work for PAT integrations.
-        if (trim((string) $request->header('Authorization', '')) !== '') {
-            return $next($request);
-        }
-
-        // Skip preflight requests (OPTIONS with Access-Control-Request-Method)
-        if ($request->getMethod() === 'OPTIONS' && $request->header('Access-Control-Request-Method')) {
+        // PAT integrations use Bearer outside the interactive-auth surface.
+        if (! $request->is('api/v1/auth/*') && trim((string) $request->header('Authorization', '')) !== '') {
             return $next($request);
         }
 
@@ -50,7 +45,7 @@ final class VerifyApiCsrf
     private function isTrustedBrowserOrigin(Request $request): bool
     {
         $secFetchSite = strtolower(trim((string) $request->header('Sec-Fetch-Site', '')));
-        if (in_array($secFetchSite, ['same-origin', 'same-site', 'none'], true)) {
+        if ($secFetchSite === 'same-origin') {
             return true;
         }
 
@@ -64,8 +59,7 @@ final class VerifyApiCsrf
             return $this->isAllowedOrigin($referer);
         }
 
-        // Non-browser clients and tests often omit browser fetch metadata.
-        return $secFetchSite === '';
+        return false;
     }
 
     private function isAllowedOrigin(string $value): bool

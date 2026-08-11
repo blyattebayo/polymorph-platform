@@ -26,8 +26,7 @@ final readonly class CreateUserAction
      *     name: string,
      *     email: string,
      *     password: string,
-     *     status?: string,
-     *     email_verified_at?: \DateTimeInterface|null
+     *     status?: string
      * } $data
      *
      * @throws UserAlreadyExistsException
@@ -51,7 +50,6 @@ final readonly class CreateUserAction
             'email' => $email->toString(),
             'password' => $data['password'],
             'status' => $data['status'] ?? User::STATUS_ACTIVE,
-            'email_verified_at' => $data['email_verified_at'] ?? null,
         ];
 
         return $this->userRepository->create($userData);

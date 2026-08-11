@@ -7,12 +7,7 @@ namespace Polymorph\Platform\Domain\Auth\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Polymorph\Platform\Support\Validation\ValidationRules;
 
-/**
- * Request для входа в систему (аутентификации).
- *
- * Валидирует email и password для входа администратора.
- */
-class LoginRequest extends FormRequest
+final class LoginRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -23,7 +18,7 @@ class LoginRequest extends FormRequest
     {
         return [
             'email' => ValidationRules::email(),
-            'password' => ValidationRules::password(),
+            'password' => ['required', 'string', 'max:255'],
         ];
     }
 }

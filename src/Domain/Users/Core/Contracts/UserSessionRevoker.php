@@ -6,5 +6,7 @@ namespace Polymorph\Platform\Domain\Users\Core\Contracts;
 
 interface UserSessionRevoker
 {
-    public function revokeAllForUser(int $userId): void;
+    public function afterPasswordChange(int $userId): void;
+
+    public function afterAccountRestriction(int $userId): void;
 }

@@ -8,6 +8,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Exceptions\PostTooLargeException;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
@@ -44,18 +45,6 @@ use UnexpectedValueException;
  */
 final class FrameworkErrorResolver implements ResolvesError
 {
-    /**
-     * Атрибуты запроса, куда домен Auth кладёт причину отказа.
-     *
-     * Читаем по строковому ключу, а НЕ импортом константы: Support — нижний слой,
-     * и зависимость Support -> Domain\Auth\Infrastructure была бы пробоем границы
-     * (ровно AP-4 из ревью). Совпадение ключей с RequestCredentialAuthenticator
-     * закреплено тестом, поэтому источник правды остаётся один.
-     */
-    private const AUTH_FAILURE_REASON = 'auth.failure_reason';
-
-    private const AUTH_FAILURE_MESSAGE = 'auth.failure_message';
-
     public function __construct(
         private readonly ErrorFactory $factory,
     ) {}
@@ -87,6 +76,7 @@ final class FrameworkErrorResolver implements ResolvesError
                 new ErrorReport(level: 'error', message: 'Service unavailable during API request'),
             ),
             $exception instanceof PostTooLargeException => new ErrorResolution($this->postTooLarge()),
+            $exception instanceof ThrottleRequestsException => new ErrorResolution($this->tooManyRequests($exception)),
 
             // Подстраховка под необёрнутые SPL-исключения. Наследник ПЕРЕД предком:
             // UnexpectedValueException extends RuntimeException. Отчёт помечает
@@ -143,35 +133,12 @@ final class FrameworkErrorResolver implements ResolvesError
             ->build();
     }
 
-    /**
-     * Причина отказа лежит в атрибутах запроса, их проставляет аутентификатор.
-     * Раньше эта ветка жила прямо в HostBootstrap и затеняла маппинг из конфига —
-     * два обработчика на один класс, из которых один недостижим.
-     */
     private function unauthenticated(?Request $request): ErrorPayload
     {
-        // Аутентификатор кладёт в атрибуты И причину, И готовое сообщение, поэтому
-        // выводить второе из первой здесь не нужно.
-        $reason = 'missing_token';
-        $message = 'Authentication is required to access this resource.';
-
-        if ($request instanceof Request) {
-            $attributeReason = $request->attributes->get(self::AUTH_FAILURE_REASON);
-            $attributeMessage = $request->attributes->get(self::AUTH_FAILURE_MESSAGE);
-
-            if (is_string($attributeReason) && $attributeReason !== '') {
-                $reason = $attributeReason;
-            }
-
-            if (is_string($attributeMessage) && $attributeMessage !== '') {
-                $message = $attributeMessage;
-            }
-        }
-
         return $this->factory->for(ErrorCode::UNAUTHORIZED)
             ->meta([
-                'reason' => $reason,
-                'message' => $message,
+                'reason' => 'missing_token',
+                'message' => 'Authentication is required to access this resource.',
             ])
             ->build();
     }
@@ -247,6 +214,18 @@ final class FrameworkErrorResolver implements ResolvesError
                 'error_type' => 'post_too_large',
             ])
             ->build();
+    }
+
+    private function tooManyRequests(ThrottleRequestsException $exception): ErrorPayload
+    {
+        $builder = $this->factory->for(ErrorCode::TOO_MANY_REQUESTS);
+        $retryAfter = $exception->getHeaders()['Retry-After'] ?? null;
+
+        if (is_numeric($retryAfter)) {
+            $builder = $builder->addMeta('retry_after', (int) $retryAfter);
+        }
+
+        return $builder->build();
     }
 
     private function badRequest(string $detail, string $exceptionType): ErrorPayload

@@ -26,7 +26,7 @@ final class SdkCurrentActor implements CurrentActor
 
     public function actor(): ?Actor
     {
-        $user = $this->auth->user();
+        $user = $this->auth->actor();
 
         return $user instanceof User ? ActorMapper::fromUser($user) : null;
     }

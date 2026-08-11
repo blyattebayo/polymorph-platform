@@ -17,7 +17,7 @@ use Polymorph\Sdk\Routing\Routes;
  *   adminApi(...) -> api/v1/admin/ext/__PLUGIN_ID__/…  имя admin.v1.ext.__PLUGIN_ID__.*
  *   web(...)      -> ext/__PLUGIN_ID__/…               имя ext.__PLUGIN_ID__.*
  *
- * Аутентификация зоны тоже от хоста: adminApi всегда идёт под auth:api.
+ * Аутентификация зоны тоже от хоста: adminApi всегда идёт под auth:session.
  * Действие — всегда пара [Controller::class, 'method'] ('__invoke' для
  * invokable-контроллера).
  */

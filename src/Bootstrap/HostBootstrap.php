@@ -9,8 +9,8 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Polymorph\Platform\Domain\AccessControl\Console\GenerateFeCapabilityCatalogCommand;
 use Polymorph\Platform\Domain\AccessControl\Console\RebuildAccessControlCommand;
-use Polymorph\Platform\Domain\Auth\Console\PruneAuthSessionsCommand;
-use Polymorph\Platform\Domain\Extensions\Console\MigrateLegacyExtensionDataCommand;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneAuthSessionsCommand;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Http\SessionCookie;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsBuildCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsDeployCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsDisableCommand;
@@ -23,9 +23,8 @@ use Polymorph\Platform\Domain\Extensions\Console\ScaffoldPluginCommand;
 use Polymorph\Platform\Http\ApiErrorHandler;
 use Polymorph\Platform\Http\Middleware\AddCacheVary;
 use Polymorph\Platform\Http\Middleware\CanonicalUrl;
-use Polymorph\Platform\Http\Middleware\EnsureSessionCredential;
+use Polymorph\Platform\Http\Middleware\ResolveSessionCredential;
 use Polymorph\Platform\Http\Middleware\NoCacheAuth;
-use Polymorph\Platform\Http\Middleware\RenewAccessTokenCookie;
 use Polymorph\Platform\Http\Middleware\RequireCapability;
 use Polymorph\Platform\Http\Middleware\VerifyApiCsrf;
 use Polymorph\Platform\Support\Console\PreflightCommand;
@@ -65,20 +64,12 @@ final class HostBootstrap
             PluginsBuildCommand::class,
             PluginsDeployCommand::class,
             ScaffoldPluginCommand::class,
-            MigrateLegacyExtensionDataCommand::class,
         ];
     }
 
     public static function middleware(Middleware $middleware): void
     {
-        // This runs before Laravel has bootstrapped the config repository.
-        $jwtAccessCookie = (string) env('JWT_ACCESS_COOKIE', 'cms_at');
-        $jwtRefreshCookie = (string) env('JWT_REFRESH_COOKIE', 'cms_rt');
-
-        $middleware->encryptCookies(except: array_values(array_unique(array_filter([
-            $jwtAccessCookie,
-            $jwtRefreshCookie,
-        ], static fn ($name): bool => is_string($name) && trim($name) !== ''))));
+        $middleware->encryptCookies(except: [SessionCookie::NAME]);
 
         // Canonicalisation applies globally to all HTTP requests (redirect /About -> /about
         // before routing). The middleware itself filters system paths (admin, api, auth, ...).
@@ -87,10 +78,9 @@ final class HostBootstrap
         // API group order: CORS -> CSRF -> Vary -> Auth.
         $middleware->appendToGroup('api', VerifyApiCsrf::class);
         $middleware->appendToGroup('api', AddCacheVary::class);
-        $middleware->appendToGroup('api', RenewAccessTokenCookie::class);
 
         $middleware->alias([
-            'session.credential' => EnsureSessionCredential::class,
+            ResolveSessionCredential::ALIAS => ResolveSessionCredential::class,
             'no-cache-auth' => NoCacheAuth::class,
             RequireCapability::ALIAS => RequireCapability::class,
         ]);

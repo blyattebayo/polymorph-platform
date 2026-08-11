@@ -9,7 +9,7 @@ use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Domain\Users\Events\UserUpdated;
 
 /**
- * Ревокает все refresh-сессии пользователя, когда его статус сменился
+ * Removes all browser sessions when the user's status changes.
  * на ограничивающий (blocked/inactive).
  *
  * Симметричен {@see RevokeSessionsAfterPasswordChanged}: побочный эффект
@@ -29,7 +29,7 @@ final class RevokeSessionsAfterUserStatusChanged
         $status = $event->changes['status'] ?? null;
 
         if ($status === User::STATUS_BLOCKED || $status === User::STATUS_INACTIVE) {
-            $this->sessionRevoker->revokeAllForUser((int) $event->user->id);
+            $this->sessionRevoker->afterAccountRestriction((int) $event->user->id);
         }
     }
 }
