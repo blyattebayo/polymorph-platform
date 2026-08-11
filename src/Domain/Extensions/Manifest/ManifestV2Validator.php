@@ -34,6 +34,9 @@ final class ManifestV2Validator
         $this->assertSemver($version, $source);
 
         $schemaVersion = $this->requireString($manifest, 'schemaVersion', $source);
+        if ($schemaVersion !== '2.0') {
+            throw new \InvalidArgumentException("{$source}: schemaVersion must be '2.0'.");
+        }
 
         $kindValue = is_string($manifest['kind'] ?? null) && trim((string) $manifest['kind']) !== ''
             ? trim((string) $manifest['kind'])
@@ -47,6 +50,8 @@ final class ManifestV2Validator
                 "{$source}: requires SDK '{$sdk}', host SDK is ".Sdk::VERSION.' (incompatible).',
             );
         }
+
+        $this->validateDependencies($manifest['dependencies'] ?? [], $id, $source);
 
         return new ManifestV2(
             schemaVersion: $schemaVersion,
@@ -83,6 +88,25 @@ final class ManifestV2Validator
             SdkVersion::fromString($version);
         } catch (\InvalidArgumentException) {
             throw new \InvalidArgumentException("{$source}: version '{$version}' is not semver (major.minor.patch).");
+        }
+    }
+
+    private function validateDependencies(mixed $dependencies, string $extensionId, string $source): void
+    {
+        if (! is_array($dependencies)) {
+            throw new \InvalidArgumentException("{$source}: dependencies must be an object.");
+        }
+
+        foreach ($dependencies as $dependencyId => $range) {
+            if (! is_string($dependencyId) || ! ValidationConstraints::slug()->matches($dependencyId)) {
+                throw new \InvalidArgumentException("{$source}: dependency id must match ".ValidationConstraints::slug()->pattern().'.');
+            }
+            if ($dependencyId === $extensionId) {
+                throw new \InvalidArgumentException("{$source}: extension cannot depend on itself.");
+            }
+            if (! is_string($range) || trim($range) === '') {
+                throw new \InvalidArgumentException("{$source}: dependency '{$dependencyId}' must have a non-empty version range.");
+            }
         }
     }
 

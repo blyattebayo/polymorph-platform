@@ -36,7 +36,7 @@ final class GenerateFeCapabilityCatalogCommand extends Command
                 continue;
             }
 
-            if (str_starts_with($resource, 'ext.') || str_starts_with($resource, 'plugin.')) {
+            if (str_starts_with($resource, 'ext.')) {
                 continue;
             }
 

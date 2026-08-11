@@ -7,7 +7,6 @@ namespace Polymorph\Platform\Domain\Users\Http\Requests;
 use Illuminate\Validation\Rule;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Domain\Users\Http\Requests\Rules\AssignableRoleIdsRule;
-use Polymorph\Platform\Domain\Users\Http\Requests\Rules\ValidUserStatusRule;
 use Polymorph\Platform\Http\Requests\ApiFormRequest;
 use Polymorph\Platform\Support\Validation\ValidationRules;
 
@@ -25,7 +24,7 @@ final class StoreUserRequest extends ApiFormRequest
             // равно перепроверит (гонка двух запросов) и ответит 409.
             'email' => [...ValidationRules::email(), Rule::unique(User::class, 'email')],
             'password' => ValidationRules::password(),
-            'status' => ['nullable', new ValidUserStatusRule],
+            'status' => ['nullable', Rule::in(User::allowedStatuses())],
             'role_ids' => ['nullable', 'array', app(AssignableRoleIdsRule::class)],
             'role_ids.*' => ['integer', 'min:1'],
         ];

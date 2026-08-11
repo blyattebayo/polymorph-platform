@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Services;
 
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Access\AccessCheck;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 use Polymorph\Platform\SharedKernel\Access\ResourceRef;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
 final class EffectiveCapabilityResolver
 {
@@ -20,7 +20,7 @@ final class EffectiveCapabilityResolver
     /**
      * @return list<string>
      */
-    public function for(UserIdentity $user): array
+    public function for(User $user): array
     {
         $checks = [];
         $keys = [];

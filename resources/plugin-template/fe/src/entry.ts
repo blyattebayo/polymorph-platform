@@ -1,4 +1,4 @@
-import type { PluginMount } from '@polymorph/plugin-sdk';
+import type { PluginMount } from '@blyattebayo/polymorph-sdk';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';

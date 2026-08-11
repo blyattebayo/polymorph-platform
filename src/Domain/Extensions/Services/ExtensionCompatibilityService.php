@@ -24,11 +24,6 @@ final class ExtensionCompatibilityService
         return "Plugin '{$plugin->id}' declares core range '{$range}', current core is '{$coreVersion}'.";
     }
 
-    public function isStrict(): bool
-    {
-        return (bool) config('plugins.compatibility.strict', true);
-    }
-
     /**
      * Проверка попадания версии в semver-диапазон.
      *

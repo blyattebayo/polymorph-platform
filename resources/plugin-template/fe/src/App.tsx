@@ -1,4 +1,4 @@
-import type { PluginHost } from '@polymorph/plugin-sdk';
+import type { PluginHost } from '@blyattebayo/polymorph-sdk';
 import { useEffect, useState } from 'react';
 
 type HelloPayload = {

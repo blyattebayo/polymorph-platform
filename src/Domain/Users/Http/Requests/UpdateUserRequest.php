@@ -7,7 +7,6 @@ namespace Polymorph\Platform\Domain\Users\Http\Requests;
 use Illuminate\Validation\Rule;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Domain\Users\Http\Requests\Rules\AssignableRoleIdsRule;
-use Polymorph\Platform\Domain\Users\Http\Requests\Rules\ValidUserStatusRule;
 use Polymorph\Platform\Http\Requests\ApiFormRequest;
 use Polymorph\Platform\Support\Validation\ValidationRules;
 
@@ -26,7 +25,7 @@ final class UpdateUserRequest extends ApiFormRequest
                 ...ValidationRules::email(required: false),
                 Rule::unique(User::class, 'email')->ignore((int) $this->route('userId')),
             ],
-            'status' => ['sometimes', new ValidUserStatusRule],
+            'status' => ['sometimes', Rule::in(User::allowedStatuses())],
             'role_ids' => ['sometimes', 'array', app(AssignableRoleIdsRule::class)],
             'role_ids.*' => ['integer', 'min:1'],
         ];

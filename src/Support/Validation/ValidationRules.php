@@ -14,6 +14,7 @@ final class ValidationRules
         $constraint = ValidationConstraints::email();
 
         return [
+            'bail',
             ...self::presence($required, $sometimes, $nullable),
             'string',
             $constraint->laravelRule(),

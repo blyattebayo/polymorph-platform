@@ -7,7 +7,7 @@ namespace Polymorph\Platform\Support\Logging;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
 
 final class LogContextEnricher
 {
@@ -77,7 +77,7 @@ final class LogContextEnricher
     private function userId(): int|string|null
     {
         try {
-            return $this->app->make(AuthenticationContext::class)->authIdentifier();
+            return $this->app->make(AuthenticationContext::class)->userId();
         } catch (\Throwable) {
             return null;
         }

@@ -8,8 +8,8 @@ use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionR
 use Polymorph\Platform\Domain\Records\Core\Models\Record;
 use Polymorph\Platform\Domain\Records\Support\RecordSchemaResolver;
 use Polymorph\Platform\Domain\SchemaModel\Services\FieldAccessService;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
 final class RecordReadProfileResolver
 {
@@ -18,7 +18,7 @@ final class RecordReadProfileResolver
         private readonly FieldAccessService $fieldAccessService,
     ) {}
 
-    public function forDefinition(?UserIdentity $actor, int $recordDefinitionId, string $action = CapabilityCatalog::ACTION_READ): RecordReadProfile
+    public function forDefinition(?User $actor, int $recordDefinitionId, string $action = CapabilityCatalog::ACTION_READ): RecordReadProfile
     {
         $definition = $this->recordDefinitionRepository->find($recordDefinitionId);
         $schemaId = $definition?->schema_id;
@@ -26,12 +26,12 @@ final class RecordReadProfileResolver
         return $this->forSchema($actor, is_int($schemaId) && $schemaId > 0 ? $schemaId : null, $action);
     }
 
-    public function forRecord(?UserIdentity $actor, Record $record, string $action = CapabilityCatalog::ACTION_READ): RecordReadProfile
+    public function forRecord(?User $actor, Record $record, string $action = CapabilityCatalog::ACTION_READ): RecordReadProfile
     {
         return $this->forSchema($actor, RecordSchemaResolver::fromRecord($record), $action);
     }
 
-    public function forSchema(?UserIdentity $actor, ?int $schemaId, string $action = CapabilityCatalog::ACTION_READ): RecordReadProfile
+    public function forSchema(?User $actor, ?int $schemaId, string $action = CapabilityCatalog::ACTION_READ): RecordReadProfile
     {
         if ($schemaId === null || $schemaId <= 0) {
             return new RecordReadProfile(null, [], true);
@@ -41,7 +41,7 @@ final class RecordReadProfileResolver
         // «видно всё», и любой будущий вызов без аутентификации (все нынешние
         // HTTP-пути передают актора из DI) молча раскрывал бы поля, которые
         // политики прячут от каждого реального пользователя.
-        if (! $actor instanceof UserIdentity) {
+        if (! $actor instanceof User) {
             return new RecordReadProfile($schemaId, [], false);
         }
 

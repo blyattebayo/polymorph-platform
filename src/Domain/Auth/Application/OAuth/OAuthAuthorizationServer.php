@@ -6,14 +6,13 @@ namespace Polymorph\Platform\Domain\Auth\Application\OAuth;
 
 use Polymorph\Platform\Domain\Auth\Application\Contracts\Clock;
 use Polymorph\Platform\Domain\Auth\Application\Contracts\IdGenerator;
-use Polymorph\Platform\Domain\Auth\Application\Contracts\UserGateway;
 use Polymorph\Platform\Domain\Auth\Application\OAuth\Data\AuthorizationCode;
 use Polymorph\Platform\Domain\Auth\Application\OAuth\Data\AuthorizationRequest;
 use Polymorph\Platform\Domain\Auth\Application\OAuth\Data\OAuthClient;
 use Polymorph\Platform\Domain\Auth\Application\OAuth\Data\OAuthGrant;
 use Polymorph\Platform\Domain\Auth\Application\OAuth\Data\OAuthTokenSet;
-use Polymorph\Platform\Domain\Auth\Domain\ValueObjects\UserId;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
+use Polymorph\Platform\Domain\Users\Infrastructure\Repositories\UserRepository;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 
 final readonly class OAuthAuthorizationServer
 {
@@ -25,7 +24,7 @@ final readonly class OAuthAuthorizationServer
         private OAuthSecrets $secrets,
         private Clock $clock,
         private IdGenerator $ids,
-        private UserGateway $users,
+        private UserRepository $users,
     ) {}
 
     /** @param list<string> $redirectUris */
@@ -86,7 +85,7 @@ final readonly class OAuthAuthorizationServer
         return new AuthorizationRequest($client, $redirectUri, $resource, $scope, $challenge, $state);
     }
 
-    public function approve(AuthorizationRequest $request, UserIdentity $user): string
+    public function approve(AuthorizationRequest $request, User $user): string
     {
         if (! $user->isActiveAccount()) {
             throw new OAuthProtocolException('access_denied', 'The user account is not active.', 403);
@@ -98,7 +97,7 @@ final readonly class OAuthAuthorizationServer
             $secret->hash,
             new AuthorizationCode(
                 $request->client->id,
-                $user->userId(),
+                (int) $user->id,
                 $request->redirectUri,
                 $request->resource,
                 $request->scope,
@@ -128,8 +127,8 @@ final readonly class OAuthAuthorizationServer
             throw new OAuthProtocolException('invalid_grant', 'Authorization code is invalid, expired, consumed, or bound to another request.');
         }
 
-        $user = $this->users->findById(new UserId($code->userId));
-        if ($user === null || ! $user->identity->isActiveAccount()) {
+        $user = $this->users->find($code->userId);
+        if ($user === null || ! $user->isActiveAccount()) {
             throw new OAuthProtocolException('invalid_grant', 'The authorizing user is no longer active.');
         }
 
@@ -181,7 +180,7 @@ final readonly class OAuthAuthorizationServer
         return new OAuthTokenSet($access->plaintext, $refresh->plaintext, $this->config->accessTokenTtlSeconds, $grant->scope);
     }
 
-    public function authenticate(string $plaintextAccessToken): ?UserIdentity
+    public function authenticate(string $plaintextAccessToken): ?User
     {
         if (! str_starts_with($plaintextAccessToken, 'pmph_oat_')) {
             return null;
@@ -259,10 +258,10 @@ final readonly class OAuthAuthorizationServer
         }
     }
 
-    private function activeIdentity(int $userId): ?UserIdentity
+    private function activeIdentity(int $userId): ?User
     {
-        $user = $this->users->findById(new UserId($userId));
+        $user = $this->users->find($userId);
 
-        return $user !== null && $user->identity->isActiveAccount() ? $user->identity : null;
+        return $user !== null && $user->isActiveAccount() ? $user : null;
     }
 }

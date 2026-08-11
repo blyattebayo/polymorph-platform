@@ -26,9 +26,9 @@ final class AuthenticationDenied extends RuntimeException implements DomainError
         return new self('invalid_credentials', 'Invalid credentials.');
     }
 
-    public static function inactiveAccount(): self
+    public static function disabledAccount(): self
     {
-        return new self('inactive_user', 'Account is not active.');
+        return new self('disabled_user', 'Account is disabled.');
     }
 
     public static function ambiguousCredentials(): self

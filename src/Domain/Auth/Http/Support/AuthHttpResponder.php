@@ -6,9 +6,7 @@ namespace Polymorph\Platform\Domain\Auth\Http\Support;
 
 use Illuminate\Http\JsonResponse;
 use Polymorph\Platform\Domain\AccessControl\Services\EffectiveCapabilityResolver;
-use Polymorph\Platform\Domain\Auth\Application\Models\AuthUser;
 use Polymorph\Platform\Domain\Auth\Application\Models\IssuedSession;
-use Polymorph\Platform\Domain\Auth\Domain\Exceptions\AuthInvariantViolation;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\SessionCookie;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
@@ -23,7 +21,7 @@ final readonly class AuthHttpResponder
 
     public function authenticated(IssuedSession $result): JsonResponse
     {
-        $response = AdminResponse::json($this->userPayload($this->eloquentUser($result->user)));
+        $response = AdminResponse::json($this->userPayload($result->user));
         $response->headers->setCookie($this->cookie->create($result->credential));
 
         return $response;
@@ -40,15 +38,6 @@ final readonly class AuthHttpResponder
     public function current(User $user): JsonResponse
     {
         return AdminResponse::json($this->userPayload($user));
-    }
-
-    private function eloquentUser(AuthUser $user): User
-    {
-        if (! $user->identity instanceof User) {
-            throw new AuthInvariantViolation('Authentication requires an Eloquent user identity.');
-        }
-
-        return $user->identity;
     }
 
     /** @return array{id: int, email: string, name: string, capabilities: list<string>} */

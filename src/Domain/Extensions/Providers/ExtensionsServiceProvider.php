@@ -18,7 +18,6 @@ use Polymorph\Platform\Domain\Extensions\Services\ExtensionCompatibilityService;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionDiscoveryService;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionFrontendManifestService;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionManager;
-use Polymorph\Platform\Domain\Extensions\Services\ExtensionManifestValidator;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionMigrationService;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionRegistryService;
 use Polymorph\Platform\Domain\Records\Events\RecordDeleted;
@@ -34,7 +33,6 @@ final class ExtensionsServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ExtensionAclManifestParser::class);
-        $this->app->singleton(ExtensionManifestValidator::class);
         $this->app->singleton(ExtensionDiscoveryService::class);
         $this->app->singleton(ExtensionRegistryService::class);
         $this->app->singleton(ExtensionCapabilityService::class);

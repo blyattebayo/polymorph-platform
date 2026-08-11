@@ -72,6 +72,10 @@ final class HostBootstrap
 
     public static function middleware(Middleware $middleware): void
     {
+        // This product has no server-rendered login route. Every protected API request
+        // has the same 401 contract, regardless of content-negotiation headers.
+        $middleware->redirectGuestsTo(static fn (Request $request): ?string => null);
+
         $middleware->encryptCookies(except: [SessionCookie::NAME]);
 
         // Canonicalisation applies globally to all HTTP requests (redirect /About -> /about

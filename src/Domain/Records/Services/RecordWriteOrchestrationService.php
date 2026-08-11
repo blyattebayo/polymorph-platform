@@ -17,7 +17,7 @@ use Polymorph\Platform\Domain\Records\Pipeline\Handlers\CreateRecordHandler;
 use Polymorph\Platform\Domain\Records\Pipeline\Handlers\DeleteRecordHandler;
 use Polymorph\Platform\Domain\Records\Pipeline\Handlers\RestoreRecordHandler;
 use Polymorph\Platform\Domain\Records\Pipeline\Handlers\UpdateRecordHandler;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ThrowsErrors;
 
@@ -38,7 +38,7 @@ final class RecordWriteOrchestrationService
     /**
      * @param  array<string,mixed>  $dataJson
      */
-    public function create(int $recordDefinitionId, array $dataJson, UserIdentity $actor): RecordSnapshot
+    public function create(int $recordDefinitionId, array $dataJson, User $actor): RecordSnapshot
     {
         $operationId = (string) Str::uuid();
         $recordDefinition = $this->recordDefinitionRepository->find($recordDefinitionId);
@@ -55,7 +55,7 @@ final class RecordWriteOrchestrationService
         return $this->createRecordHandler->handle(new CreateRecordCommand(
             $recordDefinition,
             $dataJson,
-            $actor->userId(),
+            (int) $actor->id,
             $operationId,
         ));
     }
@@ -63,7 +63,7 @@ final class RecordWriteOrchestrationService
     /**
      * @param  array<string,mixed>  $dataJson
      */
-    public function update(int $recordId, array $dataJson, UserIdentity $actor): RecordSnapshot
+    public function update(int $recordId, array $dataJson, User $actor): RecordSnapshot
     {
         $operationId = (string) Str::uuid();
         $record = $this->recordRepository->findWithDefinition($recordId);
@@ -90,28 +90,28 @@ final class RecordWriteOrchestrationService
             $recordId,
             $recordDefinition,
             $dataJson,
-            $actor->userId(),
+            (int) $actor->id,
             $operationId,
         ));
     }
 
-    public function delete(int $recordId, UserIdentity $actor): void
+    public function delete(int $recordId, User $actor): void
     {
         $operationId = (string) Str::uuid();
         $this->deleteRecordHandler->handle(new DeleteRecordCommand(
             $recordId,
-            $actor->userId(),
+            (int) $actor->id,
             $operationId,
         ));
     }
 
-    public function restore(int $recordId, UserIdentity $actor): RecordSnapshot
+    public function restore(int $recordId, User $actor): RecordSnapshot
     {
         $operationId = (string) Str::uuid();
 
         return $this->restoreRecordHandler->handle(new RestoreRecordCommand(
             $recordId,
-            $actor->userId(),
+            (int) $actor->id,
             $operationId,
         ));
     }

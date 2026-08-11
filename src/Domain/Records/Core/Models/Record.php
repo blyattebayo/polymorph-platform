@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
-use RuntimeException;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 
 /**
  * Eloquent-модель для записей контента (Record).
@@ -65,21 +65,7 @@ class Record extends Model
      */
     public function author(): BelongsTo
     {
-        return $this->belongsTo($this->resolveAuthUserModelClass(), 'author_id');
-    }
-
-    /**
-     * @return class-string<Model>
-     */
-    private function resolveAuthUserModelClass(): string
-    {
-        $modelClass = config('auth.providers.users.model');
-
-        if (! is_string($modelClass) || $modelClass === '' || ! is_subclass_of($modelClass, Model::class)) {
-            throw new RuntimeException('Auth user model must be configured as an Eloquent model class.');
-        }
-
-        return $modelClass;
+        return $this->belongsTo(User::class, 'author_id');
     }
 
     /**

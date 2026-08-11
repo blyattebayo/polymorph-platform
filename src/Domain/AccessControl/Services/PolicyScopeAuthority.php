@@ -10,10 +10,10 @@ use Polymorph\Platform\Domain\AccessControl\Core\Models\Assignment;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Policy;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Effect;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\ResourceRef;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
 /**
  * Правило «нельзя распоряжаться правами шире собственных» для HTTP-админки ACL.
@@ -42,7 +42,7 @@ final class PolicyScopeAuthority
 
     public function assertCanManageScope(string $resourcePattern, string $action): void
     {
-        $actor = $this->requireActor();
+        $actor = $this->requireUser();
 
         // resource_pattern проверяется как ресурс: покрытие паттерна актором
         // означает покрытие всего поддерева, которое этот паттерн раздаёт.
@@ -94,7 +94,7 @@ final class PolicyScopeAuthority
      */
     public function assertCanReduceSubjectAccess(Subject $subject): void
     {
-        $actor = $this->requireActor();
+        $actor = $this->requireUser();
 
         foreach ($this->subjectPolicies($subject) as $policy) {
             $resourcePattern = (string) $policy->resource_pattern;
@@ -212,13 +212,13 @@ final class PolicyScopeAuthority
         }
     }
 
-    private function requireActor(): UserIdentity
+    private function requireUser(): User
     {
-        $actor = $this->auth->actor();
+        $actor = $this->auth->user();
 
         // Fail-closed: без актора этот путь недостижим штатно (маршруты за
         // RequireCapability), значит отсутствие актора — отказ, а не пропуск.
-        if (! $actor instanceof UserIdentity) {
+        if (! $actor instanceof User) {
             throw AccessControlApplicationException::forbidden(
                 'Managing policies requires an authenticated actor.',
             );

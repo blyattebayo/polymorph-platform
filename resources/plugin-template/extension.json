@@ -4,7 +4,7 @@
   "name": "__PLUGIN_NAME__",
   "version": "0.1.0",
   "kind": "plugin",
-  "sdk": "^4",
+  "sdk": "^5",
   "provider": "Plugins\\__PLUGIN_CLASS__\\__PLUGIN_CLASS__ServiceProvider",
   "scopes": ["records:read", "records:write"],
   "egress": [],
@@ -24,7 +24,8 @@
     },
     "frontend": {
       "bundle": "__PLUGIN_MOUNT_PATH__/fe/plugin.js",
-      "mountPath": "__PLUGIN_MOUNT_PATH__"
+      "mountPath": "__PLUGIN_MOUNT_PATH__",
+      "contractVersion": "5.0.0"
     }
   }
 }

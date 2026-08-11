@@ -9,12 +9,12 @@ use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdminist
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Assignment;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Policy;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
-use Polymorph\Platform\Domain\Users\Core\Contracts\UserRepository;
+use Polymorph\Platform\Domain\Users\Infrastructure\Repositories\UserRepository;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Access\AccessCheck;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 use Polymorph\Platform\SharedKernel\Access\ResourceRef;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Sdk\Access\AccessGrants;
 use Polymorph\Sdk\Access\CapabilityAction;
 use Polymorph\Sdk\Extension\ExtensionContext;
@@ -211,7 +211,7 @@ final class SdkAccessGrants implements AccessGrants
     /**
      * null — «неизвестный или неактивный аккаунт», для гейта это deny.
      */
-    private function actorFor(int $userId): ?UserIdentity
+    private function actorFor(int $userId): ?User
     {
         $user = $this->users->find($userId);
 

@@ -8,8 +8,8 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Http\Request;
 use LogicException;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
-use Polymorph\Platform\SharedKernel\Identity\RequestCredentialResolver;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\RequestCredentialResolver;
 
 final class ApiGuard implements Guard
 {
@@ -31,7 +31,7 @@ final class ApiGuard implements Guard
 
     public function user(): ?Authenticatable
     {
-        $actor = $this->context->resolve($this->request, $this->resolver)?->actor;
+        $actor = $this->context->resolve($this->request, $this->resolver)?->user;
 
         return $actor instanceof Authenticatable ? $actor : null;
     }

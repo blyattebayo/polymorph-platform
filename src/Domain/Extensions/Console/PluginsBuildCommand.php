@@ -136,12 +136,11 @@ final class PluginsBuildCommand extends Command
         }
 
         $zip->addFile($srcDir.DIRECTORY_SEPARATOR.$manifestFile, $manifestFile);
-        foreach (['composer.json', 'composer.lock'] as $rootFile) {
-            if (is_file($srcDir.DIRECTORY_SEPARATOR.$rootFile)) {
-                $zip->addFile($srcDir.DIRECTORY_SEPARATOR.$rootFile, $rootFile);
-            }
+        $composerManifest = $srcDir.DIRECTORY_SEPARATOR.'composer.json';
+        if (is_file($composerManifest)) {
+            $zip->addFile($composerManifest, 'composer.json');
         }
-        $this->addTree($zip, $beVendorRoot.DIRECTORY_SEPARATOR.'be', 'be');
+        $this->addTree($zip, $beVendorRoot.DIRECTORY_SEPARATOR.'be', 'be', ['tests']);
         $this->addTree($zip, $beVendorRoot.DIRECTORY_SEPARATOR.'vendor', 'vendor');
         $this->addTree($zip, $distDir, 'fe/dist');
 
@@ -239,7 +238,8 @@ final class PluginsBuildCommand extends Command
         @rmdir($path);
     }
 
-    private function addTree(ZipArchive $zip, string $dir, string $prefix): void
+    /** @param list<string> $excludedDirectoryNames */
+    private function addTree(ZipArchive $zip, string $dir, string $prefix, array $excludedDirectoryNames = []): void
     {
         if (! is_dir($dir)) {
             return;
@@ -267,7 +267,10 @@ final class PluginsBuildCommand extends Command
             }
 
             if (is_dir($path)) {
-                $this->addTree($zip, $path, $entry);
+                if (in_array($name, $excludedDirectoryNames, true)) {
+                    continue;
+                }
+                $this->addTree($zip, $path, $entry, $excludedDirectoryNames);
             } elseif (is_readable($path)) {
                 $zip->addFile($path, $entry);
             } else {

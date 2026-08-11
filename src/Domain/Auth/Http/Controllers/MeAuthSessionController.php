@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Auth\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
 use Polymorph\Platform\Domain\Auth\Application\UseCases\Session\ListSessions;
 use Polymorph\Platform\Domain\Auth\Application\UseCases\Session\RevokeSession;
 use Polymorph\Platform\Domain\Auth\Domain\Session;
@@ -12,7 +13,6 @@ use Polymorph\Platform\Domain\Auth\Domain\ValueObjects\SessionId;
 use Polymorph\Platform\Domain\Auth\Domain\ValueObjects\UserId;
 use Polymorph\Platform\Domain\Auth\Http\Resources\AuthSessionResource;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 
 final readonly class MeAuthSessionController
 {
@@ -24,9 +24,9 @@ final readonly class MeAuthSessionController
 
     public function index(): JsonResponse
     {
-        $user = $this->auth->requireActor();
-        $currentSessionId = $this->auth->credential()?->sessionId;
-        $sessions = $this->listSessions->execute(new UserId($user->userId()));
+        $user = $this->auth->requireUser();
+        $currentSessionId = $this->auth->credential()?->sessionId();
+        $sessions = $this->listSessions->execute(new UserId((int) $user->id));
 
         return AdminResponse::json([
             'data' => array_map(
@@ -41,9 +41,9 @@ final readonly class MeAuthSessionController
 
     public function destroy(string $sessionId): JsonResponse
     {
-        $user = $this->auth->requireActor();
+        $user = $this->auth->requireUser();
 
-        if (! $this->revokeSession->execute(new UserId($user->userId()), new SessionId($sessionId))) {
+        if (! $this->revokeSession->execute(new UserId((int) $user->id), new SessionId($sessionId))) {
             abort(404);
         }
 

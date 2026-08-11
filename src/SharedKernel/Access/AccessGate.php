@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\SharedKernel\Access;
 
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 
 /**
  * Единственный порт вопроса «можно ли актору Х делать Y с ресурсом Z».
@@ -20,10 +20,10 @@ use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
  */
 interface AccessGate
 {
-    public function allows(?UserIdentity $actor, ResourceRef $resource, string $action): bool;
+    public function allows(?User $user, ResourceRef $resource, string $action): bool;
 
     /** Для текущего аутентифицированного актора запроса (нет актора — false). */
-    public function currentActorAllows(ResourceRef $resource, string $action): bool;
+    public function currentUserAllows(ResourceRef $resource, string $action): bool;
 
     /**
      * Батч одним SQL-запросом — для массовых проверок (видимость полей, каталог).
@@ -31,5 +31,5 @@ interface AccessGate
      * @param  list<AccessCheck>  $checks
      * @return list<bool> в порядке $checks
      */
-    public function allowsEach(?UserIdentity $actor, array $checks): array;
+    public function allowsEach(?User $user, array $checks): array;
 }

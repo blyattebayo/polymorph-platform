@@ -14,7 +14,6 @@ use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\HttpErrorException;
-use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 use Polymorph\Sdk\Extension\ExtensionProvider as SdkV2ExtensionProvider;
 
 final class ExtensionManager
@@ -27,7 +26,6 @@ final class ExtensionManager
         private readonly ExtensionCompatibilityService $compatibilityService,
         private readonly ExtensionMigrationService $migrationService,
         private readonly Application $app,
-        private readonly AppLogger $logger,
     ) {}
 
     /**
@@ -235,17 +233,9 @@ final class ExtensionManager
             return;
         }
 
-        if ($this->compatibilityService->isStrict()) {
-            $entry->last_warning = $issue;
-            $entry->save();
-            throw new PluginException($issue, ErrorCode::PLUGIN_INCOMPATIBLE);
-        }
-
         $entry->last_warning = $issue;
         $entry->save();
-        $this->logger
-            ->withContext(['plugin_id' => $plugin->id])
-            ->warning('plugin.compatibility_warning', ['warning' => $issue]);
+        throw new PluginException($issue, ErrorCode::PLUGIN_INCOMPATIBLE);
     }
 
     private function assertDependenciesSatisfied(DiscoveredExtension $plugin): void

@@ -6,8 +6,8 @@ namespace Polymorph\Platform\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Authentication\SessionCredentialAuthenticator;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 
 final readonly class ResolveSessionCredential
 {

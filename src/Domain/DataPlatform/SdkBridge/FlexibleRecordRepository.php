@@ -6,6 +6,7 @@ namespace Polymorph\Platform\Domain\DataPlatform\SdkBridge;
 
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
 use Polymorph\Platform\Domain\DataPlatform\StorageKey;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use Polymorph\Platform\Domain\Records\Core\Contracts\RecordRepository;
@@ -24,8 +25,7 @@ use Polymorph\Platform\Domain\Records\Support\RecordSystemFields;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 use Polymorph\Platform\Domain\SchemaModel\Services\FieldAccessService;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
 use Polymorph\Sdk\Data\Entity;
 use Polymorph\Sdk\Data\EntityPage;
@@ -387,8 +387,8 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
      */
     private function readableData(array $data): array
     {
-        $actor = $this->auth->actor();
-        if (! $actor instanceof UserIdentity) {
+        $actor = $this->auth->user();
+        if (! $actor instanceof User) {
             return $data;
         }
 
@@ -405,8 +405,8 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
      */
     private function assertActorMayWrite(array $data): void
     {
-        $actor = $this->auth->actor();
-        if (! $actor instanceof UserIdentity) {
+        $actor = $this->auth->user();
+        if (! $actor instanceof User) {
             return;
         }
 
@@ -426,7 +426,7 @@ final class FlexibleRecordRepository implements QueryExecutor, Repository
 
     private function actorId(): ?int
     {
-        $identifier = $this->auth->authIdentifier();
+        $identifier = $this->auth->userId();
 
         if (is_int($identifier)) {
             return $identifier;

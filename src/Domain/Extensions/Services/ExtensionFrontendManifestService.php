@@ -106,25 +106,22 @@ final class ExtensionFrontendManifestService
             ];
         }
 
-        $version = data_get($manifest, 'frontend.contractVersion');
-        $mountPath = data_get($manifest, 'frontend.mountPath');
-        $bundle = data_get($manifest, 'frontend.bundle');
+        $version = data_get($manifest, 'contributes.frontend.contractVersion');
+        $mountPath = data_get($manifest, 'contributes.frontend.mountPath');
+        $bundle = data_get($manifest, 'contributes.frontend.bundle');
 
-        $uiMode = data_get($manifest, 'frontend.ui.mode');
-        if ($uiMode === null) {
-            $uiMode = data_get($manifest, 'contributes.frontend.ui.mode');
-        }
+        $uiMode = data_get($manifest, 'contributes.frontend.ui.mode');
 
         return [
             'contractVersion' => is_string($version) && trim($version) !== '' ? trim($version) : null,
             'mountPath' => is_string($mountPath) && trim($mountPath) !== '' ? trim($mountPath) : null,
             'bundle' => is_string($bundle) && trim($bundle) !== '' ? trim($bundle) : (is_string($plugin->frontend_bundle) ? trim((string) $plugin->frontend_bundle) : null),
             'navigation' => [
-                'title' => is_string(data_get($manifest, 'frontend.navigation.title'))
-                    ? trim((string) data_get($manifest, 'frontend.navigation.title'))
+                'title' => is_string(data_get($manifest, 'contributes.navigation.title'))
+                    ? trim((string) data_get($manifest, 'contributes.navigation.title'))
                     : null,
-                'section' => is_string(data_get($manifest, 'frontend.navigation.section'))
-                    ? trim((string) data_get($manifest, 'frontend.navigation.section'))
+                'section' => is_string(data_get($manifest, 'contributes.navigation.section'))
+                    ? trim((string) data_get($manifest, 'contributes.navigation.section'))
                     : null,
             ],
             'uiMode' => is_string($uiMode) && trim($uiMode) !== '' ? trim($uiMode) : null,

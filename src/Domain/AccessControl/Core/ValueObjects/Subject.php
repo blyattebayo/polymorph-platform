@@ -29,39 +29,21 @@ final readonly class Subject
 
     public static function role(string $code): self
     {
-        return self::typed(self::TYPE_ROLE, $code);
-    }
-
-    public static function typed(string $type, string $identifier): self
-    {
-        $normalizedType = strtolower(trim($type));
-        $normalizedIdentifier = trim($identifier);
-
-        if (! ValidationConstraints::slug()->matches($normalizedType)) {
-            throw new InvalidArgumentException('Subject type must be a lowercase identifier.');
-        }
+        $normalizedIdentifier = trim($code);
 
         if ($normalizedIdentifier === '') {
-            throw new InvalidArgumentException('Subject identifier must not be empty.');
+            throw new InvalidArgumentException('Role code must not be empty.');
         }
 
         if (str_contains($normalizedIdentifier, ':')) {
-            throw new InvalidArgumentException('Subject identifier must not contain ":".');
+            throw new InvalidArgumentException('Role code must not contain ":".');
         }
 
-        if ($normalizedType === self::TYPE_USER) {
-            if (filter_var($normalizedIdentifier, FILTER_VALIDATE_INT) === false || (int) $normalizedIdentifier <= 0) {
-                throw new InvalidArgumentException('User id must be positive.');
-            }
-
-            $normalizedIdentifier = (string) (int) $normalizedIdentifier;
-        }
-
-        if ($normalizedType === self::TYPE_ROLE && ! ValidationConstraints::roleCode()->matches($normalizedIdentifier)) {
+        if (! ValidationConstraints::roleCode()->matches($normalizedIdentifier)) {
             throw new InvalidArgumentException('Role code is invalid.');
         }
 
-        return new self($normalizedType, $normalizedIdentifier);
+        return new self(self::TYPE_ROLE, $normalizedIdentifier);
     }
 
     public static function fromString(string $subject): self
@@ -76,7 +58,21 @@ final readonly class Subject
             throw new InvalidArgumentException('Invalid subject format. Expected type:identifier.');
         }
 
-        return self::typed($parts[0], $parts[1]);
+        return match ($parts[0]) {
+            self::TYPE_USER => self::parseUserIdentifier($parts[1]),
+            self::TYPE_ROLE => self::role($parts[1]),
+            default => throw new InvalidArgumentException('Subject type must be user or role.'),
+        };
+    }
+
+    private static function parseUserIdentifier(string $identifier): self
+    {
+        $normalized = trim($identifier);
+        if (filter_var($normalized, FILTER_VALIDATE_INT) === false || (int) $normalized <= 0) {
+            throw new InvalidArgumentException('User id must be positive.');
+        }
+
+        return self::user((int) $normalized);
     }
 
     public function type(): string

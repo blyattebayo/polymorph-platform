@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Users\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
 use Polymorph\Platform\Domain\Users\Http\Requests\IndexUsersRequest;
 use Polymorph\Platform\Domain\Users\Http\Requests\SetUserPasswordRequest;
 use Polymorph\Platform\Domain\Users\Http\Requests\StoreUserRequest;
@@ -14,7 +15,6 @@ use Polymorph\Platform\Domain\Users\Services\AdminUserReadService;
 use Polymorph\Platform\Http\Controllers\Controller;
 use Polymorph\Platform\Http\Pagination\V2\PaginatedJsonResponse;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Symfony\Component\HttpFoundation\Response;
 
 final class UserController extends Controller
@@ -30,7 +30,7 @@ final class UserController extends Controller
         return PaginatedJsonResponse::from($this->adminUserReadService->list(
             $request->pageRequest(),
             $request->searchQuery(),
-            $request->excludesSelf() ? $this->auth->actor()?->userId() : null,
+            $request->excludesSelf() ? $this->auth->userId() : null,
         ));
     }
 

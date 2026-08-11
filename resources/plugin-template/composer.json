@@ -5,7 +5,7 @@
     "license": "proprietary",
     "require": {
         "php": "^8.2",
-        "blyattebayo/polymorph-sdk": "^4.0"
+        "blyattebayo/polymorph-sdk": "^5.0"
     },
     "autoload": {
         "psr-4": {
@@ -18,8 +18,8 @@
         }
     },
     "require-dev": {
-        "blyattebayo/polymorph-sdk-laravel": "^4.0",
-        "blyattebayo/polymorph-plugin-test-kit": "^4.0"
+        "blyattebayo/polymorph-sdk-laravel": "^5.0",
+        "blyattebayo/polymorph-plugin-test-kit": "^5.0"
     },
     "scripts": {
         "test": "vendor/bin/pest be/tests --bootstrap=vendor/autoload.php"

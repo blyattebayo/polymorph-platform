@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Auth\Http\OAuth;
 
 use Illuminate\Http\Request;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
 use Polymorph\Platform\Domain\Auth\Application\OAuth\Data\AuthorizationRequest;
 use Polymorph\Platform\Domain\Auth\Application\OAuth\OAuthAuthorizationServer;
 use Polymorph\Platform\Domain\Auth\Application\OAuth\OAuthProtocolException;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 
 final readonly class OAuthAuthorizationController
 {
@@ -25,7 +25,7 @@ final readonly class OAuthAuthorizationController
             return OAuthResponses::error($error);
         }
 
-        if ($this->authentication->actor() === null) {
+        if ($this->authentication->user() === null) {
             return redirect()->to($this->loginUrl($request->getRequestUri()));
         }
 
@@ -43,7 +43,7 @@ final readonly class OAuthAuthorizationController
             return OAuthResponses::error($error);
         }
 
-        $actor = $this->authentication->actor();
+        $actor = $this->authentication->user();
         if ($actor === null) {
             return redirect()->to(
                 $this->loginUrl('/oauth/authorize?'.http_build_query($this->authorizationQuery($authorization))),

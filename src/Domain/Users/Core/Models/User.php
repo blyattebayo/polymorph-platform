@@ -11,7 +11,6 @@ use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
 /**
  * Eloquent модель для пользователей (User).
@@ -22,21 +21,18 @@ use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
  * @property string $name Имя пользователя
  * @property string $email Email пользователя (уникальный)
  * @property string $password Хеш пароля
- * @property bool $is_platform_admin Встроенная учётка платформенного администратора
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read DatabaseNotificationCollection<int, DatabaseNotification> $notifications Уведомления пользователя
  */
-class User extends Authenticatable implements UserIdentity
+class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
     public const STATUS_ACTIVE = 'active';
 
-    public const STATUS_BLOCKED = 'blocked';
-
-    public const STATUS_INACTIVE = 'inactive';
+    public const STATUS_DISABLED = 'disabled';
 
     /**
      * @return list<string>
@@ -45,8 +41,7 @@ class User extends Authenticatable implements UserIdentity
     {
         return [
             self::STATUS_ACTIVE,
-            self::STATUS_BLOCKED,
-            self::STATUS_INACTIVE,
+            self::STATUS_DISABLED,
         ];
     }
 
@@ -80,7 +75,6 @@ class User extends Authenticatable implements UserIdentity
     {
         return [
             'password' => 'hashed',
-            'is_platform_admin' => 'boolean',
         ];
     }
 
@@ -88,11 +82,6 @@ class User extends Authenticatable implements UserIdentity
      * Флаг намеренно НЕ в $fillable: встроенность назначает только сидер,
      * никакой mass-assignment из HTTP-запроса не должен её включить.
      */
-    public function isPlatformAdmin(): bool
-    {
-        return (bool) ($this->is_platform_admin ?? false);
-    }
-
     public function statusValue(): string
     {
         return strtolower(trim((string) ($this->status ?? self::STATUS_ACTIVE)));
@@ -101,10 +90,5 @@ class User extends Authenticatable implements UserIdentity
     public function isActiveAccount(): bool
     {
         return $this->statusValue() === self::STATUS_ACTIVE;
-    }
-
-    public function userId(): int
-    {
-        return (int) $this->id;
     }
 }

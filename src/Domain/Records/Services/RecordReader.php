@@ -7,8 +7,8 @@ namespace Polymorph\Platform\Domain\Records\Services;
 use Polymorph\Platform\Domain\Records\Core\Contracts\RecordRepository;
 use Polymorph\Platform\Domain\Records\Core\Models\Record;
 use Polymorph\Platform\Domain\Records\Support\RecordPayloadPathRegistry;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\Infrastructure\Pagination\V2\LaravelPaginatorAdapter;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageResult;
 
@@ -24,7 +24,7 @@ final class RecordReader
     ) {}
 
     public function listForDefinition(
-        ?UserIdentity $actor,
+        ?User $actor,
         int $recordDefinitionId,
         PageRequest $pagination,
     ): PageResult {
@@ -41,7 +41,7 @@ final class RecordReader
     /**
      * @return array<string, mixed>|null
      */
-    public function show(?UserIdentity $actor, int $recordId): ?array
+    public function show(?User $actor, int $recordId): ?array
     {
         $record = $this->recordRepository->findForRead($recordId);
         if (! $record instanceof Record) {
@@ -55,7 +55,7 @@ final class RecordReader
      * @param  int[]  $recordIds
      * @return array{by_record_id: object, included: array<string, object>}
      */
-    public function hydrate(?UserIdentity $actor, array $recordIds): array
+    public function hydrate(?User $actor, array $recordIds): array
     {
         if ($recordIds === []) {
             return [
@@ -88,7 +88,7 @@ final class RecordReader
         ];
     }
 
-    public function payloadForRecord(?UserIdentity $actor, Record $record): object
+    public function payloadForRecord(?User $actor, Record $record): object
     {
         return $this->payloadProjector->project(
             $record->data_json,
@@ -99,7 +99,7 @@ final class RecordReader
     /**
      * @return array<string, mixed>
      */
-    public function presentLoadedRecord(?UserIdentity $actor, Record $record): array
+    public function presentLoadedRecord(?User $actor, Record $record): array
     {
         return $this->presentRecord(
             $record,

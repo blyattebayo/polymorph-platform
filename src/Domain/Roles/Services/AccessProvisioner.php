@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\AccessControl\Access\BuiltInRoleCatalog;
 use Polymorph\Platform\Domain\Roles\Core\Contracts\RoleAssignmentRepository;
 use Polymorph\Platform\Domain\Roles\Core\Contracts\RoleRepository;
-use Polymorph\Platform\Domain\Users\Core\Contracts\PrivilegedUserMembership;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 
 final class AccessProvisioner
@@ -16,7 +15,6 @@ final class AccessProvisioner
     public function __construct(
         private readonly RoleAssignmentRepository $roleAssignments,
         private readonly RoleRepository $roles,
-        private readonly PrivilegedUserMembership $privilegedUserMembership,
     ) {}
 
     public function syncForUser(User $user): void
@@ -24,8 +22,8 @@ final class AccessProvisioner
         // Атомарно: провижининг baseline-ролей (возможное создание ролей +
         // assign/unassign) либо применяется целиком, либо откатывается.
         DB::transaction(function () use ($user): void {
-            if ($this->privilegedUserMembership->isSystemAdministrator($user->userId())) {
-                $this->revokeBaselineRoles($user->userId());
+            if (in_array(BuiltInRoleCatalog::ROLE_SYSTEM_ADMIN, $this->roleAssignments->roleCodesForUser((int) $user->id), true)) {
+                $this->revokeBaselineRoles((int) $user->id);
 
                 return;
             }
@@ -36,7 +34,7 @@ final class AccessProvisioner
             }
 
             foreach ($baselineRoleIds as $roleId) {
-                $this->roleAssignments->assign($user->userId(), $roleId);
+                $this->roleAssignments->assign((int) $user->id, $roleId);
             }
         });
     }

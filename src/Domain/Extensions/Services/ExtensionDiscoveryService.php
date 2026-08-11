@@ -13,318 +13,159 @@ use Throwable;
 
 final class ExtensionDiscoveryService
 {
-    /** Манифест расширения v2 (Extension SDK V2). */
-    private const MANIFEST_V2 = 'extension.json';
+    private const MANIFEST = 'extension.json';
 
-    /**
-     * Расширения, которые не удалось прочитать при последнем обходе.
-     *
-     * @var list<ExtensionDiscoveryFailure>
-     */
+    /** @var list<ExtensionDiscoveryFailure> */
     private array $failures = [];
 
     public function __construct(
-        private readonly ExtensionManifestValidator $validator,
         private readonly ExtensionAclManifestParser $aclManifestParser,
-        private readonly ManifestV2Validator $manifestV2Validator,
+        private readonly ManifestV2Validator $manifestValidator,
         private readonly AppLogger $logger,
     ) {}
 
-    /**
-     * Обойти каталог расширений.
-     *
-     * Битое расширение ПРОПУСКАЕТСЯ, а не роняет обход: каталог наполняется
-     * сторонним содержимым, и один негодный манифест не должен лишать хост
-     * всех остальных расширений. Раньше исключение отсюда доходило до
-     * ExtensionsServiceProvider::register() и убивало приложение целиком —
-     * и каждый запрос, и каждую artisan-команду, включая те, которыми это чинят.
-     *
-     * Пропуск не молчаливый: причина уходит в лог и остаётся в {@see failures()},
-     * откуда её показывает `plugins:list`.
-     *
-     * @return list<DiscoveredExtension>
-     */
+    /** @return list<DiscoveredExtension> */
     public function discoverAll(): array
     {
-        $manifestFile = (string) config('plugins.manifest_file', 'plugin.json');
-
         $this->failures = [];
-        $plugins = [];
-
-        // Рантайм drop-in плагины (магазинные) из plugins.root_path.
+        $extensions = [];
         $rootPath = (string) config('plugins.root_path');
-        if ($rootPath !== '' && is_dir($rootPath)) {
-            $directories = glob($rootPath.'/*', GLOB_ONLYDIR) ?: [];
-            sort($directories);
+        if ($rootPath === '' || ! is_dir($rootPath)) {
+            return [];
+        }
 
-            foreach ($directories as $directory) {
-                $directoryName = basename($directory);
-                if (is_string($directoryName) && str_starts_with($directoryName, '_')) {
-                    continue;
-                }
+        $directories = glob($rootPath.'/*', GLOB_ONLYDIR) ?: [];
+        sort($directories);
+        foreach ($directories as $directory) {
+            if (str_starts_with(basename($directory), '_')) {
+                continue;
+            }
 
-                try {
-                    $plugin = $this->loadFromDirectory($directory, $manifestFile);
-                } catch (Throwable $exception) {
-                    $this->failures[] = new ExtensionDiscoveryFailure($directory, $exception->getMessage());
+            try {
+                $extension = $this->loadFromDirectory($directory);
+            } catch (Throwable $exception) {
+                $this->failures[] = new ExtensionDiscoveryFailure($directory, $exception->getMessage());
+                $this->logger->error('extensions.discovery_failed', [
+                    'path' => $directory,
+                    'exception' => $exception->getMessage(),
+                ]);
 
-                    $this->logger->error('extensions.discovery_failed', [
-                        'path' => $directory,
-                        'exception' => $exception->getMessage(),
-                    ]);
+                continue;
+            }
 
-                    continue;
-                }
-
-                if ($plugin !== null) {
-                    $plugins[] = $plugin;
-                }
+            if ($extension instanceof DiscoveredExtension) {
+                $extensions[] = $extension;
             }
         }
 
-        return $this->sortByDependencies($plugins);
+        return $this->sortByDependencies($extensions);
     }
 
-    /**
-     * Расширения, пропущенные при последнем {@see discoverAll()}.
-     *
-     * @return list<ExtensionDiscoveryFailure>
-     */
+    /** @return list<ExtensionDiscoveryFailure> */
     public function failures(): array
     {
         return $this->failures;
     }
 
-    /**
-     * Грузит одно расширение из произвольного каталога (drop-in или vendor-пакет). V1 (plugin.json)
-     * имеет приоритет для обратной совместимости; иначе — V2 (extension.json). Каталог
-     * location-agnostic: всё резолвится относительно $directory.
-     */
-    private function loadFromDirectory(string $directory, string $manifestFile): ?DiscoveredExtension
+    private function loadFromDirectory(string $directory): ?DiscoveredExtension
     {
-        $manifestPath = $directory.DIRECTORY_SEPARATOR.$manifestFile;
-        $v2ManifestPath = $directory.DIRECTORY_SEPARATOR.self::MANIFEST_V2;
+        $manifestPath = $directory.DIRECTORY_SEPARATOR.self::MANIFEST;
 
-        if (is_file($manifestPath)) {
-            return $this->loadPlugin($manifestPath, $directory);
-        }
-
-        if (is_file($v2ManifestPath)) {
-            return $this->loadExtensionV2($v2ManifestPath, $directory);
-        }
-
-        return null;
+        return is_file($manifestPath) ? $this->loadExtension($manifestPath, $directory) : null;
     }
 
     /**
-     * Топологическая сортировка по dependencies: зависимости загружаются
-     * раньше зависимых (детерминированно, алфавитный порядок внутри уровня).
-     *
-     * @param  list<DiscoveredExtension>  $plugins
+     * @param  list<DiscoveredExtension>  $extensions
      * @return list<DiscoveredExtension>
-     *
-     * @throws PluginException при циклической зависимости
      */
-    private function sortByDependencies(array $plugins): array
+    private function sortByDependencies(array $extensions): array
     {
         $byId = [];
-        foreach ($plugins as $plugin) {
-            $byId[$plugin->id] = $plugin;
+        foreach ($extensions as $extension) {
+            $byId[$extension->id] = $extension;
         }
 
         $sorted = [];
         $visited = [];
         $inProgress = [];
-
-        $visit = function (string $pluginId) use (&$visit, &$sorted, &$visited, &$inProgress, $byId): void {
-            if (isset($visited[$pluginId])) {
+        $visit = function (string $extensionId) use (&$visit, &$sorted, &$visited, &$inProgress, $byId): void {
+            if (isset($visited[$extensionId])) {
                 return;
             }
-
-            if (isset($inProgress[$pluginId])) {
-                throw new PluginException("Cyclic plugin dependency detected involving '{$pluginId}'.");
+            if (isset($inProgress[$extensionId])) {
+                throw new PluginException("Cyclic extension dependency detected involving '{$extensionId}'.");
             }
-
-            $inProgress[$pluginId] = true;
-
-            foreach (array_keys($byId[$pluginId]->dependencies) as $dependencyId) {
+            $inProgress[$extensionId] = true;
+            foreach (array_keys($byId[$extensionId]->dependencies) as $dependencyId) {
                 if (isset($byId[$dependencyId])) {
                     $visit($dependencyId);
                 }
             }
-
-            unset($inProgress[$pluginId]);
-            $visited[$pluginId] = true;
-            $sorted[] = $byId[$pluginId];
+            unset($inProgress[$extensionId]);
+            $visited[$extensionId] = true;
+            $sorted[] = $byId[$extensionId];
         };
 
-        foreach (array_keys($byId) as $pluginId) {
-            $visit($pluginId);
+        foreach (array_keys($byId) as $extensionId) {
+            $visit($extensionId);
         }
 
         return $sorted;
     }
 
-    /**
-     * @throws PluginException
-     */
-    private function loadPlugin(string $manifestPath, string $directory): DiscoveredExtension
+    private function loadExtension(string $manifestPath, string $directory): DiscoveredExtension
     {
         $raw = file_get_contents($manifestPath);
         if (! is_string($raw) || trim($raw) === '') {
             throw new PluginException("Manifest {$manifestPath}: file is empty.");
         }
-
-        /** @var mixed $decoded */
-        $decoded = json_decode($raw, true);
-        if (! is_array($decoded)) {
-            throw new PluginException("Manifest {$manifestPath}: invalid JSON.");
-        }
-
-        $this->validator->validate($decoded, $manifestPath);
-        $this->assertControllerAutoloadContract($decoded, $manifestPath, $directory);
-
-        $pluginId = (string) $decoded['id'];
-        $routeFile = data_get($decoded, 'backend.routes.file');
-        $routeFilePath = is_string($routeFile) && trim($routeFile) !== ''
-            ? $directory.DIRECTORY_SEPARATOR.ltrim($routeFile, '/\\')
-            : $directory.DIRECTORY_SEPARATOR.'be/routes.php';
-
-        if (! is_file($routeFilePath)) {
-            $routeFilePath = null;
-        }
-
-        // Маршруты расширения всегда declarative: объект Routes из be/routes.php,
-        // который хост монтирует на boot. Прежний db-режим удалён — стейл-манифест
-        // с ним отклоняем громко, а не молча игнорируем.
-        $routeMode = data_get($decoded, 'backend.routes.mode');
-        if ($routeMode !== null && $routeMode !== 'declarative') {
-            throw new PluginException(
-                "Manifest {$manifestPath}: backend.routes.mode '{$routeMode}' is no longer supported; plugin routes are declarative (omit the field).",
-            );
-        }
-
-        $frontendNavSection = data_get($decoded, 'frontend.navigation.section');
-        if (is_string($frontendNavSection) && trim($frontendNavSection) !== '') {
-            $frontendNavSection = trim($frontendNavSection);
-            if (! in_array($frontendNavSection, ['content', 'system'], true)) {
-                throw new PluginException(
-                    "Manifest {$manifestPath}: frontend.navigation.section '{$frontendNavSection}' is invalid; expected 'content' or 'system'.",
-                );
-            }
-        } else {
-            $frontendNavSection = null;
-        }
-
-        $this->validateFrontendUiMode(data_get($decoded, 'frontend.ui.mode'), $manifestPath);
-
-        return new DiscoveredExtension(
-            id: $pluginId,
-            name: (string) $decoded['name'],
-            version: (string) $decoded['version'],
-            coreVersionRange: (string) $decoded['coreVersionRange'],
-            tablePrefix: (string) data_get($decoded, 'db.tablePrefix'),
-            manifestPath: $manifestPath,
-            manifestHash: hash('sha256', $raw),
-            providerClass: is_string(data_get($decoded, 'backend.provider')) ? (string) data_get($decoded, 'backend.provider') : null,
-            backendRouteFile: $routeFilePath,
-            capabilityDefinitions: $this->aclManifestParser->parseCapabilities($decoded, $pluginId),
-            defaultAdminRoles: $this->aclManifestParser->parseDefaultAdminRoles($decoded),
-            frontendBundle: is_string(data_get($decoded, 'frontend.bundle')) ? (string) data_get($decoded, 'frontend.bundle') : null,
-            frontendMountPath: is_string(data_get($decoded, 'frontend.mountPath')) ? (string) data_get($decoded, 'frontend.mountPath') : null,
-            frontendNavTitle: is_string(data_get($decoded, 'frontend.navigation.title')) ? (string) data_get($decoded, 'frontend.navigation.title') : null,
-            frontendNavSection: $frontendNavSection,
-            dependencies: $this->parseDependencies($decoded),
-            pluginRoles: $this->aclManifestParser->parseRoles($decoded, $pluginId),
-        );
-    }
-
-    /**
-     * Загружает расширение V2 (extension.json) в ту же модель {@see DiscoveredExtension},
-     * что и V1 — чтобы зрелый downstream (routes/ACL/migrations/lifecycle) работал без
-     * plugin.json. Валидация и согласование версии SDK — через {@see ManifestV2Validator};
-     * capabilities — в namespace `ext.{id}.` (см. ADR 0003).
-     *
-     * @throws PluginException
-     */
-    private function loadExtensionV2(string $manifestPath, string $directory): DiscoveredExtension
-    {
-        $raw = file_get_contents($manifestPath);
-        if (! is_string($raw) || trim($raw) === '') {
-            throw new PluginException("Manifest {$manifestPath}: file is empty.");
-        }
-
-        /** @var mixed $decoded */
         $decoded = json_decode($raw, true);
         if (! is_array($decoded)) {
             throw new PluginException("Manifest {$manifestPath}: invalid JSON.");
         }
 
         try {
-            $manifest = $this->manifestV2Validator->validate($decoded, $manifestPath);
-        } catch (\InvalidArgumentException $e) {
-            // Валидатор уже начинает сообщение с пути ($source), поэтому
-            // повторный префикс только задваивал бы его в выводе plugins:list.
-            throw new PluginException($e->getMessage(), previous: $e);
+            $manifest = $this->manifestValidator->validate($decoded, $manifestPath);
+        } catch (\InvalidArgumentException $exception) {
+            throw new PluginException($exception->getMessage(), previous: $exception);
         }
 
-        $pluginId = $manifest->id;
         $contributes = $manifest->contributes;
-
-        // Маршруты расширения всегда лежат в be/routes.php (Routes::define()).
-        $routeFilePath = $directory.DIRECTORY_SEPARATOR.'be/routes.php';
-        if (! is_file($routeFilePath)) {
-            $routeFilePath = null;
-        }
-
         $frontend = is_array($contributes['frontend'] ?? null) ? $contributes['frontend'] : [];
         $navigation = is_array($contributes['navigation'] ?? null) ? $contributes['navigation'] : [];
-
-        $navSection = is_string($navigation['section'] ?? null) ? trim((string) $navigation['section']) : null;
+        $navSection = is_string($navigation['section'] ?? null) ? trim($navigation['section']) : null;
         if ($navSection !== null && $navSection !== '' && ! in_array($navSection, ['content', 'system'], true)) {
             throw new PluginException(
                 "Manifest {$manifestPath}: contributes.navigation.section '{$navSection}' is invalid; expected 'content' or 'system'.",
             );
         }
-        $navSection = ($navSection === null || $navSection === '') ? null : $navSection;
-
+        $navSection = $navSection === '' ? null : $navSection;
         $this->validateFrontendUiMode($frontend['ui']['mode'] ?? null, $manifestPath);
 
-        $coreVersionRange = data_get($decoded, 'coreVersionRange');
-        if (! is_string($coreVersionRange) || trim($coreVersionRange) === '') {
-            $coreVersionRange = '*';
-        } else {
-            $coreVersionRange = trim($coreVersionRange);
-        }
-        $tablePrefix = data_get($decoded, 'db.tablePrefix');
-        if (! is_string($tablePrefix) || trim($tablePrefix) === '') {
-            $tablePrefix = '';
-        } else {
-            $tablePrefix = trim($tablePrefix);
-        }
+        $routeFile = $directory.DIRECTORY_SEPARATOR.'be/routes.php';
+        $coreVersionRange = is_string($decoded['coreVersionRange'] ?? null) ? trim($decoded['coreVersionRange']) : '*';
+        $tablePrefix = is_string(data_get($decoded, 'db.tablePrefix'))
+            ? trim((string) data_get($decoded, 'db.tablePrefix'))
+            : '';
 
         return new DiscoveredExtension(
-            id: $pluginId,
+            id: $manifest->id,
             name: $manifest->name,
             version: $manifest->version,
-            // V2 поддерживает опциональную host-core ось совместимости через
-            // coreVersionRange (используется в hardening/compatibility сценариях).
-            coreVersionRange: $coreVersionRange,
-            // V2 обычно работает без собственных таблиц, но может объявлять
-            // db.tablePrefix для миграций/очистки данных.
+            coreVersionRange: $coreVersionRange !== '' ? $coreVersionRange : '*',
             tablePrefix: $tablePrefix,
             manifestPath: $manifestPath,
             manifestHash: hash('sha256', $raw),
             providerClass: $manifest->provider,
-            backendRouteFile: $routeFilePath,
-            capabilityDefinitions: $this->aclManifestParser->parseV2Capabilities($contributes, $pluginId),
-            defaultAdminRoles: $this->aclManifestParser->parseV2DefaultAdminRoles($contributes),
-            frontendBundle: is_string($frontend['bundle'] ?? null) ? (string) $frontend['bundle'] : null,
-            frontendMountPath: is_string($frontend['mountPath'] ?? null) ? (string) $frontend['mountPath'] : null,
-            frontendNavTitle: is_string($navigation['title'] ?? null) ? (string) $navigation['title'] : null,
+            backendRouteFile: is_file($routeFile) ? $routeFile : null,
+            capabilityDefinitions: $this->aclManifestParser->parseCapabilities($contributes, $manifest->id),
+            defaultAdminRoles: $this->aclManifestParser->parseDefaultAdminRoles($contributes),
+            frontendBundle: is_string($frontend['bundle'] ?? null) ? $frontend['bundle'] : null,
+            frontendMountPath: is_string($frontend['mountPath'] ?? null) ? $frontend['mountPath'] : null,
+            frontendNavTitle: is_string($navigation['title'] ?? null) ? $navigation['title'] : null,
             frontendNavSection: $navSection,
             dependencies: $this->parseDependencies($decoded),
-            pluginRoles: $this->aclManifestParser->parseV2Roles($contributes, $pluginId),
+            pluginRoles: $this->aclManifestParser->parseRoles($contributes, $manifest->id),
         );
     }
 
@@ -334,13 +175,8 @@ final class ExtensionDiscoveryService
      */
     private function parseDependencies(array $manifest): array
     {
-        $raw = $manifest['dependencies'] ?? null;
-        if (! is_array($raw)) {
-            return [];
-        }
-
         $dependencies = [];
-        foreach ($raw as $dependencyId => $range) {
+        foreach (($manifest['dependencies'] ?? []) as $dependencyId => $range) {
             if (is_string($dependencyId) && is_string($range)) {
                 $dependencies[$dependencyId] = $range;
             }
@@ -349,45 +185,15 @@ final class ExtensionDiscoveryService
         return $dependencies;
     }
 
-    /**
-     * Режим отображения плагина в админ-SPA: overlay (по умолчанию) — полноэкранный
-     * модальный оверлей поверх ядра; embedded — inline в общем лейауте. Поле
-     * опциональное; пустое/отсутствующее значение silently fallback'ит к overlay.
-     */
     private function validateFrontendUiMode(mixed $mode, string $manifestPath): void
     {
         if ($mode === null) {
             return;
         }
-        if (! is_string($mode) || trim($mode) === '') {
-            return;
-        }
-        $mode = trim($mode);
-        if (! in_array($mode, ['overlay', 'embedded'], true)) {
+        if (! is_string($mode) || ! in_array(trim($mode), ['overlay', 'embedded'], true)) {
             throw new PluginException(
-                "Manifest {$manifestPath}: frontend.ui.mode '{$mode}' is invalid; expected 'overlay' or 'embedded'.",
+                "Manifest {$manifestPath}: contributes.frontend.ui.mode must be 'overlay' or 'embedded'.",
             );
-        }
-    }
-
-    /**
-     * @param  array<string, mixed>  $manifest
-     */
-    private function assertControllerAutoloadContract(array $manifest, string $manifestPath, string $directory): void
-    {
-        $autoloadBase = rtrim(str_replace('\\', '/', $directory), '/');
-        $psr4Path = data_get($manifest, 'backend.psr4Path');
-        if ($psr4Path === null) {
-            return;
-        }
-
-        if (! is_string($psr4Path) || trim($psr4Path) === '') {
-            throw new PluginException("Manifest {$manifestPath}: backend.psr4Path must be non-empty string when provided.");
-        }
-
-        $resolvedPath = $autoloadBase.'/'.ltrim(str_replace('\\', '/', $psr4Path), '/');
-        if (! is_dir($resolvedPath)) {
-            throw new PluginException("Manifest {$manifestPath}: backend.psr4Path '{$psr4Path}' does not exist.");
         }
     }
 }

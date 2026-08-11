@@ -8,48 +8,41 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Polymorph\Platform\Domain\AccessControl\Access\BuiltInRoleCatalog;
+use Polymorph\Platform\Domain\Roles\Services\AccessProvisioner;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 
-/**
- * Идемпотентно создаёт администратора платформы и назначает ему built-in роль
- * system-admin. Учётка берётся из config('admin.seed') (env ADMIN_EMAIL /
- * ADMIN_PASSWORD / ADMIN_NAME) — читается через config, а не env(), чтобы
- * работать и под `config:cache`. Требует предварительно засеянных ролей
- * (BuiltInRolesSeeder) — PlatformSeeder гарантирует порядок.
- */
-class AdminUserSeeder extends Seeder
+final class AdminUserSeeder extends Seeder
 {
     private const DEFAULT_PASSWORD = 'admin123';
 
-    public function run(): void
+    public function run(AccessProvisioner $provisioner): void
     {
         $email = (string) config('admin.seed.email', 'admin@example.com');
         $password = (string) config('admin.seed.password', self::DEFAULT_PASSWORD);
         $name = (string) config('admin.seed.name', 'Administrator');
 
-        $user = User::query()->updateOrCreate(
-            ['email' => $email],
-            [
-                'name' => $name,
-                'password' => Hash::make($password),
-            ],
-        );
+        DB::transaction(function () use ($email, $name, $password, $provisioner): void {
+            $user = User::query()->updateOrCreate(
+                ['email' => $email],
+                [
+                    'name' => $name,
+                    'password' => Hash::make($password),
+                ],
+            );
 
-        // Маркер встроенности — вне fillable, поэтому forceFill: только сидер
-        // имеет право объявить учётку платформенным администратором.
-        if (! $user->isPlatformAdmin()) {
-            $user->forceFill(['is_platform_admin' => true])->save();
-        }
+            $adminRoleId = (int) (DB::table('roles')
+                ->where('code', BuiltInRoleCatalog::ROLE_SYSTEM_ADMIN)
+                ->value('id') ?? 0);
+            if ($adminRoleId <= 0) {
+                throw new \RuntimeException('The system.admin role must exist before the admin user is seeded.');
+            }
 
-        $userId = (int) (User::query()->where('email', $email)->value('id') ?? 0);
-        $adminRoleId = (int) (DB::table('roles')->where('code', BuiltInRoleCatalog::ROLE_SYSTEM_ADMIN)->value('id') ?? 0);
-
-        if ($userId > 0 && $adminRoleId > 0) {
             DB::table('user_role_assignments')->updateOrInsert(
-                ['user_id' => $userId, 'role_id' => $adminRoleId],
+                ['user_id' => (int) $user->id, 'role_id' => $adminRoleId],
                 ['updated_at' => now(), 'created_at' => now()],
             );
-        }
+            $provisioner->syncForUser($user);
+        });
 
         $this->command?->info("Admin user: {$email}");
 

@@ -5,19 +5,12 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Users\Infrastructure\Repositories;
 
 use Illuminate\Pagination\LengthAwarePaginator;
-use Polymorph\Platform\Domain\Users\Core\Contracts\UserRepository;
 use Polymorph\Platform\Domain\Users\Core\Exceptions\UserNotFoundException;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
 
-/**
- * Eloquent реализация репозитория пользователей.
- */
-final class EloquentUserRepository implements UserRepository
+final class UserRepository
 {
-    /**
-     * Найти пользователя по ID.
-     */
     public function find(int $id): ?User
     {
         return User::find($id);
@@ -33,9 +26,6 @@ final class EloquentUserRepository implements UserRepository
         return User::query()->where('email', $normalized)->first();
     }
 
-    /**
-     * Найти пользователя по ID или выбросить исключение.
-     */
     public function findOrFail(int $id): User
     {
         $user = $this->find($id);
@@ -47,17 +37,13 @@ final class EloquentUserRepository implements UserRepository
         return $user;
     }
 
-    /**
-     * Создать нового пользователя.
-     */
+    /** @param array<string, mixed> $data */
     public function create(array $data): User
     {
         return User::create($data);
     }
 
-    /**
-     * Обновить данные пользователя.
-     */
+    /** @param array<string, mixed> $data */
     public function update(User $user, array $data): User
     {
         $user->update($data);
@@ -65,6 +51,7 @@ final class EloquentUserRepository implements UserRepository
         return $user->fresh();
     }
 
+    /** @return LengthAwarePaginator<int, User> */
     public function paginate(PageRequest $pagination, ?string $search = null, ?int $excludeUserId = null): LengthAwarePaginator
     {
         $query = User::query();
@@ -86,9 +73,6 @@ final class EloquentUserRepository implements UserRepository
             ->paginate(perPage: $pagination->perPage, page: $pagination->page);
     }
 
-    /**
-     * Проверить существование пользователя с данным email.
-     */
     public function existsByEmail(string $email): bool
     {
         return User::where('email', strtolower($email))->exists();

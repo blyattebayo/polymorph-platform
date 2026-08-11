@@ -10,7 +10,7 @@ use Polymorph\Platform\Domain\Users\Events\UserUpdated;
 
 /**
  * Removes all browser sessions when the user's status changes.
- * на ограничивающий (blocked/inactive).
+ * на ограничивающий (disabled).
  *
  * Симметричен {@see RevokeSessionsAfterPasswordChanged}: побочный эффект
  * привязан к доменному событию, а не инлайнится в сервис. Опирается на
@@ -28,7 +28,7 @@ final class RevokeSessionsAfterUserStatusChanged
     {
         $status = $event->changes['status'] ?? null;
 
-        if ($status === User::STATUS_BLOCKED || $status === User::STATUS_INACTIVE) {
+        if ($status === User::STATUS_DISABLED) {
             $this->sessionRevoker->afterAccountRestriction((int) $event->user->id);
         }
     }

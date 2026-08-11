@@ -9,8 +9,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Polymorph\Platform\Domain\Extensions\Http\ExtensionErrorResolver;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\Support\Errors\ErrorCatalog;
 use Polymorph\Platform\Support\Errors\ErrorFactory;
 use Polymorph\Platform\Support\Errors\ErrorKernel;
@@ -91,27 +89,13 @@ class AppServiceProvider extends ServiceProvider
 
             return new TraceId($request instanceof Request ? $request : null);
         });
-        $this->app->scoped(UserIdentity::class, static fn ($app): UserIdentity => $app->make(AuthenticationContext::class)->requireActor());
-
     }
 
     public function boot(): void
     {
         RateLimiter::for('auth-login', static function (Request $request): Limit {
-            $email = strtolower(trim((string) $request->input('email', '')));
-            $key = sha1($request->ip().'|'.$email);
-
-            return Limit::perMinute(5)->by($key);
-        });
-
-        RateLimiter::for('auth-password-reset', static function (Request $request): Limit {
-            $email = strtolower(trim((string) $request->input('email', '')));
-
-            return Limit::perMinute(3)->by(sha1($request->ip().'|'.$email));
-        });
-
-        RateLimiter::for('auth-register', static function (Request $request): Limit {
-            $email = strtolower(trim((string) $request->input('email', '')));
+            $input = $request->input('email');
+            $email = is_string($input) ? strtolower(trim($input)) : '';
             $key = sha1($request->ip().'|'.$email);
 
             return Limit::perMinute(5)->by($key);

@@ -6,11 +6,11 @@ namespace Polymorph\Platform\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 use Polymorph\Platform\SharedKernel\Access\ResourceRef;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ThrowsErrors;
 
@@ -36,9 +36,9 @@ final class RequireCapability
     {
         // Актор резолвится здесь, а не внутри гейта: middleware различает
         // 401 (не аутентифицирован) и 403 (нет права), гейт отвечает только bool.
-        $user = $this->auth->actor();
+        $user = $this->auth->user();
 
-        if (! $user instanceof UserIdentity) {
+        if (! $user instanceof User) {
             $this->throwError(ErrorCode::UNAUTHORIZED, 'Authentication is required.');
         }
 

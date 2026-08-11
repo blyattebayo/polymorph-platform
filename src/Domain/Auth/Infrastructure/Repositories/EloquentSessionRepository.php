@@ -42,7 +42,6 @@ final class EloquentSessionRepository implements SessionRepository
                 'users.name',
                 'users.email',
                 'users.status',
-                'users.is_platform_admin',
                 'users.created_at',
                 'users.updated_at',
                 'auth_sessions.id as authenticated_session_id',

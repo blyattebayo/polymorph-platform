@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -56,6 +57,12 @@ return new class extends Migration
             $table->json('payload');
             $table->timestamp('created_at')->useCurrent()->index();
         });
+
+        $subjectPattern = '^(user:[1-9][0-9]*|role:[a-z][a-z0-9_.-]*)$';
+        DB::statement("ALTER TABLE ac_assignments ADD CONSTRAINT ac_assignments_subject_check CHECK (subject ~ '{$subjectPattern}')");
+        DB::statement("ALTER TABLE ac_compiled ADD CONSTRAINT ac_compiled_subject_check CHECK (subject ~ '{$subjectPattern}')");
+        DB::statement("ALTER TABLE ac_audit ADD CONSTRAINT ac_audit_actor_check CHECK (actor = 'system' OR actor ~ '{$subjectPattern}')");
+        DB::statement("ALTER TABLE ac_audit ADD CONSTRAINT ac_audit_target_subject_check CHECK (target_subject IS NULL OR target_subject ~ '{$subjectPattern}')");
     }
 
     public function down(): void

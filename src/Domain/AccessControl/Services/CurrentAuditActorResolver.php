@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\AccessControl\Services;
 
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AuditActorResolver;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 
 final class CurrentAuditActorResolver implements AuditActorResolver
 {
@@ -16,10 +16,10 @@ final class CurrentAuditActorResolver implements AuditActorResolver
 
     public function resolve(): string
     {
-        $actor = $this->auth->actor();
+        $actor = $this->auth->user();
 
-        if ($actor instanceof UserIdentity) {
-            return 'user:'.$actor->userId();
+        if ($actor instanceof User) {
+            return 'user:'.(int) $actor->id;
         }
 
         return 'system';

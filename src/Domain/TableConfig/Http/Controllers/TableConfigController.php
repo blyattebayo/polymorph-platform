@@ -6,6 +6,7 @@ namespace Polymorph\Platform\Domain\TableConfig\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
 use Polymorph\Platform\Domain\TableConfig\Core\Contracts\TableConfigRepository;
 use Polymorph\Platform\Domain\TableConfig\Core\Models\TableConfig;
 use Polymorph\Platform\Domain\TableConfig\Http\Resources\TableConfigResource;
@@ -13,7 +14,6 @@ use Polymorph\Platform\Domain\TableConfig\Services\TableConfigMergeService;
 use Polymorph\Platform\Domain\TableConfig\Services\TableConfigSchemaValidator;
 use Polymorph\Platform\Http\Controllers\Controller;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ThrowsErrors;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,6 +26,7 @@ final class TableConfigController extends Controller
         private readonly TableConfigSchemaValidator $schemaValidator,
         private readonly TableConfigMergeService $mergeService,
         private readonly TableConfigRepository $repository,
+        private readonly AuthenticationContext $auth,
     ) {}
 
     public function showBase(string $tableKey): JsonResponse
@@ -35,7 +36,7 @@ final class TableConfigController extends Controller
         return (new TableConfigResource($config))->response()->setStatusCode(200);
     }
 
-    public function updateBase(Request $request, string $tableKey, UserIdentity $actor): JsonResponse
+    public function updateBase(Request $request, string $tableKey): JsonResponse
     {
         [$schemaVersion, $configJson] = $this->validatePayload($request, true);
 
@@ -44,9 +45,10 @@ final class TableConfigController extends Controller
         return (new TableConfigResource($config))->response()->setStatusCode(200);
     }
 
-    public function showMyOverride(string $tableKey, UserIdentity $actor): JsonResponse
+    public function showMyOverride(string $tableKey): JsonResponse
     {
-        $config = $this->repository->findUserOverride($tableKey, $actor->userId());
+        $userId = (int) $this->auth->requireUser()->id;
+        $config = $this->repository->findUserOverride($tableKey, $userId);
 
         if (! $config) {
             return AdminResponse::json([
@@ -54,7 +56,7 @@ final class TableConfigController extends Controller
                     'id' => null,
                     'table_key' => $tableKey,
                     'scope' => 'user',
-                    'user_id' => $actor->userId(),
+                    'user_id' => $userId,
                     'schema_version' => 1,
                     'config_json' => [],
                     'created_at' => null,
@@ -66,27 +68,28 @@ final class TableConfigController extends Controller
         return (new TableConfigResource($config))->response()->setStatusCode(200);
     }
 
-    public function updateMyOverride(Request $request, string $tableKey, UserIdentity $actor): JsonResponse
+    public function updateMyOverride(Request $request, string $tableKey): JsonResponse
     {
         [$schemaVersion, $configJson] = $this->validatePayload($request, false);
 
-        $config = $this->repository->upsertUserOverride($tableKey, $actor->userId(), $schemaVersion, $configJson);
+        $config = $this->repository->upsertUserOverride($tableKey, (int) $this->auth->requireUser()->id, $schemaVersion, $configJson);
 
         return (new TableConfigResource($config))->response()->setStatusCode(200);
     }
 
-    public function destroyMyOverride(string $tableKey, UserIdentity $actor): Response
+    public function destroyMyOverride(string $tableKey): Response
     {
-        $config = $this->findUserOverrideOrFail($tableKey, $actor->userId());
+        $config = $this->findUserOverrideOrFail($tableKey, (int) $this->auth->requireUser()->id);
         $this->repository->delete($config);
 
         return AdminResponse::noContent();
     }
 
-    public function resolved(string $tableKey, UserIdentity $actor): JsonResponse
+    public function resolved(string $tableKey): JsonResponse
     {
+        $userId = (int) $this->auth->requireUser()->id;
         $base = $this->repository->findBase($tableKey);
-        $override = $this->repository->findUserOverride($tableKey, $actor->userId());
+        $override = $this->repository->findUserOverride($tableKey, $userId);
 
         if (! $base && ! $override) {
             $this->throwError(
@@ -105,7 +108,7 @@ final class TableConfigController extends Controller
                 'id' => $override?->id ?? $base?->id,
                 'table_key' => $tableKey,
                 'scope' => $override ? 'user' : 'base',
-                'user_id' => $override ? $actor->userId() : null,
+                'user_id' => $override ? $userId : null,
                 'schema_version' => $override?->schema_version ?? $base?->schema_version,
                 'config_json' => $resolvedConfig,
                 'created_at' => optional($override?->created_at ?? $base?->created_at)->toIso8601String(),

@@ -243,7 +243,7 @@ final class MediaPreviewController extends Controller
      */
     private function hasMediaReadCapability(): bool
     {
-        return $this->gate->currentActorAllows(
+        return $this->gate->currentUserAllows(
             ResourceRef::fromString(MediaCapabilities::RESOURCE),
             CapabilityCatalog::ACTION_READ,
         );

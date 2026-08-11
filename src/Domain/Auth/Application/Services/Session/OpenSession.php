@@ -10,12 +10,12 @@ use Polymorph\Platform\Domain\Auth\Application\Contracts\IdGenerator;
 use Polymorph\Platform\Domain\Auth\Application\Contracts\SessionCredentials;
 use Polymorph\Platform\Domain\Auth\Application\Contracts\SessionRepository;
 use Polymorph\Platform\Domain\Auth\Application\Contracts\TransactionManager;
-use Polymorph\Platform\Domain\Auth\Application\Models\AuthUser;
 use Polymorph\Platform\Domain\Auth\Application\Models\IssuedSession;
 use Polymorph\Platform\Domain\Auth\Application\SessionPolicy;
 use Polymorph\Platform\Domain\Auth\Domain\Session;
 use Polymorph\Platform\Domain\Auth\Domain\ValueObjects\ClientMetadata;
 use Polymorph\Platform\Domain\Auth\Domain\ValueObjects\UserId;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 
 final readonly class OpenSession
 {
@@ -28,11 +28,11 @@ final readonly class OpenSession
         private AuthenticationLock $authenticationLock,
     ) {}
 
-    public function execute(AuthUser $user, ClientMetadata $client): IssuedSession
+    public function execute(User $user, ClientMetadata $client): IssuedSession
     {
         return $this->transactions->run(function () use ($user, $client): IssuedSession {
             $now = $this->clock->now();
-            $userId = new UserId($user->id());
+            $userId = new UserId((int) $user->id);
             $this->authenticationLock->forUser($userId);
             $active = $this->sessions->activeForUserForUpdate($userId, $now);
 

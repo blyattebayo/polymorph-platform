@@ -9,7 +9,7 @@ use Polymorph\Platform\Domain\Auth\Application\Services\Session\RevokeUserSessio
 use Polymorph\Platform\Domain\Auth\Domain\ValueObjects\UserId;
 use Polymorph\Platform\Domain\Users\Core\Contracts\UserSessionRevoker;
 
-final readonly class AuthUserSessionRevoker implements UserSessionRevoker
+final readonly class DatabaseUserSessionRevoker implements UserSessionRevoker
 {
     public function __construct(
         private RevokeUserSessions $revokeUserSessions,

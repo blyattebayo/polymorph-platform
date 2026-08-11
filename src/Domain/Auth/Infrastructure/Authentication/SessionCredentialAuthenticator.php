@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Auth\Infrastructure\Authentication;
 
 use Illuminate\Http\Request;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticatedCredential;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\RequestCredentialResolver;
 use Polymorph\Platform\Domain\Auth\Application\Contracts\Clock;
 use Polymorph\Platform\Domain\Auth\Application\Contracts\SessionCredentials;
 use Polymorph\Platform\Domain\Auth\Application\Contracts\SessionRepository;
 use Polymorph\Platform\Domain\Auth\Application\Exceptions\AuthenticationDenied;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\SessionCookie;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticatedCredential;
-use Polymorph\Platform\SharedKernel\Identity\RequestCredentialResolver;
 
 final readonly class SessionCredentialAuthenticator implements RequestCredentialResolver
 {

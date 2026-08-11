@@ -10,19 +10,19 @@ use Polymorph\Platform\Domain\Extensions\HostExtensionServices;
 use Polymorph\Platform\Domain\Extensions\Http\ReplyAwareControllerDispatcher;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\Contracts\ExtensionRegistryState;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\DatabaseExtensionRegistryState;
-use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkActorDirectory;
-use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkCurrentActor;
+use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkCurrentUser;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkExtensionState;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkLogger;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkRedactor;
+use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkUserDirectory;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkValidationConstraints;
 use Polymorph\Sdk\Access\AccessGrants;
 use Polymorph\Sdk\Contracts\ExtensionState;
 use Polymorph\Sdk\Data\DefinitionRegistry;
 use Polymorph\Sdk\Data\Repository;
 use Polymorph\Sdk\Extension\ExtensionServices;
-use Polymorph\Sdk\Identity\ActorDirectory;
-use Polymorph\Sdk\Identity\CurrentActor;
+use Polymorph\Sdk\Identity\CurrentUser;
+use Polymorph\Sdk\Identity\UserDirectory;
 use Polymorph\Sdk\Logging\Logger;
 use Polymorph\Sdk\Logging\Redactor;
 use Polymorph\Sdk\Validation\ValidationConstraints;
@@ -44,8 +44,8 @@ final class ExtensionsSdkServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     public const SDK_CONTRACT_BINDINGS = [
-        CurrentActor::class => SdkCurrentActor::class,
-        ActorDirectory::class => SdkActorDirectory::class,
+        CurrentUser::class => SdkCurrentUser::class,
+        UserDirectory::class => SdkUserDirectory::class,
         Logger::class => SdkLogger::class,
         Redactor::class => SdkRedactor::class,
         ExtensionState::class => SdkExtensionState::class,

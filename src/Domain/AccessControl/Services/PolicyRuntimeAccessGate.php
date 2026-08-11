@@ -6,11 +6,11 @@ namespace Polymorph\Platform\Domain\AccessControl\Services;
 
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRuntime;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Access\AccessCheck;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\ResourceRef;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
 /**
  * Единственное место, где «тройка» (резолвер актора, субъекты, рантайм политик)
@@ -27,34 +27,34 @@ final class PolicyRuntimeAccessGate implements AccessGate
         private readonly AuthenticationContext $auth,
     ) {}
 
-    public function allows(?UserIdentity $actor, ResourceRef $resource, string $action): bool
+    public function allows(?User $user, ResourceRef $resource, string $action): bool
     {
-        if (! $actor instanceof UserIdentity) {
+        if (! $user instanceof User) {
             return false;
         }
 
         $action = trim($action);
 
-        return $this->runtime->allows($this->subjectProvider->for($actor), $resource->value, $action);
+        return $this->runtime->allows($this->subjectProvider->for($user), $resource->value, $action);
     }
 
-    public function currentActorAllows(ResourceRef $resource, string $action): bool
+    public function currentUserAllows(ResourceRef $resource, string $action): bool
     {
-        return $this->allows($this->auth->actor(), $resource, $action);
+        return $this->allows($this->auth->user(), $resource, $action);
     }
 
-    public function allowsEach(?UserIdentity $actor, array $checks): array
+    public function allowsEach(?User $user, array $checks): array
     {
         if ($checks === []) {
             return [];
         }
 
-        if (! $actor instanceof UserIdentity) {
+        if (! $user instanceof User) {
             return array_map(static fn (): bool => false, $checks);
         }
 
         $decisions = $this->runtime->batchEvaluate(
-            $this->subjectProvider->for($actor),
+            $this->subjectProvider->for($user),
             array_map(
                 static fn (AccessCheck $check): array => [
                     'resource' => $check->resource->value,

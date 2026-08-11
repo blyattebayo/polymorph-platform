@@ -10,7 +10,7 @@ use Polymorph\Platform\Domain\DataPlatform\ScopedExtensionData;
 use Polymorph\Platform\Domain\DataPlatform\SdkBridge\SdkDefinitionRegistry;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\Contracts\ExtensionRegistryState;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkAccessGrants;
-use Polymorph\Platform\Domain\Users\Core\Contracts\UserRepository;
+use Polymorph\Platform\Domain\Users\Infrastructure\Repositories\UserRepository;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Sdk\Access\AccessGrants;
 use Polymorph\Sdk\Data\DefinitionRegistry;

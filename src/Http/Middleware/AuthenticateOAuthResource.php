@@ -6,9 +6,9 @@ namespace Polymorph\Platform\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
 use Polymorph\Platform\Domain\Auth\Application\Exceptions\AuthenticationDenied;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Authentication\OAuthAccessTokenCredentialAuthenticator;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 use Polymorph\Platform\Support\Errors\ErrorCode;
 use Polymorph\Platform\Support\Errors\ErrorFactory;
 use Polymorph\Platform\Support\Errors\HttpErrorException;

@@ -1,8 +1,8 @@
-import { createStubHost, loadValidationConstraintsFromApi } from '@polymorph/plugin-sdk';
+import { createStubHost, loadValidation } from '@blyattebayo/polymorph-sdk';
 import { mount } from './entry';
 
 async function bootstrap(): Promise<void> {
-  await loadValidationConstraintsFromApi().catch(() => undefined);
+  await loadValidation().catch(() => undefined);
 
   const root = document.getElementById('root');
   if (!root) {

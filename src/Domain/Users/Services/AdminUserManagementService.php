@@ -5,27 +5,21 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Users\Services;
 
 use Illuminate\Support\Facades\DB;
-use Polymorph\Platform\Domain\Users\Actions\ChangePasswordAction;
-use Polymorph\Platform\Domain\Users\Actions\CreateUserAction;
-use Polymorph\Platform\Domain\Users\Actions\UpdateUserAction;
-use Polymorph\Platform\Domain\Users\Core\Contracts\UserMutationGuard;
-use Polymorph\Platform\Domain\Users\Core\Contracts\UserRoleManager;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
+use Polymorph\Platform\Domain\Roles\Services\UserRoleService;
 use Polymorph\Platform\Domain\Users\Core\Exceptions\UserAlreadyExistsException;
 use Polymorph\Platform\Domain\Users\Core\Exceptions\UserNotFoundException;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
-use Polymorph\Platform\Domain\Users\Queries\FindUserByIdQuery;
+use Polymorph\Platform\Domain\Users\Core\ValueObjects\Email;
+use Polymorph\Platform\Domain\Users\Core\ValueObjects\Password;
+use Polymorph\Platform\Domain\Users\Infrastructure\Repositories\UserRepository;
 use Polymorph\Platform\Domain\Users\Support\RoleIdsNormalizer;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 
 final class AdminUserManagementService
 {
     public function __construct(
-        private readonly CreateUserAction $createUserAction,
-        private readonly UpdateUserAction $updateUserAction,
-        private readonly ChangePasswordAction $changePasswordAction,
-        private readonly UserRoleManager $userRoleManager,
-        private readonly UserMutationGuard $mutationGuard,
-        private readonly FindUserByIdQuery $findUserByIdQuery,
+        private readonly UserRepository $users,
+        private readonly UserRoleService $roles,
         private readonly AuthenticationContext $auth,
     ) {}
 
@@ -40,11 +34,22 @@ final class AdminUserManagementService
 
         // Симметрично update(): создать пользователя сразу системным админом
         // может только системный админ. Раньше create() guard не звал вовсе.
-        $this->userRoleManager->assertRoleChangeAllowed($this->auth->requireActor(), null, $roleIds);
+        $this->auth->requireUser();
+        $this->roles->assertRoleChangeAllowed(null, $roleIds);
 
         return DB::transaction(function () use ($validated, $roleIds): User {
-            $user = $this->createUserAction->execute($validated);
-            $this->userRoleManager->syncForUser((int) $user->id, $roleIds);
+            $email = Email::fromString((string) $validated['email']);
+            if ($this->users->existsByEmail($email->toString())) {
+                throw UserAlreadyExistsException::withEmail($email->toString());
+            }
+            Password::fromPlain((string) $validated['password']);
+            $user = $this->users->create([
+                'name' => (string) ($validated['name'] ?? ''),
+                'email' => $email->toString(),
+                'password' => (string) $validated['password'],
+                'status' => (string) ($validated['status'] ?? User::STATUS_ACTIVE),
+            ]);
+            $this->roles->sync((int) $user->id, $roleIds);
 
             return $user;
         });
@@ -58,8 +63,8 @@ final class AdminUserManagementService
      */
     public function update(int $userId, array $validated): User
     {
-        $user = $this->findUserByIdQuery->executeOrFail($userId);
-        $this->mutationGuard->assertCanMutate($user);
+        $user = $this->users->findOrFail($userId);
+        $this->roles->assertCanMutate($user);
 
         $roleIds = array_key_exists('role_ids', $validated)
             ? RoleIdsNormalizer::normalize($validated['role_ids'])
@@ -68,16 +73,24 @@ final class AdminUserManagementService
         if ($roleIds !== null) {
             // Диff по членству в system.admin: выдать или снять роль может
             // только действующий системный админ.
-            $this->userRoleManager->assertRoleChangeAllowed($this->auth->requireActor(), $userId, $roleIds);
+            $this->roles->assertRoleChangeAllowed($userId, $roleIds);
         }
 
         // Ревок сессий при смене статуса на ограничивающий выполняет
         // листенер RevokeSessionsAfterUserStatusChanged на событии UserUpdated.
         return DB::transaction(function () use ($user, $validated, $roleIds): User {
-            $updated = $this->updateUserAction->execute($user, $validated);
+            $data = array_intersect_key($validated, array_flip(['name', 'email', 'status']));
+            if (isset($data['email'])) {
+                $email = Email::fromString((string) $data['email']);
+                if ($email->toString() !== $user->email && $this->users->existsByEmail($email->toString())) {
+                    throw UserAlreadyExistsException::withEmail($email->toString());
+                }
+                $data['email'] = $email->toString();
+            }
+            $updated = $data === [] ? $user : $this->users->update($user, $data);
 
             if ($roleIds !== null) {
-                $this->userRoleManager->syncForUser((int) $updated->id, $roleIds);
+                $this->roles->sync((int) $updated->id, $roleIds);
             }
 
             return $updated;
@@ -89,8 +102,9 @@ final class AdminUserManagementService
      */
     public function setPassword(int $userId, string $password): void
     {
-        $user = $this->findUserByIdQuery->executeOrFail($userId);
-        $this->mutationGuard->assertCanMutate($user);
-        $this->changePasswordAction->execute($user, $password);
+        $user = $this->users->findOrFail($userId);
+        $this->roles->assertCanMutate($user);
+        Password::fromPlain($password);
+        $this->users->update($user, ['password' => $password]);
     }
 }

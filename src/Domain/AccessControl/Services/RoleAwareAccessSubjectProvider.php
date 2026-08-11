@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessSubjectProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Polymorph\Platform\Domain\Roles\Core\Contracts\RoleAssignmentRepository;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 
 final class RoleAwareAccessSubjectProvider implements AccessSubjectProvider
 {
@@ -24,9 +24,9 @@ final class RoleAwareAccessSubjectProvider implements AccessSubjectProvider
     /**
      * @return list<Subject>
      */
-    public function for(UserIdentity $user): array
+    public function for(User $user): array
     {
-        $userId = $user->userId();
+        $userId = (int) $user->id;
         if ($userId <= 0) {
             throw new InvalidArgumentException('User id must be positive.');
         }

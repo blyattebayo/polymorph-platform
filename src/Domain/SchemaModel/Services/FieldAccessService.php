@@ -6,11 +6,11 @@ namespace Polymorph\Platform\Domain\SchemaModel\Services;
 
 use Polymorph\Platform\Domain\SchemaModel\Access\SchemaFieldResources;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Access\AccessCheck;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 use Polymorph\Platform\SharedKernel\Access\ResourceRef;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
 
 final class FieldAccessService
 {
@@ -34,7 +34,7 @@ final class FieldAccessService
         private readonly PathTreeFilter $pathTreeFilter,
     ) {}
 
-    public function canAccessField(?UserIdentity $user, int $schemaId, string $action, ?string $fullPath = null): bool
+    public function canAccessField(?User $user, int $schemaId, string $action, ?string $fullPath = null): bool
     {
         $fieldPath = trim((string) $fullPath);
         if ($user === null || $schemaId <= 0 || $fieldPath === '' || $action === '') {
@@ -47,14 +47,14 @@ final class FieldAccessService
     /**
      * @return string[]
      */
-    public function visibleFieldPaths(?UserIdentity $user, int $schemaId, string $action = CapabilityCatalog::ACTION_READ): array
+    public function visibleFieldPaths(?User $user, int $schemaId, string $action = CapabilityCatalog::ACTION_READ): array
     {
         $normalizedAction = trim($action);
         if ($user === null || $schemaId <= 0 || $normalizedAction === '') {
             return [];
         }
 
-        $cacheKey = $user->userId().':'.$schemaId.':'.$normalizedAction;
+        $cacheKey = (int) $user->id.':'.$schemaId.':'.$normalizedAction;
 
         return $this->visibleFieldPathsCache[$cacheKey] ??= $this->computeVisibleFieldPaths($user, $schemaId, $normalizedAction);
     }
@@ -66,7 +66,7 @@ final class FieldAccessService
      * каждого поля схемы по очереди стоит один запрос к гейту, а не N.
      * Fail-closed: нет актора — не видно ничего.
      */
-    public function isFieldReadable(?UserIdentity $user, int $schemaId, string $fullPath, string $action = CapabilityCatalog::ACTION_READ): bool
+    public function isFieldReadable(?User $user, int $schemaId, string $fullPath, string $action = CapabilityCatalog::ACTION_READ): bool
     {
         $normalizedAction = trim($action);
         $fieldPath = trim($fullPath);
@@ -97,7 +97,7 @@ final class FieldAccessService
     /**
      * @return string[]
      */
-    private function computeVisibleFieldPaths(UserIdentity $user, int $schemaId, string $action): array
+    private function computeVisibleFieldPaths(User $user, int $schemaId, string $action): array
     {
         $visible = $this->allowedFieldPaths($user, $schemaId, $action);
 
@@ -113,9 +113,9 @@ final class FieldAccessService
      *
      * @return list<string>
      */
-    private function allowedFieldPaths(UserIdentity $user, int $schemaId, string $action): array
+    private function allowedFieldPaths(User $user, int $schemaId, string $action): array
     {
-        $cacheKey = $user->userId().':'.$schemaId.':'.$action;
+        $cacheKey = (int) $user->id.':'.$schemaId.':'.$action;
 
         return $this->allowedFieldPathsCache[$cacheKey] ??= (function () use ($user, $schemaId, $action): array {
             $fieldPaths = $this->schemaFieldPaths($schemaId);
@@ -145,7 +145,7 @@ final class FieldAccessService
      * @param  array<string, mixed>  $dataJson
      * @return array<string, mixed>
      */
-    public function filterReadableDataJson(?UserIdentity $user, int $schemaId, array $dataJson): array
+    public function filterReadableDataJson(?User $user, int $schemaId, array $dataJson): array
     {
         return $this->pathTreeFilter->filterVisibleData($dataJson, $this->visibleFieldPaths($user, $schemaId, CapabilityCatalog::ACTION_READ));
     }
@@ -154,7 +154,7 @@ final class FieldAccessService
      * @param  array<string, mixed>  $dataJson
      * @return string[]
      */
-    public function forbiddenWritePaths(?UserIdentity $user, int $schemaId, array $dataJson): array
+    public function forbiddenWritePaths(?User $user, int $schemaId, array $dataJson): array
     {
         return $this->pathTreeFilter->forbiddenWritePaths($dataJson, $this->visibleFieldPaths($user, $schemaId, CapabilityCatalog::ACTION_WRITE));
     }

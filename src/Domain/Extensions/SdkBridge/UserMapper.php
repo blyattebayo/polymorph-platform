@@ -5,18 +5,15 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Extensions\SdkBridge;
 
 use Polymorph\Platform\Domain\Users\Core\Models\User;
-use Polymorph\Sdk\Identity\Actor;
+use Polymorph\Sdk\Identity\User as SdkUser;
 
-/**
- * Маппинг модели пользователя ядра в нейтральный SDK-DTO {@see Actor}.
- */
-final class ActorMapper
+final class UserMapper
 {
     private function __construct() {}
 
-    public static function fromUser(User $user): Actor
+    public static function toSdk(User $user): SdkUser
     {
-        return new Actor(
+        return new SdkUser(
             id: (int) $user->id,
             email: (string) $user->email,
             name: isset($user->name) ? (string) $user->name : null,

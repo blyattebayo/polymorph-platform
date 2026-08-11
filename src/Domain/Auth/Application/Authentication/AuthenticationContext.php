@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Polymorph\Platform\SharedKernel\Identity;
+namespace Polymorph\Platform\Domain\Auth\Application\Authentication;
 
 use Illuminate\Http\Request;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 
 /** Request-scoped result of the one credential resolver selected by the route. */
 final class AuthenticationContext
@@ -28,22 +29,22 @@ final class AuthenticationContext
         return $this->credential;
     }
 
-    public function actor(): ?UserIdentity
+    public function user(): ?User
     {
-        return $this->credential?->actor;
+        return $this->credential?->user;
     }
 
-    public function requireActor(): UserIdentity
+    public function requireUser(): User
     {
-        $actor = $this->actor();
-        abort_unless($actor instanceof UserIdentity, 401);
+        $user = $this->user();
+        abort_unless($user instanceof User, 401);
 
-        return $actor;
+        return $user;
     }
 
-    public function authIdentifier(): ?int
+    public function userId(): ?int
     {
-        return $this->actor()?->userId();
+        return $this->user() === null ? null : (int) $this->user()->id;
     }
 
     public function hasCredential(): bool

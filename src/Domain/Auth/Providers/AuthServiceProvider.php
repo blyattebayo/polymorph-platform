@@ -7,6 +7,7 @@ namespace Polymorph\Platform\Domain\Auth\Providers;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
 use Polymorph\Platform\Domain\Auth\Application\Contracts\AuthenticationAudit;
 use Polymorph\Platform\Domain\Auth\Application\Contracts\AuthenticationLock;
 use Polymorph\Platform\Domain\Auth\Application\Contracts\Clock;
@@ -15,7 +16,6 @@ use Polymorph\Platform\Domain\Auth\Application\Contracts\PasswordHasher;
 use Polymorph\Platform\Domain\Auth\Application\Contracts\SessionCredentials;
 use Polymorph\Platform\Domain\Auth\Application\Contracts\SessionRepository;
 use Polymorph\Platform\Domain\Auth\Application\Contracts\TransactionManager;
-use Polymorph\Platform\Domain\Auth\Application\Contracts\UserGateway;
 use Polymorph\Platform\Domain\Auth\Application\OAuth\OAuthAuthorizationServer;
 use Polymorph\Platform\Domain\Auth\Application\OAuth\OAuthSecrets;
 use Polymorph\Platform\Domain\Auth\Application\OAuth\OAuthServerConfig;
@@ -27,13 +27,12 @@ use Polymorph\Platform\Domain\Auth\Infrastructure\Authentication\SessionCredenti
 use Polymorph\Platform\Domain\Auth\Infrastructure\Config\SessionCookieConfig;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneAuthSessionsCommand;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneOAuthCredentialsCommand;
-use Polymorph\Platform\Domain\Auth\Infrastructure\Gateways\EloquentUserGateway;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\SessionCookie;
 use Polymorph\Platform\Domain\Auth\Infrastructure\OAuth\DatabaseOAuthStore;
 use Polymorph\Platform\Domain\Auth\Infrastructure\OAuth\SecureOAuthSecrets;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Repositories\EloquentSessionRepository;
-use Polymorph\Platform\Domain\Auth\Infrastructure\Services\Session\AuthUserSessionRevoker;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\Session\DatabaseAuthenticationLock;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Services\Session\DatabaseUserSessionRevoker;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\Session\LaravelPasswordHasher;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\Session\LoggedAuthenticationAudit;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\Session\SecureSessionCredentials;
@@ -42,7 +41,6 @@ use Polymorph\Platform\Domain\Auth\Infrastructure\Services\Shared\LaravelTransac
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\Shared\SystemClock;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Services\Shared\UuidGenerator;
 use Polymorph\Platform\Domain\Users\Core\Contracts\UserSessionRevoker;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
 
 /**
  * Complete composition root for the platform's sole interactive-auth runtime.
@@ -86,7 +84,6 @@ final class AuthServiceProvider extends ServiceProvider
         $this->app->singleton(IdGenerator::class, UuidGenerator::class);
         $this->app->singleton(TransactionManager::class, LaravelTransactionManager::class);
         $this->app->singleton(BestEffortAudit::class);
-        $this->app->singleton(UserGateway::class, EloquentUserGateway::class);
     }
 
     private function registerSessionCapability(): void
@@ -96,7 +93,7 @@ final class AuthServiceProvider extends ServiceProvider
         $this->app->singleton(AuthenticationLock::class, DatabaseAuthenticationLock::class);
         $this->app->singleton(SessionRepository::class, EloquentSessionRepository::class);
         $this->app->singleton(AuthenticationAudit::class, LoggedAuthenticationAudit::class);
-        $this->app->singleton(UserSessionRevoker::class, AuthUserSessionRevoker::class);
+        $this->app->singleton(UserSessionRevoker::class, DatabaseUserSessionRevoker::class);
     }
 
     private function registerOAuthCapability(): void

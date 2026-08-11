@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\SchemaModel\Services;
 
 use Illuminate\Support\Collection;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
-use Polymorph\Platform\SharedKernel\Identity\AuthenticationContext;
-use Polymorph\Platform\SharedKernel\Identity\UserIdentity;
+use Polymorph\Platform\Domain\Users\Core\Models\User;
 
 /**
  * Полевой ACL на пути ЧТЕНИЯ СХЕМЫ.
@@ -65,7 +65,7 @@ final class SchemaFieldVisibility
             ->values();
     }
 
-    private function pruneNode(?UserIdentity $actor, int $schemaId, Field $field): ?Field
+    private function pruneNode(?User $actor, int $schemaId, Field $field): ?Field
     {
         $children = $field->relationLoaded('children')
             ? $field->getRelation('children')
@@ -91,15 +91,15 @@ final class SchemaFieldVisibility
         return null;
     }
 
-    private function isReadable(?UserIdentity $actor, int $schemaId, Field $field): bool
+    private function isReadable(?User $actor, int $schemaId, Field $field): bool
     {
         return $this->fieldAccess->isFieldReadable($actor, $schemaId, (string) $field->full_path);
     }
 
-    private function actor(): ?UserIdentity
+    private function actor(): ?User
     {
-        $actor = $this->auth->actor();
+        $actor = $this->auth->user();
 
-        return $actor instanceof UserIdentity ? $actor : null;
+        return $actor instanceof User ? $actor : null;
     }
 }
