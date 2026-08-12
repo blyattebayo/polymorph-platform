@@ -8,8 +8,8 @@ use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdminist
 use Polymorph\Platform\Domain\DataPlatform\DataPlatform;
 use Polymorph\Platform\Domain\DataPlatform\ScopedExtensionData;
 use Polymorph\Platform\Domain\DataPlatform\SdkBridge\SdkDefinitionRegistry;
-use Polymorph\Platform\Domain\Extensions\SdkBridge\Contracts\ExtensionRegistryState;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkAccessGrants;
+use Polymorph\Platform\Domain\Extensions\Services\ExtensionDiscoveryService;
 use Polymorph\Platform\Domain\Users\Infrastructure\Repositories\UserRepository;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
 use Polymorph\Sdk\Access\AccessGrants;
@@ -25,7 +25,7 @@ use Polymorph\Sdk\Extension\ExtensionServices;
  * {@see ExtensionContext}. Data-часть идёт через единый шов {@see DataPlatform};
  * гранты — через {@see SdkAccessGrants} с enforcement 'ext.{id}.'.
  *
- * Контекст сверяется с реестром расширений: id, которого хост не знает, — отказ.
+ * The context must name an installed extension; otherwise access is denied.
  * ВАЖНО про модель угроз: плагины исполняются in-process как доверенный PHP-код,
  * поэтому ext-префиксы и эта сверка — защита от ошибок и случайного залезания в
  * чужой неймспейс, а не криптографическая граница. Полная атрибуция «какой плагин
@@ -38,7 +38,7 @@ final class HostExtensionServices implements ExtensionServices
         private readonly AccessControlAdministration $admin,
         private readonly AccessGate $gate,
         private readonly UserRepository $users,
-        private readonly ExtensionRegistryState $registry,
+        private readonly ExtensionDiscoveryService $discovery,
     ) {}
 
     /**
@@ -80,10 +80,9 @@ final class HostExtensionServices implements ExtensionServices
 
     private function assertKnown(ExtensionContext $context): void
     {
-        if (! $this->registry->isKnown($context->id->value)) {
+        if ($this->discovery->find($context->id->value) === null) {
             throw new \LogicException(sprintf(
-                "ExtensionContext '%s' does not match any registered extension. ".
-                'Scoped SDK services are issued only for extensions known to the host registry.',
+                "ExtensionContext '%s' does not match an installed extension.",
                 $context->id->value,
             ));
         }

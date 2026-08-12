@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Http\Controllers;
 
-use Polymorph\Platform\Domain\Extensions\Core\Models\ExtensionRegistry;
-use Polymorph\Platform\Domain\Extensions\Services\ExtensionRegistryService;
+use Polymorph\Platform\Domain\Extensions\Services\ExtensionDiscoveryService;
 use Polymorph\Platform\Http\Controllers\Controller;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -36,23 +35,17 @@ final class ExtensionAssetController extends Controller
     ];
 
     public function __construct(
-        private readonly ExtensionRegistryService $registryService,
+        private readonly ExtensionDiscoveryService $discovery,
     ) {}
 
     public function show(string $plugin, string $path): BinaryFileResponse
     {
-        $registry = $this->registryService->findEnabled($plugin);
-
-        if (! $registry instanceof ExtensionRegistry) {
+        $extension = $this->discovery->find($plugin);
+        if ($extension === null || ! $extension->hasFrontend) {
             abort(404);
         }
 
-        $manifestPath = (string) $registry->manifest_path;
-        if ($manifestPath === '') {
-            abort(404);
-        }
-
-        $base = realpath(dirname($manifestPath).DIRECTORY_SEPARATOR.'fe'.DIRECTORY_SEPARATOR.'dist');
+        $base = realpath(dirname($extension->manifestPath).DIRECTORY_SEPARATOR.'fe'.DIRECTORY_SEPARATOR.'dist');
         if ($base === false) {
             abort(404);
         }

@@ -19,7 +19,7 @@ final class ExtensionFrontendController extends Controller
     public function index(ExtensionFrontendManifestRequest $request): JsonResponse
     {
         return AdminResponse::json([
-            'data' => $this->manifestService->enabledFrontendPlugins(),
+            'data' => $this->manifestService->frontendPlugins(),
         ]);
     }
 }

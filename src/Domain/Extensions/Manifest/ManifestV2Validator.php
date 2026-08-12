@@ -5,25 +5,36 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Extensions\Manifest;
 
 use Polymorph\Platform\Support\Validation\ValidationConstraints;
-use Polymorph\Sdk\Version\Compatibility;
 use Polymorph\Sdk\Version\Sdk;
 use Polymorph\Sdk\Version\SdkVersion;
 
 /**
- * Валидатор манифеста расширения v2 + согласование версии SDK.
- *
- * Связывает version-машинерию SDK (Epic 0) с lifecycle: расширение объявляет
- * требуемый диапазон `sdk` (напр. "^2"), хост проверяет его против собственной
- * версии {@see Sdk::VERSION} через {@see Compatibility::satisfiesRange()} и
- * отклоняет несовместимое РАНЬШЕ загрузки кода.
+ * Validates the one supported manifest shape and exact SDK version before code loads.
  */
 final class ManifestV2Validator
 {
+    private const FIELDS = [
+        'schemaVersion',
+        'id',
+        'name',
+        'version',
+        'sdk',
+        'provider',
+        'contributes',
+    ];
+
     /**
      * @param  array<string, mixed>  $manifest
      */
     public function validate(array $manifest, string $source = 'manifest'): ManifestV2
     {
+        $unknown = array_values(array_diff(array_keys($manifest), self::FIELDS));
+        if ($unknown !== []) {
+            throw new \InvalidArgumentException(
+                "{$source}: unsupported field(s): ".implode(', ', $unknown).'.',
+            );
+        }
+
         $id = $this->requireString($manifest, 'id', $source);
         if (! ValidationConstraints::slug()->matches($id)) {
             throw new \InvalidArgumentException("{$source}: id must match ".ValidationConstraints::slug()->pattern().'.');
@@ -38,34 +49,36 @@ final class ManifestV2Validator
             throw new \InvalidArgumentException("{$source}: schemaVersion must be '2.0'.");
         }
 
-        $kindValue = is_string($manifest['kind'] ?? null) && trim((string) $manifest['kind']) !== ''
-            ? trim((string) $manifest['kind'])
-            : ExtensionKind::PLUGIN->value;
-        $kind = ExtensionKind::tryFrom($kindValue)
-            ?? throw new \InvalidArgumentException("{$source}: kind '{$kindValue}' is invalid (plugin|module|integration).");
-
         $sdk = $this->requireString($manifest, 'sdk', $source);
-        if (! Compatibility::satisfiesRange(Sdk::VERSION, $sdk)) {
+        if ($sdk !== Sdk::VERSION) {
             throw new \InvalidArgumentException(
-                "{$source}: requires SDK '{$sdk}', host SDK is ".Sdk::VERSION.' (incompatible).',
+                "{$source}: sdk must equal host SDK ".Sdk::VERSION.", got '{$sdk}'.",
             );
         }
 
-        $this->validateDependencies($manifest['dependencies'] ?? [], $id, $source);
+        $provider = $this->requireString($manifest, 'provider', $source);
+        $contributes = $manifest['contributes'] ?? [];
+        if (! is_array($contributes)) {
+            throw new \InvalidArgumentException("{$source}: contributes must be an object.");
+        }
+        $unknownContributions = array_values(array_diff(
+            array_keys($contributes),
+            ['capabilities', 'roles', 'defaultAdminRoles'],
+        ));
+        if ($unknownContributions !== []) {
+            throw new \InvalidArgumentException(
+                "{$source}: unsupported contribution(s): ".implode(', ', $unknownContributions).'.',
+            );
+        }
 
         return new ManifestV2(
             schemaVersion: $schemaVersion,
             id: $id,
             name: $name,
             version: $version,
-            kind: $kind,
             sdk: $sdk,
-            scopes: $this->stringList($manifest['scopes'] ?? null),
-            egress: $this->stringList($manifest['egress'] ?? null),
-            contributes: is_array($manifest['contributes'] ?? null) ? $manifest['contributes'] : [],
-            provider: is_string($manifest['provider'] ?? null) && trim((string) $manifest['provider']) !== ''
-                ? trim((string) $manifest['provider'])
-                : null,
+            provider: $provider,
+            contributes: $contributes,
         );
     }
 
@@ -91,37 +104,4 @@ final class ManifestV2Validator
         }
     }
 
-    private function validateDependencies(mixed $dependencies, string $extensionId, string $source): void
-    {
-        if (! is_array($dependencies)) {
-            throw new \InvalidArgumentException("{$source}: dependencies must be an object.");
-        }
-
-        foreach ($dependencies as $dependencyId => $range) {
-            if (! is_string($dependencyId) || ! ValidationConstraints::slug()->matches($dependencyId)) {
-                throw new \InvalidArgumentException("{$source}: dependency id must match ".ValidationConstraints::slug()->pattern().'.');
-            }
-            if ($dependencyId === $extensionId) {
-                throw new \InvalidArgumentException("{$source}: extension cannot depend on itself.");
-            }
-            if (! is_string($range) || trim($range) === '') {
-                throw new \InvalidArgumentException("{$source}: dependency '{$dependencyId}' must have a non-empty version range.");
-            }
-        }
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function stringList(mixed $value): array
-    {
-        if (! is_array($value)) {
-            return [];
-        }
-
-        return array_values(array_filter(
-            array_map(static fn ($v): string => is_string($v) ? trim($v) : '', $value),
-            static fn (string $v): bool => $v !== '',
-        ));
-    }
 }

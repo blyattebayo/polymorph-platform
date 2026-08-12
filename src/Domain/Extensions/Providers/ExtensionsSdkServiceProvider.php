@@ -8,16 +8,12 @@ use Illuminate\Routing\Contracts\ControllerDispatcher;
 use Illuminate\Support\ServiceProvider;
 use Polymorph\Platform\Domain\Extensions\HostExtensionServices;
 use Polymorph\Platform\Domain\Extensions\Http\ReplyAwareControllerDispatcher;
-use Polymorph\Platform\Domain\Extensions\SdkBridge\Contracts\ExtensionRegistryState;
-use Polymorph\Platform\Domain\Extensions\SdkBridge\DatabaseExtensionRegistryState;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkCurrentUser;
-use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkExtensionState;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkLogger;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkRedactor;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkUserDirectory;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkValidationConstraints;
 use Polymorph\Sdk\Access\AccessGrants;
-use Polymorph\Sdk\Contracts\ExtensionState;
 use Polymorph\Sdk\Data\DefinitionRegistry;
 use Polymorph\Sdk\Data\Repository;
 use Polymorph\Sdk\Extension\ExtensionServices;
@@ -48,15 +44,12 @@ final class ExtensionsSdkServiceProvider extends ServiceProvider
         UserDirectory::class => SdkUserDirectory::class,
         Logger::class => SdkLogger::class,
         Redactor::class => SdkRedactor::class,
-        ExtensionState::class => SdkExtensionState::class,
         ExtensionServices::class => HostExtensionServices::class,
         ValidationConstraints::class => SdkValidationConstraints::class,
     ];
 
     public function register(): void
     {
-        $this->app->singleton(ExtensionRegistryState::class, DatabaseExtensionRegistryState::class);
-
         foreach (self::SDK_CONTRACT_BINDINGS as $contract => $adapter) {
             $this->app->singleton($contract, $adapter);
         }

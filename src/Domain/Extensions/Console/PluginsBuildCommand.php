@@ -42,6 +42,12 @@ final class PluginsBuildCommand extends Command
             return self::FAILURE;
         }
 
+        if (! is_file($srcDir.DIRECTORY_SEPARATOR.'composer.json')) {
+            $this->error("Plugin source must contain composer.json: {$srcDir}");
+
+            return self::FAILURE;
+        }
+
         $manifest = json_decode((string) file_get_contents($manifestPath), true);
         if (! is_array($manifest)) {
             $this->error("Manifest is not valid JSON: {$manifestPath}");
@@ -69,7 +75,7 @@ final class PluginsBuildCommand extends Command
             }
         }
 
-        if (is_file($srcDir.DIRECTORY_SEPARATOR.'composer.json') && ! (bool) $this->option('skip-composer')) {
+        if (! (bool) $this->option('skip-composer')) {
             if (! $this->runProcess(
                 $srcDir,
                 'composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs',
@@ -82,6 +88,11 @@ final class PluginsBuildCommand extends Command
 
         $beVendorRoot = $this->scopePluginVendor($id, $srcDir);
         if ($beVendorRoot === null) {
+            return self::FAILURE;
+        }
+        if (! is_file($beVendorRoot.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'autoload.php')) {
+            $this->error('Plugin artifact requires vendor/autoload.php; run Composer or remove --skip-composer.');
+
             return self::FAILURE;
         }
 

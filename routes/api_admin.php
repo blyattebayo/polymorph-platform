@@ -21,7 +21,6 @@ Route::middleware(['api', 'auth:session'])
             'acl',
             'media',
             'menu',
-            'plugins',
             'record_definitions',
             'records',
             'schema_models',

@@ -30,11 +30,8 @@ final class CapabilityRegistry
     ) {}
 
     /**
-     * Мемоизация на время жизни инстанса (биндинг — scoped, т.е. один запрос):
-     * без неё каждый вызов заново обходил провайдеров, а ExtensionsCapabilityProvider
-     * на каждом проходе делал SQL-запрос + обход ФС (аудит, 6.6). Scoped, а не
-     * singleton: включение плагина в живом процессе должно попадать в каталог
-     * следующего запроса.
+     * The installed extension set cannot change in a running process. Installation
+     * requires restart, so the catalog is collected once per process.
      *
      * @return list<CapabilityDefinition>
      */

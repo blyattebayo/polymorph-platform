@@ -75,42 +75,6 @@ return [
             'status' => 422,
             'detail' => 'Plugin manifest is invalid.',
         ],
-        ErrorCode::PLUGIN_ALREADY_DISABLED->value => [
-            'uri' => 'https://polymorph.dev/problems/plugin-already-disabled',
-            'title' => 'Plugin already disabled',
-            'status' => 409,
-            'detail' => 'Plugin is already disabled.',
-        ],
-        ErrorCode::PLUGIN_ALREADY_ENABLED->value => [
-            'uri' => 'https://polymorph.dev/problems/plugin-already-enabled',
-            'title' => 'Plugin already enabled',
-            'status' => 409,
-            'detail' => 'Plugin is already enabled.',
-        ],
-        ErrorCode::PLUGIN_NOT_FOUND->value => [
-            'uri' => 'https://polymorph.dev/problems/plugin-not-found',
-            'title' => 'Plugin not found',
-            'status' => 404,
-            'detail' => 'Plugin was not found.',
-        ],
-        ErrorCode::PLUGIN_INCOMPATIBLE->value => [
-            'uri' => 'https://polymorph.dev/problems/plugin-incompatible',
-            'title' => 'Plugin incompatible with core',
-            'status' => 409,
-            'detail' => 'Plugin declares a core version range that does not match the current core version.',
-        ],
-        ErrorCode::PLUGIN_DEPENDENCY_FAILED->value => [
-            'uri' => 'https://polymorph.dev/problems/plugin-dependency-failed',
-            'title' => 'Plugin dependency check failed',
-            'status' => 409,
-            'detail' => 'Plugin dependency requirements are not satisfied.',
-        ],
-        ErrorCode::ROUTES_RELOAD_FAILED->value => [
-            'uri' => 'https://polymorph.dev/problems/routes-reload-failed',
-            'title' => 'Failed to reload plugin routes',
-            'status' => 500,
-            'detail' => 'Failed to reload plugin routes.',
-        ],
         ErrorCode::MEDIA_DOWNLOAD_ERROR->value => [
             'uri' => 'https://polymorph.dev/problems/media-download-error',
             'title' => 'Failed to download media',

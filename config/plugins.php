@@ -28,13 +28,4 @@ return [
 
     // Artifact extraction is staged outside runtime_root before atomic replacement.
     'staging_path' => env('PLUGINS_STAGING_PATH', storage_path('app/plugin-staging')),
-    'scaffold_template_path' => env('PLUGINS_SCAFFOLD_TEMPLATE_PATH', dirname(__DIR__).'/resources/plugin-template'),
-
-    'allowed_admin_prefix_template' => 'api/v1/admin/plugins/%s',
-    'allowed_api_prefix_template' => 'api/v1/plugins/%s',
-    'allowed_web_prefix_template' => 'plugins/%s',
-
-    'default_frontend_section' => 'content',
-    'default_frontend_ui_mode' => 'overlay',
-    'core_version' => env('APP_VERSION', '0.0.0'),
 ];

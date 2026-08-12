@@ -4,127 +4,30 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Services;
 
-use Polymorph\Platform\Domain\Extensions\Core\Models\ExtensionRegistry;
+use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
 
 final class ExtensionFrontendManifestService
 {
-    /**
-     * @return list<array<string, mixed>>
-     */
-    public function enabledFrontendPlugins(): array
+    public function __construct(
+        private readonly ExtensionDiscoveryService $discovery,
+    ) {}
+
+    /** @return list<array<string, mixed>> */
+    public function frontendPlugins(): array
     {
-        return ExtensionRegistry::query()
-            ->where('is_enabled', true)
-            ->whereNotNull('frontend_bundle')
-            ->orderBy('plugin_id')
-            ->get()
-            ->map(static function (ExtensionRegistry $plugin): array {
-                $frontend = self::frontendManifestData($plugin);
-
-                $entry = [
-                    'id' => $plugin->plugin_id,
-                    'name' => $plugin->name,
-                    'version' => $plugin->version,
-                    'bundle' => self::versionedBundle($frontend['bundle'], (string) $plugin->version),
-                    'navigation' => [
-                        'title' => $frontend['navigation']['title'] ?? $plugin->name,
-                        'section' => $frontend['navigation']['section'] ?? config('plugins.default_frontend_section', 'content'),
-                    ],
-                    'mountPath' => $frontend['mountPath'] ?? "/plugins/{$plugin->plugin_id}",
-                    'ui' => [
-                        'mode' => $frontend['uiMode'] ?? config('plugins.default_frontend_ui_mode', 'overlay'),
-                    ],
-                ];
-
-                if (is_string($frontend['contractVersion'])) {
-                    $entry['requiredContractVersion'] = $frontend['contractVersion'];
-                }
-
-                return $entry;
-            })
-            ->values()
-            ->all();
-    }
-
-    private static function versionedBundle(?string $bundle, string $version): ?string
-    {
-        if (! is_string($bundle) || $bundle === '' || ! str_starts_with($bundle, '/')) {
-            return $bundle;
-        }
-
-        $version = trim($version);
-        if ($version === '') {
-            return $bundle;
-        }
-
-        $separator = str_contains($bundle, '?') ? '&' : '?';
-
-        return $bundle.$separator.'v='.rawurlencode($version);
-    }
-
-    /**
-     * @return array{
-     *   contractVersion:?string,
-     *   mountPath:?string,
-     *   bundle:?string,
-     *   navigation:array{title?:string, section?:string},
-     *   uiMode:?string
-     * }
-     */
-    private static function frontendManifestData(ExtensionRegistry $plugin): array
-    {
-        $manifestPath = (string) $plugin->manifest_path;
-        if ($manifestPath === '' || ! is_file($manifestPath)) {
-            return [
-                'contractVersion' => null,
-                'mountPath' => null,
-                'bundle' => is_string($plugin->frontend_bundle) ? trim((string) $plugin->frontend_bundle) : null,
-                'navigation' => [],
-                'uiMode' => null,
-            ];
-        }
-
-        $raw = file_get_contents($manifestPath);
-        if (! is_string($raw) || trim($raw) === '') {
-            return [
-                'contractVersion' => null,
-                'mountPath' => null,
-                'bundle' => is_string($plugin->frontend_bundle) ? trim((string) $plugin->frontend_bundle) : null,
-                'navigation' => [],
-                'uiMode' => null,
-            ];
-        }
-
-        $manifest = json_decode($raw, true);
-        if (! is_array($manifest)) {
-            return [
-                'contractVersion' => null,
-                'mountPath' => null,
-                'bundle' => is_string($plugin->frontend_bundle) ? trim((string) $plugin->frontend_bundle) : null,
-                'navigation' => [],
-                'uiMode' => null,
-            ];
-        }
-
-        $version = data_get($manifest, 'contributes.frontend.contractVersion');
-        $mountPath = data_get($manifest, 'contributes.frontend.mountPath');
-        $bundle = data_get($manifest, 'contributes.frontend.bundle');
-
-        $uiMode = data_get($manifest, 'contributes.frontend.ui.mode');
-
-        return [
-            'contractVersion' => is_string($version) && trim($version) !== '' ? trim($version) : null,
-            'mountPath' => is_string($mountPath) && trim($mountPath) !== '' ? trim($mountPath) : null,
-            'bundle' => is_string($bundle) && trim($bundle) !== '' ? trim($bundle) : (is_string($plugin->frontend_bundle) ? trim((string) $plugin->frontend_bundle) : null),
-            'navigation' => [
-                'title' => is_string(data_get($manifest, 'contributes.navigation.title'))
-                    ? trim((string) data_get($manifest, 'contributes.navigation.title'))
-                    : null,
-                'section' => is_string(data_get($manifest, 'contributes.navigation.section'))
-                    ? trim((string) data_get($manifest, 'contributes.navigation.section'))
-                    : null,
+        return array_values(array_map(
+            static fn (DiscoveredExtension $extension): array => [
+                'id' => $extension->id,
+                'name' => $extension->name,
+                'version' => $extension->version,
+                'requiredContractVersion' => $extension->sdkVersion,
+                'bundle' => "/plugins/{$extension->id}/fe/plugin.js?v=".rawurlencode($extension->version),
+                'mountPath' => "/plugins/{$extension->id}",
             ],
-            'uiMode' => is_string($uiMode) && trim($uiMode) !== '' ? trim($uiMode) : null,
-        ];
+            array_filter(
+                $this->discovery->discoverAll(),
+                static fn (DiscoveredExtension $extension): bool => $extension->hasFrontend,
+            ),
+        ));
     }
 }

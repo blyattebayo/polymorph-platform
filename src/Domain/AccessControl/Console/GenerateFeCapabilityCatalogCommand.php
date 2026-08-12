@@ -15,7 +15,7 @@ use Polymorph\Platform\Domain\AccessControl\Services\CapabilityRegistry;
  * ручной правки фронта — рассинхрон обнаруживался только глазами. Теперь
  * источник один: `--check` в CI падает, если сгенерированный файл устарел.
  *
- * Динамические capability плагинов (ext.* / plugin.*) намеренно не включаются:
+ * Динамические capability расширений (`ext.*`) намеренно не включаются:
  * фронт получает их в рантайме через /auth/current, а каталог описывает ядро.
  */
 final class GenerateFeCapabilityCatalogCommand extends Command

@@ -63,10 +63,9 @@ final class AccessControlServiceProvider extends ServiceProvider
         // на запрос; singleton пережил бы запрос под Octane.
         $this->app->scoped(AccessGate::class, PolicyRuntimeAccessGate::class);
 
-        // Scoped, а не singleton: реестр мемоизирует каталог на своё время жизни,
-        // и singleton заморозил бы его на первом запросе воркера — включённый
-        // позже плагин не попал бы в каталог до рестарта процесса.
-        $this->app->scoped(CapabilityRegistry::class, function ($app): CapabilityRegistry {
+        // Installed extensions are immutable for the lifetime of a process. Installation
+        // requires a restart, so one catalog per process is the only supported state.
+        $this->app->singleton(CapabilityRegistry::class, function ($app): CapabilityRegistry {
             /** @var iterable<CapabilityDefinitionProvider> $providers */
             $providers = $app->tagged('access.capability_providers');
 

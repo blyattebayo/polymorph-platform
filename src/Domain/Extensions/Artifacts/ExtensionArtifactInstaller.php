@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Artifacts;
 
-use Polymorph\Platform\Domain\Extensions\Artifacts\Contracts\ExtensionArtifactSource;
 use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException;
 use Polymorph\Platform\Domain\Extensions\Manifest\ManifestV2Validator;
 use ZipArchive;
@@ -15,25 +14,31 @@ final class ExtensionArtifactInstaller
         private readonly ManifestV2Validator $manifestV2Validator,
     ) {}
 
-    public function install(ExtensionArtifactSource $source): string
+    public function install(string $zipPath): string
     {
-        $artifact = $source->resolve();
-        $this->verifyChecksum($artifact);
+        if (! is_file($zipPath) || strtolower((string) pathinfo($zipPath, PATHINFO_EXTENSION)) !== 'zip') {
+            throw new ExtensionException("Plugin artifact must be an existing .zip file: {$zipPath}");
+        }
+        $this->verifyChecksum($zipPath);
 
         $zip = new ZipArchive;
-        if ($zip->open($artifact->zipPath) !== true) {
-            throw new ExtensionException("Unable to open plugin artifact: {$artifact->zipPath}");
+        if ($zip->open($zipPath) !== true) {
+            throw new ExtensionException("Unable to open plugin artifact: {$zipPath}");
         }
 
-        $manifest = $this->readManifest($zip, $artifact->zipPath);
+        $manifest = $this->readManifest($zip, $zipPath);
+        if ($zip->locateName('vendor/autoload.php') === false) {
+            $zip->close();
+            throw new ExtensionException("Plugin artifact {$zipPath} has no vendor/autoload.php.");
+        }
         try {
-            $this->manifestV2Validator->validate($manifest, "{$artifact->zipPath}#extension.json");
+            $this->manifestV2Validator->validate($manifest, "{$zipPath}#extension.json");
         } catch (\InvalidArgumentException $e) {
-            throw new ExtensionException("Plugin artifact {$artifact->zipPath}: {$e->getMessage()}");
+            throw new ExtensionException("Plugin artifact {$zipPath}: {$e->getMessage()}");
         }
         $pluginId = (string) $manifest['id'];
 
-        $this->assertNoZipSlip($zip, $artifact->zipPath);
+        $this->assertNoZipSlip($zip, $zipPath);
 
         $runtimeRoot = $this->runtimeRoot();
         $staging = $this->stagingRoot().DIRECTORY_SEPARATOR.$pluginId.'-'.uniqid();
@@ -52,16 +57,23 @@ final class ExtensionArtifactInstaller
         return $pluginId;
     }
 
-    private function verifyChecksum(ResolvedArtifact $artifact): void
+    private function verifyChecksum(string $zipPath): void
     {
-        if ($artifact->declaredChecksum === null) {
-            return;
+        $sidecar = $zipPath.'.sha256';
+        if (! is_file($sidecar)) {
+            throw new ExtensionException("Plugin checksum sidecar is required: {$sidecar}");
         }
 
-        $actual = hash_file('sha256', $artifact->zipPath);
-        if (! is_string($actual) || ! hash_equals(strtolower($artifact->declaredChecksum), strtolower($actual))) {
+        $raw = trim((string) file_get_contents($sidecar));
+        $declared = preg_split('/\s+/', $raw)[0] ?? '';
+        if (! is_string($declared) || ! preg_match('/^[a-f0-9]{64}$/i', $declared)) {
+            throw new ExtensionException("Plugin checksum sidecar is invalid: {$sidecar}");
+        }
+
+        $actual = hash_file('sha256', $zipPath);
+        if (! is_string($actual) || ! hash_equals(strtolower($declared), strtolower($actual))) {
             throw new ExtensionException(
-                "Plugin artifact checksum mismatch for {$artifact->zipPath}: expected {$artifact->declaredChecksum}, got ".(is_string($actual) ? $actual : 'n/a').'.',
+                "Plugin artifact checksum mismatch for {$zipPath}: expected {$declared}, got ".(is_string($actual) ? $actual : 'n/a').'.',
             );
         }
     }
@@ -113,49 +125,16 @@ final class ExtensionArtifactInstaller
         }
 
         if (! $this->renameWithRetry($staging, $target)) {
-            if (! $this->copyDir($staging, $target)) {
-                if ($backup !== null) {
-                    @rename($backup, $target);
-                }
-                $this->removeDirectory($staging);
-                throw new ExtensionException($this->lockedDirMessage($target, 'move the new plugin artifact into place'));
+            if ($backup !== null) {
+                @rename($backup, $target);
             }
             $this->removeDirectory($staging);
+            throw new ExtensionException($this->lockedDirMessage($target, 'move the new plugin artifact into place'));
         }
 
         if ($backup !== null) {
             $this->removeDirectory($backup);
         }
-    }
-
-    private function copyDir(string $from, string $to): bool
-    {
-        if (! is_dir($from)) {
-            return false;
-        }
-        if (! is_dir($to) && ! @mkdir($to, 0755, true) && ! is_dir($to)) {
-            return false;
-        }
-
-        foreach (scandir($from) ?: [] as $name) {
-            if ($name === '.' || $name === '..') {
-                continue;
-            }
-            $src = $from.DIRECTORY_SEPARATOR.$name;
-            $dst = $to.DIRECTORY_SEPARATOR.$name;
-            if (is_link($src)) {
-                continue;
-            }
-            if (is_dir($src)) {
-                if (! $this->copyDir($src, $dst)) {
-                    return false;
-                }
-            } elseif (! @copy($src, $dst)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private function stagingRoot(): string

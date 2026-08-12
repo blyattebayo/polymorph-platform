@@ -5,27 +5,15 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Routing\Plugin;
 
 use Illuminate\Support\Facades\Route;
+use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException;
 use Polymorph\Platform\Http\Middleware\RequireCapability;
 use Polymorph\Platform\Http\Middleware\VerifyApiCsrf;
-use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 use Polymorph\Sdk\Routing\RouteDefinition;
 use Polymorph\Sdk\Routing\Routes;
 use Polymorph\Sdk\Routing\Zone;
 use Polymorph\Sdk\Routing\ZoneKind;
-use Throwable;
 
-/**
- * Монтирует маршруты расширений в роутер.
- *
- * Гранулярность отказа задаётся здесь и нигде больше:
- * - битый файл или исключение при сборке — выпадает ОДНО расширение;
- * - несуществующий контроллер или метод — выпадает ОДИН маршрут;
- * - каталог расширений и маршруты ядра не выключаются никогда.
- *
- * Один и тот же путь используется и на бутстрапе, и при включении расширения
- * в живом роутере, поэтому «работает при старте, но не работает при enable»
- * (и наоборот) структурно невозможно.
- */
+/** Validates and mounts SDK route definitions; any invalid route aborts bootstrap. */
 final class PluginRouteMounter
 {
     /**
@@ -40,93 +28,46 @@ final class PluginRouteMounter
         'csrf' => VerifyApiCsrf::class,
     ];
 
-    /**
-     * Расширения, чьи маршруты не удалось смонтировать: id → причина.
-     *
-     * Расширение остаётся «включённым» в реестре, но его путей в роутере нет.
-     * Без этого следа состояние выглядит как «включено и работает», а по факту
-     * отдаёт 404 — ровно то, что бывает при обновлении ядра, когда установленный
-     * артефакт собран против старого SDK.
-     *
-     * @var array<string, string>
-     */
-    private array $failures = [];
-
-    public function __construct(
-        private readonly PluginRouteCatalog $catalog,
-        private readonly AppLogger $logger,
-    ) {}
-
-    /**
-     * @return array<string, string>
-     */
-    public function failures(): array
+    public function mountFile(string $pluginId, string $path): void
     {
-        return $this->failures;
-    }
-
-    /**
-     * Смонтировать маршруты всех включённых расширений.
-     */
-    public function mountEnabled(): void
-    {
-        foreach ($this->catalog->enabled() as $file) {
-            $this->mountFile($file);
-        }
-    }
-
-    /**
-     * Смонтировать одно расширение. Его падение не задевает остальных.
-     */
-    public function mountFile(PluginRouteFile $file): void
-    {
-        try {
-            $this->mount($file->pluginId, PluginRoutes::fromFile($file->path));
-        } catch (Throwable $exception) {
-            $this->failures[$file->pluginId] = $exception->getMessage();
-
-            $this->logger->error('routing.plugin.mount_failed', [
-                'plugin_id' => $file->pluginId,
-                'path' => $file->path,
-                'exception' => $exception->getMessage(),
-            ]);
-        }
-    }
-
-    /**
-     * Есть ли маршруты этого расширения в текущем роутере.
-     *
-     * Проверяем по префиксу пути, а не по именам: имя необязательно, а префикс
-     * задаёт хост и он уникален для расширения — значит, признак не зависит
-     * от того, что расширение написало в своём файле.
-     */
-    public function isMounted(string $pluginId): bool
-    {
-        $prefixes = array_map(
-            static fn (ZoneKind $kind): string => self::prefix($kind, $pluginId),
-            ZoneKind::cases(),
-        );
-
-        foreach (Route::getRoutes()->getRoutes() as $route) {
-            $uri = ltrim($route->uri(), '/');
-
-            foreach ($prefixes as $prefix) {
-                // Точное совпадение — маршрут в корне зоны; со слэшем — всё
-                // остальное. Голый str_starts_with без слэша считал бы
-                // расширение 'demo' смонтированным по маршрутам 'demo-2'.
-                if ($uri === $prefix || str_starts_with($uri, $prefix.'/')) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        $this->mount($pluginId, PluginRoutes::fromFile($path));
     }
 
     public function mount(string $pluginId, Routes $routes): void
     {
+        $this->validate($pluginId, $routes);
+
         foreach ($routes->zones() as $zone) {
             $this->mountZone($pluginId, $zone);
+        }
+    }
+
+    private function validate(string $pluginId, Routes $routes): void
+    {
+        $seen = [];
+
+        foreach ($routes->zones() as $zone) {
+            $this->resolveExcluded($pluginId, $zone->withoutMiddleware);
+
+            foreach ($zone->routes as $route) {
+                [$controller, $method] = $route->action();
+                if (! class_exists($controller) || ! method_exists($controller, $method)) {
+                    throw new ExtensionException(
+                        "Plugin '{$pluginId}' route '{$route->uri()}' references missing action {$controller}::{$method}.",
+                    );
+                }
+
+                $this->resolveExcluded($pluginId, $route->withoutMiddlewareList());
+                foreach ($route->methods() as $httpMethod) {
+                    $key = $zone->kind->value.' '.$httpMethod.' '.trim($route->uri(), '/');
+                    if (isset($seen[$key])) {
+                        throw new ExtensionException(
+                            "Plugin '{$pluginId}' declares duplicate route '{$httpMethod} {$route->uri()}' in zone '{$zone->kind->value}'.",
+                        );
+                    }
+                    $seen[$key] = true;
+                }
+            }
         }
     }
 
@@ -153,20 +94,6 @@ final class PluginRouteMounter
     private function mountRoute(string $pluginId, RouteDefinition $route, ZoneKind $kind, bool $zoneHasCapability): void
     {
         [$controller, $method] = $route->action();
-
-        // Проверяем ЗДЕСЬ, а не при сборке: несуществующий метод у invokable
-        // роняет весь роутер исключением из bootstrap, а пропуск одного
-        // маршрута оставляет расширение работоспособным.
-        if (! class_exists($controller) || ! method_exists($controller, $method)) {
-            $this->logger->warning('routing.plugin.action_missing', [
-                'plugin_id' => $pluginId,
-                'controller' => $controller,
-                'method' => $method,
-                'uri' => $route->uri(),
-            ]);
-
-            return;
-        }
 
         // Fail-closed дефолт админ-зоны: маршрут ADMIN_API, за который ни зона,
         // ни сам маршрут не объявили capability, получает ext.{id}.admin/access.
@@ -267,13 +194,9 @@ final class PluginRouteMounter
                 continue;
             }
 
-            // Неизвестный символ молча не снял бы ничего — это ровно тот класс
-            // ошибок, из-за которого withoutCsrf() на уровне группы не работал.
-            $this->logger->warning('routing.plugin.unknown_excludable_middleware', [
-                'plugin_id' => $pluginId,
-                'symbol' => $symbol,
-                'known' => array_keys(self::EXCLUDABLE),
-            ]);
+            throw new ExtensionException(
+                "Plugin '{$pluginId}' requests unsupported middleware exclusion '{$symbol}'.",
+            );
         }
 
         return $resolved;

@@ -13,14 +13,8 @@ use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneAuthSessionsComma
 use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneOAuthCredentialsCommand;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\SessionCookie;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsBuildCommand;
-use Polymorph\Platform\Domain\Extensions\Console\PluginsDeployCommand;
-use Polymorph\Platform\Domain\Extensions\Console\PluginsDisableCommand;
-use Polymorph\Platform\Domain\Extensions\Console\PluginsEnableCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsInstallCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsListCommand;
-use Polymorph\Platform\Domain\Extensions\Console\PluginsUninstallCommand;
-use Polymorph\Platform\Domain\Extensions\Console\PluginsUpdateCommand;
-use Polymorph\Platform\Domain\Extensions\Console\ScaffoldPluginCommand;
 use Polymorph\Platform\Http\ApiErrorHandler;
 use Polymorph\Platform\Http\Middleware\AddCacheVary;
 use Polymorph\Platform\Http\Middleware\AuthenticateOAuthResource;
@@ -60,13 +54,7 @@ final class HostBootstrap
             PruneOAuthCredentialsCommand::class,
             PluginsListCommand::class,
             PluginsInstallCommand::class,
-            PluginsUninstallCommand::class,
-            PluginsEnableCommand::class,
-            PluginsDisableCommand::class,
-            PluginsUpdateCommand::class,
             PluginsBuildCommand::class,
-            PluginsDeployCommand::class,
-            ScaffoldPluginCommand::class,
         ];
     }
 
