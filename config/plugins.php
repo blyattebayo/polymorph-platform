@@ -25,7 +25,4 @@ return [
     'php_scoper_path' => env('PLUGINS_PHP_SCOPER_PATH', dirname(__DIR__).'/tools/php-scoper.phar'),
     'php_scoper_config' => env('PLUGINS_PHP_SCOPER_CONFIG', dirname(__DIR__).'/tools/scoper/plugin-scoper.inc.php'),
     'php_scoper_prefix_base' => env('PLUGINS_PHP_SCOPER_PREFIX_BASE', 'PolymorphScoped'),
-
-    // Artifact extraction is staged outside runtime_root before atomic replacement.
-    'staging_path' => env('PLUGINS_STAGING_PATH', storage_path('app/plugin-staging')),
 ];

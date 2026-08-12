@@ -41,7 +41,9 @@ final class ExtensionArtifactInstaller
         $this->assertNoZipSlip($zip, $zipPath);
 
         $runtimeRoot = $this->runtimeRoot();
-        $staging = $this->stagingRoot().DIRECTORY_SEPARATOR.$pluginId.'-'.uniqid();
+        // Staging must live on the runtime filesystem: rename() is atomic only
+        // within one filesystem and fails with EXDEV across Docker volumes.
+        $staging = $this->stagingRoot($runtimeRoot).DIRECTORY_SEPARATOR.$pluginId.'-'.uniqid();
         $this->removeDirectory($staging);
 
         $extracted = $zip->extractTo($staging);
@@ -117,7 +119,7 @@ final class ExtensionArtifactInstaller
         $backup = null;
 
         if (is_dir($target)) {
-            $backup = $target.'.backup-'.uniqid();
+            $backup = dirname($target).DIRECTORY_SEPARATOR.'.backup-'.basename($target).'-'.uniqid();
             if (! $this->renameWithRetry($target, $backup)) {
                 $this->removeDirectory($staging);
                 throw new ExtensionException($this->lockedDirMessage($target, 'move the existing plugin directory aside'));
@@ -137,12 +139,9 @@ final class ExtensionArtifactInstaller
         }
     }
 
-    private function stagingRoot(): string
+    private function stagingRoot(string $runtimeRoot): string
     {
-        $root = rtrim((string) config('plugins.staging_path'), '/\\');
-        if ($root === '') {
-            $root = rtrim(sys_get_temp_dir(), '/\\').DIRECTORY_SEPARATOR.'polymorph-plugin-staging';
-        }
+        $root = $runtimeRoot.DIRECTORY_SEPARATOR.'.staging';
 
         if (! is_dir($root) && ! mkdir($root, 0755, true) && ! is_dir($root)) {
             throw new ExtensionException("Unable to create plugin staging dir: {$root}");
