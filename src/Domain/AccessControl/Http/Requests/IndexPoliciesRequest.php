@@ -18,10 +18,8 @@ final class IndexPoliciesRequest extends ApiFormRequest
     {
         return array_merge($this->pageRules(), [
             'resource_pattern' => ['nullable', 'string', 'max:500'],
-            'resource_prefix' => ['nullable', 'boolean'],
             'action' => ValidationRules::aclAction(required: false, nullable: true),
             'effect' => ['nullable', 'string', 'in:allow,deny'],
-            'is_active' => ['nullable', 'boolean'],
         ]);
     }
 

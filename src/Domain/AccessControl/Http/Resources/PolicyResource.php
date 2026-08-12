@@ -19,10 +19,6 @@ final class PolicyResource extends AdminJsonResource
             'resource_pattern' => (string) $policy->resource_pattern,
             'action' => (string) $policy->action,
             'effect' => (string) $policy->effect,
-            'priority' => (int) $policy->priority,
-            'is_active' => (bool) $policy->is_active,
-            'metadata' => $policy->metadata,
-            'matcher_hash' => (string) $policy->matcher_hash,
             'created_at' => $policy->created_at?->toDateTimeString(),
             'updated_at' => $policy->updated_at?->toDateTimeString(),
         ];

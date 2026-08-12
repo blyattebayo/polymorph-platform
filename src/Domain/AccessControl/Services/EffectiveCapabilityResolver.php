@@ -26,11 +26,8 @@ final class EffectiveCapabilityResolver
         $keys = [];
 
         foreach ($this->capabilityRegistry->capabilityDefinitionsAsArrays() as $definition) {
-            $resource = trim((string) ($definition['resource'] ?? ''));
-            $action = trim((string) ($definition['action'] ?? ''));
-            if ($resource === '' || $action === '') {
-                continue;
-            }
+            $resource = $definition['resource'];
+            $action = $definition['action'];
 
             $checks[] = new AccessCheck(ResourceRef::fromString($resource), $action);
             $keys[] = CapabilityCatalog::capabilityKey($resource, $action);

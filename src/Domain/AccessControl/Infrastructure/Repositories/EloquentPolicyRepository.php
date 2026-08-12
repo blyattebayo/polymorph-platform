@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\AccessControl\Infrastructure\Repositories;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRepository;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Policy;
+use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Effect;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\PolicyData;
 use Polymorph\Platform\SharedKernel\Pagination\V2\PageRequest;
 
-final class EloquentPolicyRepository implements PolicyRepository
+final class EloquentPolicyRepository
 {
     public function paginate(array $filters, PageRequest $pagination): LengthAwarePaginator
     {
@@ -18,12 +18,7 @@ final class EloquentPolicyRepository implements PolicyRepository
 
         $resourcePattern = $filters['resource_pattern'] ?? null;
         if (is_string($resourcePattern) && $resourcePattern !== '') {
-            if ($this->toBool($filters['resource_prefix'] ?? false)) {
-                $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $resourcePattern);
-                $query->where('resource_pattern', 'like', $escaped.'%');
-            } else {
-                $query->where('resource_pattern', $resourcePattern);
-            }
+            $query->where('resource_pattern', $resourcePattern);
         }
 
         foreach (['action', 'effect'] as $field) {
@@ -31,10 +26,6 @@ final class EloquentPolicyRepository implements PolicyRepository
             if (is_string($value) && $value !== '') {
                 $query->where($field, $value);
             }
-        }
-
-        if (array_key_exists('is_active', $filters)) {
-            $query->where('is_active', $this->toBool($filters['is_active']));
         }
 
         return $query->paginate(perPage: $pagination->perPage, page: $pagination->page);
@@ -45,24 +36,14 @@ final class EloquentPolicyRepository implements PolicyRepository
         return Policy::query()->find($id);
     }
 
-    public function exists(int $id): bool
-    {
-        return Policy::query()->whereKey($id)->exists();
-    }
-
     public function findDuplicate(PolicyData $policyData): ?Policy
     {
         $query = Policy::query();
 
-        if ($policyData->matcherHash !== '') {
-            $query->where('matcher_hash', $policyData->matcherHash);
-        }
-
         $query
             ->where('resource_pattern', $policyData->resourcePattern)
             ->where('action', $policyData->action)
-            ->where('effect', $policyData->effect)
-            ->where('priority', $policyData->priority);
+            ->where('effect', $policyData->effect->value);
 
         return $query->first();
     }
@@ -97,7 +78,7 @@ final class EloquentPolicyRepository implements PolicyRepository
             ->all();
     }
 
-    public function idsForResources(array $resourcePatterns, string $action, string $effect): array
+    public function idsForResources(array $resourcePatterns, string $action, Effect $effect): array
     {
         if ($resourcePatterns === []) {
             return [];
@@ -106,15 +87,10 @@ final class EloquentPolicyRepository implements PolicyRepository
         return Policy::query()
             ->whereIn('resource_pattern', $resourcePatterns)
             ->where('action', $action)
-            ->where('effect', $effect)
+            ->where('effect', $effect->value)
             ->pluck('id')
             ->map(static fn (mixed $id): int => (int) $id)
             ->values()
             ->all();
-    }
-
-    private function toBool(mixed $value): bool
-    {
-        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
 }

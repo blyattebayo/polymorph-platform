@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\AccessControl\Services;
 
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AssignmentRepository;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\PolicyRepository;
-use Polymorph\Platform\Domain\AccessControl\Core\Models\Assignment;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Policy;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Effect;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
+use Polymorph\Platform\Domain\AccessControl\Infrastructure\Repositories\EloquentAssignmentRepository;
+use Polymorph\Platform\Domain\AccessControl\Infrastructure\Repositories\EloquentPolicyRepository;
 use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
@@ -36,8 +35,8 @@ final class PolicyScopeAuthority
     public function __construct(
         private readonly AccessGate $gate,
         private readonly AuthenticationContext $auth,
-        private readonly PolicyRepository $policies,
-        private readonly AssignmentRepository $assignments,
+        private readonly EloquentPolicyRepository $policies,
+        private readonly EloquentAssignmentRepository $assignments,
     ) {}
 
     public function assertCanManageScope(string $resourcePattern, string $action): void
@@ -110,36 +109,6 @@ final class PolicyScopeAuthority
                 $resourcePattern,
                 $action,
             ));
-        }
-    }
-
-    /**
-     * Назначение политики субъекту. Урезает доступ только deny — allow субъекту
-     * ничего не отнимает, и требовать для него превосходства над субъектом
-     * незачем.
-     */
-    public function assertCanAssignPolicy(int $policyId, Subject $subject): void
-    {
-        if ($this->isDenyPolicy($policyId)) {
-            $this->assertCanReduceSubjectAccess($subject);
-        }
-    }
-
-    /**
-     * Снятие назначения. Урезает доступ снятие allow; снятие deny, наоборот,
-     * возвращает субъекту права и превосходства не требует.
-     */
-    public function assertCanUnassignPolicy(int $assignmentId): void
-    {
-        $assignment = $this->assignments->find($assignmentId);
-
-        // Несуществующее назначение — не забота guard'а: сервис ответит 404.
-        if (! $assignment instanceof Assignment) {
-            return;
-        }
-
-        if (! $this->isDenyPolicy((int) $assignment->policy_id)) {
-            $this->assertCanReduceSubjectAccess(Subject::fromString((string) $assignment->subject));
         }
     }
 

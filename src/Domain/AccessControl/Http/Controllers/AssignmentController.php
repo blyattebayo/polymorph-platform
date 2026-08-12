@@ -9,7 +9,7 @@ use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdminist
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Polymorph\Platform\Domain\AccessControl\Http\Requests\IndexAssignmentsRequest;
 use Polymorph\Platform\Domain\AccessControl\Http\Requests\SetAssignmentsRequest;
-use Polymorph\Platform\Domain\AccessControl\Services\PolicyQueryService;
+use Polymorph\Platform\Domain\AccessControl\Infrastructure\Repositories\EloquentAssignmentRepository;
 use Polymorph\Platform\Domain\AccessControl\Services\PolicyScopeAuthority;
 use Polymorph\Platform\Http\Controllers\Controller;
 use Polymorph\Platform\Http\Resources\Admin\Support\AdminResponse;
@@ -18,7 +18,7 @@ final class AssignmentController extends Controller
 {
     public function __construct(
         private readonly AccessControlAdministration $adminService,
-        private readonly PolicyQueryService $queryService,
+        private readonly EloquentAssignmentRepository $assignments,
         private readonly PolicyScopeAuthority $scopeAuthority,
     ) {}
 
@@ -38,13 +38,13 @@ final class AssignmentController extends Controller
         $this->adminService->setSubjectPolicies($subject, $policyIds);
 
         return AdminResponse::json([
-            'data' => $this->queryService->listSubjectAssignments($subject),
+            'data' => $this->assignments->listBySubject($subject),
         ]);
     }
 
-    public function indexBySubject(IndexAssignmentsRequest $request): JsonResponse
+    public function index(IndexAssignmentsRequest $request): JsonResponse
     {
-        $data = $this->queryService->listSubjectAssignments(
+        $data = $this->assignments->listBySubject(
             Subject::fromString((string) $request->validated()['subject']),
         );
 

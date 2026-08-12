@@ -18,11 +18,8 @@ final class CapabilityCatalog
 
     public const ACTION_WILDCARD = '*';
 
-    public const EFFECT_ALLOW = 'allow';
-
     /**
-     * Core platform policy actions. Domains may add more via ActionDefinitionProvider
-     * (tag: access.action_providers).
+     * Complete policy action vocabulary shared by core and extension manifests.
      *
      * @return list<string>
      */

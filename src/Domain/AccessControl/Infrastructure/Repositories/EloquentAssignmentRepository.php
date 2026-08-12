@@ -6,12 +6,10 @@ namespace Polymorph\Platform\Domain\AccessControl\Infrastructure\Repositories;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AssignmentRepository;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Assignment;
-use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\PolicySnapshotData;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 
-final class EloquentAssignmentRepository implements AssignmentRepository
+final class EloquentAssignmentRepository
 {
     public function upsert(int $policyId, Subject $subject): Assignment
     {
@@ -43,16 +41,6 @@ final class EloquentAssignmentRepository implements AssignmentRepository
         );
 
         Assignment::query()->insertOrIgnore($rows);
-    }
-
-    public function deleteForPolicyAndSubject(int $policyId, Subject $subject): void
-    {
-        $subjectKey = (string) $subject;
-
-        Assignment::query()
-            ->where('policy_id', $policyId)
-            ->where('subject', $subjectKey)
-            ->delete();
     }
 
     public function deleteManyForSubject(Subject $subject, array $policyIds): void
@@ -99,58 +87,22 @@ final class EloquentAssignmentRepository implements AssignmentRepository
             ->values();
     }
 
-    public function allSubjects(): Collection
+    public function policyRulesForSubjects(array $subjects): Collection
     {
-        return Assignment::query()
-            ->distinct()
-            ->orderBy('subject')
-            ->pluck('subject')
-            ->map(static fn (mixed $subject): string => (string) $subject)
-            ->filter(static fn (string $subject): bool => $subject !== '')
-            ->values();
-    }
+        if ($subjects === []) {
+            return collect();
+        }
 
-    public function policySnapshotsForSubject(Subject $subject): Collection
-    {
-        $subjectKey = (string) $subject;
-
-        return DB::table('ac_assignments as a')
-            ->join('ac_policies as p', 'p.id', '=', 'a.policy_id')
-            ->where('a.subject', $subjectKey)
-            ->where('p.is_active', true)
-            ->orderBy('p.priority')
-            ->orderBy('p.id')
+        return DB::table('ac_assignments as assignment')
+            ->join('ac_policies as policy', 'policy.id', '=', 'assignment.policy_id')
+            ->whereIn('assignment.subject', $subjects)
+            ->orderBy('policy.id')
             ->get([
-                'p.id as policy_id',
-                'p.resource_pattern',
-                'p.action',
-                'p.effect',
-                'p.priority',
-            ])
-            ->map(static fn (object $snapshot): PolicySnapshotData => new PolicySnapshotData(
-                policyId: (int) $snapshot->policy_id,
-                resourcePattern: (string) $snapshot->resource_pattern,
-                action: (string) $snapshot->action,
-                effect: (string) $snapshot->effect,
-                priority: (int) $snapshot->priority,
-            ));
-    }
-
-    public function listByPolicy(int $policyId): array
-    {
-        return Assignment::query()
-            ->where('policy_id', $policyId)
-            ->orderBy('id')
-            ->get(['id', 'policy_id', 'subject', 'created_at', 'updated_at'])
-            ->map(static fn (Assignment $assignment): array => [
-                'id' => (int) $assignment->id,
-                'policy_id' => (int) $assignment->policy_id,
-                'subject' => (string) $assignment->subject,
-                'created_at' => $assignment->created_at?->toDateTimeString(),
-                'updated_at' => $assignment->updated_at?->toDateTimeString(),
-            ])
-            ->values()
-            ->all();
+                'policy.id',
+                'policy.resource_pattern',
+                'policy.action',
+                'policy.effect',
+            ]);
     }
 
     public function listBySubject(Subject $subject): array

@@ -14,7 +14,7 @@ use Polymorph\Platform\Domain\AccessControl\Http\Controllers\PolicyController;
  * Две капабилити разделены намеренно: править сами политики (POLICY_MANAGE) и
  * раздавать их субъектам (POLICY_ASSIGN) — разные полномочия.
  */
-Route::prefix('acl')->name('acl.')->whereNumber(['policyId', 'assignmentId'])->group(function (): void {
+Route::prefix('acl')->name('acl.')->whereNumber('policyId')->group(function (): void {
     Route::middleware(AccessControlCapabilities::requirePolicyManage())
         ->prefix('policies')
         ->name('policies.')
@@ -26,15 +26,9 @@ Route::prefix('acl')->name('acl.')->whereNumber(['policyId', 'assignmentId'])->g
         });
 
     Route::middleware(AccessControlCapabilities::requireAssignmentManage())->group(function (): void {
-        Route::prefix('policies/{policyId}/assignments')->name('policies.assignments.')->group(function (): void {
-            Route::get('/', [PolicyController::class, 'listAssignments'])->name('index');
-            Route::post('/', [PolicyController::class, 'assign'])->name('store');
-            Route::delete('/{assignmentId}', [PolicyController::class, 'unassign'])->name('destroy');
-        });
-
         Route::get('/capabilities', [CapabilityCatalogController::class, 'index'])->name('capabilities.index');
 
-        Route::get('/assignments', [AssignmentController::class, 'indexBySubject'])->name('assignments.index');
+        Route::get('/assignments', [AssignmentController::class, 'index'])->name('assignments.index');
         Route::put('/assignments', [AssignmentController::class, 'replace'])->name('assignments.replace');
     });
 });

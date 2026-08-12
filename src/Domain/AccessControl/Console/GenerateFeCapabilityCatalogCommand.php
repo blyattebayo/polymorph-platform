@@ -29,12 +29,8 @@ final class GenerateFeCapabilityCatalogCommand extends Command
         $keys = [];
 
         foreach ($registry->capabilityDefinitionsAsArrays() as $definition) {
-            $resource = trim((string) ($definition['resource'] ?? ''));
-            $action = trim((string) ($definition['action'] ?? ''));
-
-            if ($resource === '' || $action === '') {
-                continue;
-            }
+            $resource = $definition['resource'];
+            $action = $definition['action'];
 
             if (str_starts_with($resource, 'ext.')) {
                 continue;

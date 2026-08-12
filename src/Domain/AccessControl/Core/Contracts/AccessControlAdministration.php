@@ -29,22 +29,19 @@ interface AccessControlAdministration
     public function deletePolicy(int $id): void;
 
     /**
-     * Отозвать доступ к набору ресурсов целиком: удаляет политики с точным
-     * resource_pattern из набора вместе со всеми их назначениями (любые субъекты),
-     * с пересчётом доступа и аудитом, одной транзакцией. Идемпотентно.
-     * Применять при удалении самого защищаемого объекта.
+     * Delete exact policies for resources together with their assignments.
+     * This is the idempotent lifecycle operation used when protected objects are deleted.
      *
      * @param  list<string>  $resourcePatterns
      */
     public function revokeResource(
         array $resourcePatterns,
         string $action = CapabilityCatalog::ACTION_ACCESS,
-        string $effect = CapabilityCatalog::EFFECT_ALLOW,
     ): void;
 
     public function assign(int $policyId, Subject $subject): Assignment;
 
-    public function unassign(int $policyId, int $assignmentId): void;
+    public function unassign(int $assignmentId): void;
 
     /**
      * @param  list<int>  $policyIds

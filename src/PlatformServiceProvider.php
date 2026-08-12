@@ -14,7 +14,6 @@ use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Support\ServiceProvider;
 use Polymorph\Platform\Domain\AccessControl\Console\GenerateFeCapabilityCatalogCommand;
-use Polymorph\Platform\Domain\AccessControl\Console\RebuildAccessControlCommand;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneAuthSessionsCommand;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneOAuthCredentialsCommand;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\SessionCookie;
@@ -95,7 +94,6 @@ final class PlatformServiceProvider extends ServiceProvider
     /** @var list<class-string> */
     private const COMMANDS = [
         PreflightCommand::class,
-        RebuildAccessControlCommand::class,
         GenerateFeCapabilityCatalogCommand::class,
         PruneAuthSessionsCommand::class,
         PruneOAuthCredentialsCommand::class,

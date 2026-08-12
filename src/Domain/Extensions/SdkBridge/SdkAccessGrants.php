@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdministration;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Assignment;
 use Polymorph\Platform\Domain\AccessControl\Core\Models\Policy;
+use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Effect;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
-use Polymorph\Platform\Domain\Users\Infrastructure\Repositories\UserRepository;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
+use Polymorph\Platform\Domain\Users\Infrastructure\Repositories\UserRepository;
 use Polymorph\Platform\SharedKernel\Access\AccessCheck;
 use Polymorph\Platform\SharedKernel\Access\AccessGate;
-use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 use Polymorph\Platform\SharedKernel\Access\ResourceRef;
 use Polymorph\Sdk\Access\AccessGrants;
 use Polymorph\Sdk\Access\CapabilityAction;
@@ -30,8 +30,6 @@ use Polymorph\Sdk\Extension\ExtensionContext;
  */
 final class SdkAccessGrants implements AccessGrants
 {
-    private const GRANT_PRIORITY = 100;
-
     public function __construct(
         private readonly AccessControlAdministration $admin,
         private readonly AccessGate $gate,
@@ -46,10 +44,7 @@ final class SdkAccessGrants implements AccessGrants
         $policy = $this->admin->ensurePolicy([
             'resource_pattern' => $resource,
             'action' => $action,
-            'effect' => CapabilityCatalog::EFFECT_ALLOW,
-            'priority' => self::GRANT_PRIORITY,
-            'is_active' => true,
-            'metadata' => ['source' => 'extension_grant', 'extension_id' => $this->context->id->value],
+            'effect' => Effect::ALLOW->value,
         ]);
 
         $this->admin->assign((int) $policy->id, Subject::user($userId));
@@ -65,12 +60,12 @@ final class SdkAccessGrants implements AccessGrants
             ->whereHas('policy', function ($query) use ($resource, $action): void {
                 $query->where('resource_pattern', $resource)
                     ->where('action', $action)
-                    ->where('effect', CapabilityCatalog::EFFECT_ALLOW);
+                    ->where('effect', Effect::ALLOW->value);
             })
             ->get();
 
         foreach ($assignments as $assignment) {
-            $this->admin->unassign((int) $assignment->policy_id, (int) $assignment->id);
+            $this->admin->unassign((int) $assignment->id);
         }
     }
 
@@ -85,7 +80,7 @@ final class SdkAccessGrants implements AccessGrants
             $resources,
         )));
 
-        $this->admin->revokeResource($resources, $action, CapabilityCatalog::EFFECT_ALLOW);
+        $this->admin->revokeResource($resources, $action);
     }
 
     public function replaceUserGrants(int $userId, string $resourcePrefix, array $resources, string $action = CapabilityAction::ACCESS): void
@@ -107,7 +102,7 @@ final class SdkAccessGrants implements AccessGrants
 
             foreach (array_diff(array_keys($current), $resources) as $staleResource) {
                 $assignment = $current[$staleResource];
-                $this->admin->unassign((int) $assignment->policy_id, (int) $assignment->id);
+                $this->admin->unassign((int) $assignment->id);
             }
 
             foreach (array_diff($resources, array_keys($current)) as $newResource) {
@@ -158,8 +153,7 @@ final class SdkAccessGrants implements AccessGrants
             ->whereHas('policy', function ($query) use ($resourcePrefix, $action): void {
                 $query->where('resource_pattern', 'like', $this->escapeLike($resourcePrefix).'%')
                     ->where('action', $action)
-                    ->where('effect', CapabilityCatalog::EFFECT_ALLOW)
-                    ->where('is_active', true);
+                    ->where('effect', Effect::ALLOW->value);
             })
             ->with('policy:id,resource_pattern')
             ->get();
@@ -192,7 +186,7 @@ final class SdkAccessGrants implements AccessGrants
             ->whereHas('policy', function ($query) use ($resourcePrefix, $action): void {
                 $query->where('resource_pattern', 'like', $this->escapeLike($resourcePrefix).'%')
                     ->where('action', $action)
-                    ->where('effect', CapabilityCatalog::EFFECT_ALLOW);
+                    ->where('effect', Effect::ALLOW->value);
             })
             ->with('policy:id,resource_pattern')
             ->get();

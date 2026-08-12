@@ -6,6 +6,7 @@ namespace Polymorph\Platform\Domain\Extensions\Services;
 
 use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdministration;
+use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Effect;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
 use Polymorph\Platform\Domain\Roles\Core\Models\Role;
@@ -34,13 +35,7 @@ final class ExtensionCapabilityService
         $adminZonePolicy = $this->adminService->ensurePolicy([
             'resource_pattern' => "ext.{$plugin->id}.admin",
             'action' => CapabilityCatalog::ACTION_ACCESS,
-            'effect' => CapabilityCatalog::EFFECT_ALLOW,
-            'priority' => 100,
-            'is_active' => true,
-            'metadata' => [
-                'source' => 'plugin-admin-zone',
-                'plugin_id' => $plugin->id,
-            ],
+            'effect' => Effect::ALLOW->value,
         ]);
 
         $subjects = $this->defaultAdminSubjects($plugin);
@@ -55,13 +50,7 @@ final class ExtensionCapabilityService
             $capabilityPolicy = $this->adminService->ensurePolicy([
                 'resource_pattern' => $definition->resource,
                 'action' => $definition->action,
-                'effect' => CapabilityCatalog::EFFECT_ALLOW,
-                'priority' => 100,
-                'is_active' => true,
-                'metadata' => [
-                    'source' => 'plugin-default-admin-capability',
-                    'plugin_id' => $plugin->id,
-                ],
+                'effect' => Effect::ALLOW->value,
             ]);
 
             foreach ($subjects as $subject) {
@@ -87,14 +76,7 @@ final class ExtensionCapabilityService
                 $policy = $this->adminService->ensurePolicy([
                     'resource_pattern' => $resource,
                     'action' => $this->capabilityAction($plugin, $resource),
-                    'effect' => CapabilityCatalog::EFFECT_ALLOW,
-                    'priority' => 100,
-                    'is_active' => true,
-                    'metadata' => [
-                        'source' => 'plugin-role',
-                        'plugin_id' => $plugin->id,
-                        'role' => $role->code,
-                    ],
+                    'effect' => Effect::ALLOW->value,
                 ]);
 
                 $this->adminService->assign((int) $policy->id, $subject);

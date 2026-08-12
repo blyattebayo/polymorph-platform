@@ -7,7 +7,6 @@ namespace Polymorph\Platform\Domain\AccessControl\Services;
 use InvalidArgumentException;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\CapabilityDefinitionProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\CapabilityDefinition;
-use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 
 final class CapabilityRegistry
 {
@@ -17,17 +16,9 @@ final class CapabilityRegistry
     private ?array $memoizedDefinitions = null;
 
     /**
-     * @var array<string, true>
-     */
-    private array $duplicateKeys = [];
-
-    /**
      * @param  iterable<CapabilityDefinitionProvider>  $providers
      */
-    public function __construct(
-        private readonly iterable $providers,
-        private readonly AppLogger $logger,
-    ) {}
+    public function __construct(private readonly iterable $providers) {}
 
     /**
      * The installed extension set cannot change in a running process. Installation
@@ -52,21 +43,12 @@ final class CapabilityRegistry
             foreach ($provider->capabilities() as $definition) {
                 $key = $definition->key();
 
-                // Дубль НЕ роняет каталог: он собирается на горячем пути
-                // (/auth/current и логин), а один из его источников —
-                // манифесты включённых расширений. Раньше плагин с задвоенной
-                // парой resource+action проходил установку и закрывал вход в
-                // админку всем пользователям. Побеждает первое определение,
-                // повтор уходит в лог; отвергать дубли — дело установки
-                // расширения и генератора FE-каталога, где падать полезно.
                 if (isset($seen[$key])) {
-                    $this->duplicateKeys[$key] = true;
-                    $this->logger->warning('access.duplicate_capability_definition', [
-                        'capability' => $key,
-                        'provider' => $provider::class,
-                    ]);
-
-                    continue;
+                    throw new InvalidArgumentException(sprintf(
+                        'Capability "%s" is declared more than once (provider %s).',
+                        $key,
+                        $provider::class,
+                    ));
                 }
 
                 $seen[$key] = true;
@@ -75,18 +57,6 @@ final class CapabilityRegistry
         }
 
         return $definitions;
-    }
-
-    /**
-     * Ключи, объявленные более одного раза при последней сборке каталога.
-     *
-     * @return list<string>
-     */
-    public function duplicateCapabilityKeys(): array
-    {
-        $this->capabilityDefinitions();
-
-        return array_keys($this->duplicateKeys);
     }
 
     /**

@@ -7,6 +7,7 @@ namespace Polymorph\Platform\Database\Seeders;
 use Illuminate\Database\Seeder;
 use Polymorph\Platform\Domain\AccessControl\Access\BuiltInRoleCatalog;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdministration;
+use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Effect;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Polymorph\Platform\Domain\AccessControl\Services\CapabilityRegistry;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
@@ -23,7 +24,7 @@ class BuiltInPoliciesSeeder extends Seeder
             static fn (array $definition): array => [
                 $definition['resource'],
                 $definition['action'],
-                CapabilityCatalog::EFFECT_ALLOW,
+                Effect::ALLOW->value,
             ],
             app(CapabilityRegistry::class)->capabilityDefinitionsAsArrays(),
         );
@@ -51,8 +52,6 @@ class BuiltInPoliciesSeeder extends Seeder
                 'resource_pattern' => $resource,
                 'action' => $action,
                 'effect' => $effect,
-                'priority' => 100,
-                'is_active' => true,
             ]);
 
             $policyIdsByKey[CapabilityCatalog::capabilityKey($resource, $action)] = (int) $created->id;
@@ -61,9 +60,7 @@ class BuiltInPoliciesSeeder extends Seeder
         $wildcardPolicy = $policyAdmin->ensurePolicy([
             'resource_pattern' => '*',
             'action' => CapabilityCatalog::ACTION_WILDCARD,
-            'effect' => CapabilityCatalog::EFFECT_ALLOW,
-            'priority' => 100,
-            'is_active' => true,
+            'effect' => Effect::ALLOW->value,
         ]);
 
         // Аддитивно (assign = upsert), а НЕ setSubjectPolicies: полная замена
