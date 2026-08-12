@@ -13,7 +13,7 @@ use RuntimeException;
  *
  * Реализует ErrorConvertible, поэтому опознаётся общей цепочкой резолверов и не
  * требует отдельной ветви у вызывающего — раньше под него была своя ветвь в
- * HostBootstrap со своим вызовом репортера.
+ * bootstrap-обработчик со своим вызовом репортера.
  *
  * Здесь был ещё слот `Closure(JsonResponse):JsonResponse` для донастройки ответа.
  * Его единственным потребителем был ThrowsErrors::throwErrorWithHeaders(), который

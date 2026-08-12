@@ -7,7 +7,6 @@ namespace Polymorph\Platform\Domain\Routing;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionDiscoveryService;
-use Polymorph\Platform\Domain\Routing\Console\LintRoutesCommand;
 use Polymorph\Platform\Domain\Routing\Http\FallbackController;
 use Polymorph\Platform\Domain\Routing\Plugin\PluginRouteMounter;
 
@@ -24,7 +23,6 @@ final class RoutingServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        $this->commands([LintRoutesCommand::class]);
         $this->app->singleton(PluginRouteMounter::class);
     }
 

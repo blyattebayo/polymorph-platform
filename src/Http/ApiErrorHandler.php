@@ -37,7 +37,7 @@ final class ApiErrorHandler
      */
     public function handle(Throwable $exception, Request $request): ?JsonResponse
     {
-        if (! self::wantsProblemJson($exception, $request)) {
+        if (! self::handles($exception, $request)) {
             return null;
         }
 
@@ -48,7 +48,7 @@ final class ApiErrorHandler
      * Ошибки расширений — всегда ProblemJson, даже вне `api/*`: SDK не знает про
      * маршруты хоста, и расширение не должно получать HTML-страницу вместо ответа.
      */
-    private static function wantsProblemJson(Throwable $exception, Request $request): bool
+    public static function handles(Throwable $exception, Request $request): bool
     {
         return $exception instanceof ExtensionError
             || $request->expectsJson()

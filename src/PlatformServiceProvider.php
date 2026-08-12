@@ -4,16 +4,46 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform;
 
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Auth\Middleware\Authenticate;
+use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Exceptions\Handler;
+use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use Illuminate\Http\Request;
+use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Support\ServiceProvider;
+use Polymorph\Platform\Domain\AccessControl\Console\GenerateFeCapabilityCatalogCommand;
+use Polymorph\Platform\Domain\AccessControl\Console\RebuildAccessControlCommand;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneAuthSessionsCommand;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneOAuthCredentialsCommand;
+use Polymorph\Platform\Domain\Auth\Infrastructure\Http\SessionCookie;
+use Polymorph\Platform\Domain\Extensions\Console\PluginsBuildCommand;
+use Polymorph\Platform\Domain\Extensions\Console\PluginsInstallCommand;
+use Polymorph\Platform\Domain\Extensions\Console\PluginsListCommand;
+use Polymorph\Platform\Domain\Materialization\Console\Commands\RebuildRecordDefinitionDisplayViewsCommand;
+use Polymorph\Platform\Domain\Materialization\Console\Commands\RecordIndexesDoctorCommand;
+use Polymorph\Platform\Domain\Routing\Console\LintRoutesCommand;
+use Polymorph\Platform\Http\ApiErrorHandler;
+use Polymorph\Platform\Http\Middleware\AddCacheVary;
+use Polymorph\Platform\Http\Middleware\AuthenticateOAuthResource;
+use Polymorph\Platform\Http\Middleware\CanonicalUrl;
+use Polymorph\Platform\Http\Middleware\NoCacheAuth;
+use Polymorph\Platform\Http\Middleware\RequireCapability;
+use Polymorph\Platform\Http\Middleware\ResolveSessionCredential;
+use Polymorph\Platform\Http\Middleware\VerifyApiCsrf;
+use Polymorph\Platform\Support\Console\PreflightCommand;
+use Throwable;
 
 /**
- * The heart of the blyattebayo/polymorph package: registers the platform's domain service
- * providers (in dependency order), merges the 12 platform config files, and loads the
- * package's migrations + translations. Auto-discovered via composer extra.laravel.providers,
- * so the thin host's bootstrap/providers.php is empty.
+ * The platform's single composition root. A host registers only this provider; it owns
+ * framework integration, domain-provider order, config, routes, commands, migrations,
+ * translations and package views.
  */
 final class PlatformServiceProvider extends ServiceProvider
 {
+    private const VIEW_PATH = __DIR__.'/../resources/views';
+
     /**
      * Domain providers in dependency order (mirrors the former bootstrap/providers.php).
      * Order is load-bearing: PipelineCore early; Schema -> RecordDefinitions -> Records ->
@@ -47,66 +77,107 @@ final class PlatformServiceProvider extends ServiceProvider
         Domain\Materialization\Providers\MaterializationServiceProvider::class,
     ];
 
+    /** @var list<string> */
+    private const CONFIG_KEYS = [
+        'admin',
+        'authentication',
+        'errors',
+        'materialization',
+        'media',
+        'plugins',
+        'records',
+        'routing',
+        'secret_redaction',
+        'security',
+        'validation_constraints',
+    ];
+
+    /** @var list<class-string> */
+    private const COMMANDS = [
+        PreflightCommand::class,
+        RebuildAccessControlCommand::class,
+        GenerateFeCapabilityCatalogCommand::class,
+        PruneAuthSessionsCommand::class,
+        PruneOAuthCredentialsCommand::class,
+        PluginsListCommand::class,
+        PluginsInstallCommand::class,
+        PluginsBuildCommand::class,
+        LintRoutesCommand::class,
+        RebuildRecordDefinitionDisplayViewsCommand::class,
+        RecordIndexesDoctorCommand::class,
+    ];
+
     public function register(): void
     {
         $this->mergePlatformConfigs();
+        $this->app['config']->set('view.paths', [self::VIEW_PATH]);
+        $this->registerFrameworkIntegration();
+        $this->commands(self::COMMANDS);
 
         foreach (self::PROVIDERS as $provider) {
             $this->app->register($provider);
         }
     }
 
-    /**
-     * Merge every config file shipped in the package (config key = file basename).
-     * The 11 host-owned configs (app, auth, cache, cors, database, filesystems,
-     * logging, mail, queue, services, session) live in the host and are not here.
-     *
-     * There used to be an exception list: config/errors.php held exception-builder
-     * Closures, which are not var_export-serializable, so merging it broke
-     * `config:cache`. Those Closures became code (FrameworkErrorResolver,
-     * ErrorReportPolicy) and the file is plain data again — no exception needed.
-     */
     private function mergePlatformConfigs(): void
     {
-        foreach (glob(__DIR__.'/../config/*.php') ?: [] as $file) {
-            $this->mergeConfigFrom($file, basename($file, '.php'));
+        foreach (self::CONFIG_KEYS as $key) {
+            $this->mergeConfigFrom(__DIR__."/../config/{$key}.php", $key);
         }
+    }
+
+    private function registerFrameworkIntegration(): void
+    {
+        $noRedirect = static fn (Request $request): ?string => null;
+        EncryptCookies::except(SessionCookie::NAME);
+
+        $configureKernel = static function (HttpKernelContract $kernel) use ($noRedirect): void {
+            if ($kernel instanceof HttpKernel) {
+                // ApplicationBuilder installs a web-login fallback while resolving the kernel;
+                // the API-only product has no login page, so the composition root owns
+                // the final redirect rule after that framework callback has run.
+                Authenticate::redirectUsing($noRedirect);
+                AuthenticateSession::redirectUsing($noRedirect);
+                AuthenticationException::redirectUsing($noRedirect);
+                $kernel->prependMiddleware(CanonicalUrl::class);
+                $kernel->appendMiddlewareToGroup('api', VerifyApiCsrf::class);
+                $kernel->appendMiddlewareToGroup('api', AddCacheVary::class);
+                $kernel->setMiddlewareAliases(array_merge($kernel->getMiddlewareAliases(), [
+                    ResolveSessionCredential::ALIAS => ResolveSessionCredential::class,
+                    AuthenticateOAuthResource::ALIAS => AuthenticateOAuthResource::class,
+                    'no-cache-auth' => NoCacheAuth::class,
+                    RequireCapability::ALIAS => RequireCapability::class,
+                ]));
+            }
+        };
+        $this->app->afterResolving(HttpKernelContract::class, $configureKernel);
+        if ($this->app->resolved(HttpKernelContract::class)) {
+            $configureKernel($this->app->make(HttpKernelContract::class));
+        }
+
+        $this->app->afterResolving(Handler::class, static function (Handler $handler): void {
+            // ErrorKernel is the sole reporter for requests rendered as Problem JSON.
+            // Laravel's default reporter must not write the same 4xx/5xx a second time.
+            $handler->dontReportWhen(
+                static fn (Throwable $exception): bool => ! app()->runningInConsole()
+                    && ApiErrorHandler::handles($exception, request()),
+            );
+            $handler->renderable(
+                static fn (Throwable $exception, Request $request) => app(ApiErrorHandler::class)
+                    ->handle($exception, $request),
+            );
+        });
     }
 
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'polymorph');
-        $this->registerViews();
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config' => config_path(),
             ], 'polymorph-config');
         }
-    }
-
-    /**
-     * Register the platform's Blade views (errors, public site, layouts, page
-     * templates) so a thin host renders web routes out of the box.
-     *
-     * They are added to the DEFAULT namespace's search path — not a `polymorph::`
-     * hint — so existing bare view names (view('home.default'), view('errors.404'),
-     * page templates) resolve with zero
-     * controller changes. The package path is appended AFTER config('view.paths'),
-     * so a host that publishes its own views (resource_path('views'), searched
-     * first) transparently overrides the package.
-     */
-    private function registerViews(): void
-    {
-        $viewsPath = __DIR__.'/../resources/views';
-
-        $this->callAfterResolving('view.finder', static function ($finder) use ($viewsPath): void {
-            $finder->addLocation($viewsPath);
-        });
-
-        $this->publishes([
-            $viewsPath => resource_path('views'),
-        ], 'polymorph-views');
     }
 }

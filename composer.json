@@ -27,12 +27,5 @@
             "Polymorph\\Platform\\": "src/",
             "Database\\Factories\\": "database/factories/"
         }
-    },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Polymorph\\Platform\\PlatformServiceProvider"
-            ]
-        }
     }
 }

@@ -19,7 +19,6 @@ return [
 
     'media_index' => [
         'enabled' => (bool) env('MATERIALIZATION_MEDIA_INDEX_ENABLED', true),
-        'fallback_json_scan' => (bool) env('MATERIALIZATION_MEDIA_INDEX_FALLBACK_JSON_SCAN', true),
     ],
 
     'schema_cache' => [

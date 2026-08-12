@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Extensions\Services;
 
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdministration;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\Subject;
 use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
@@ -16,7 +17,15 @@ final class ExtensionCapabilityService
         private readonly AccessControlAdministration $adminService,
     ) {}
 
-    public function assignDefaultPluginAdminPolicy(DiscoveredExtension $plugin): void
+    public function provision(DiscoveredExtension $plugin): void
+    {
+        DB::transaction(function () use ($plugin): void {
+            $this->ensurePluginRoles($plugin);
+            $this->assignDefaultPluginAdminPolicy($plugin);
+        });
+    }
+
+    private function assignDefaultPluginAdminPolicy(DiscoveredExtension $plugin): void
     {
         // Дефолтная админ-капабилити зоны ADMIN_API: ей защищаются маршруты,
         // за которые манифест не объявил requires: (см. PluginRouteMounter).
@@ -61,7 +70,7 @@ final class ExtensionCapabilityService
         }
     }
 
-    public function ensurePluginRoles(DiscoveredExtension $plugin): void
+    private function ensurePluginRoles(DiscoveredExtension $plugin): void
     {
         if ($plugin->pluginRoles === []) {
             return;

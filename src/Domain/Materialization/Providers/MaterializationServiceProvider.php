@@ -6,8 +6,6 @@ namespace Polymorph\Platform\Domain\Materialization\Providers;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use Polymorph\Platform\Domain\Materialization\Console\Commands\RebuildRecordDefinitionDisplayViewsCommand;
-use Polymorph\Platform\Domain\Materialization\Console\Commands\RecordIndexesDoctorCommand;
 use Polymorph\Platform\Domain\Materialization\Contracts\RecordDisplayValueProvider;
 use Polymorph\Platform\Domain\Materialization\Listeners\ScheduleViewRebuildOnSchemaChange;
 use Polymorph\Platform\Domain\Materialization\Listeners\SyncRecordDefinitionDisplayView;
@@ -80,11 +78,5 @@ class MaterializationServiceProvider extends ServiceProvider
             Event::listen($event, ScheduleViewRebuildOnSchemaChange::class);
         }
 
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                RebuildRecordDefinitionDisplayViewsCommand::class,
-                RecordIndexesDoctorCommand::class,
-            ]);
-        }
     }
 }

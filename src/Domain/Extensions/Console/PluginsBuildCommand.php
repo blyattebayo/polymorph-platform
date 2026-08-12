@@ -67,7 +67,7 @@ final class PluginsBuildCommand extends Command
         $feDir = $srcDir.DIRECTORY_SEPARATOR.'fe';
 
         if (is_dir($feDir) && ! (bool) $this->option('skip-fe')) {
-            if (! (bool) $this->option('skip-install') && ! $this->runProcess($feDir, 'npm install', 'Installing FE dependencies')) {
+            if (! (bool) $this->option('skip-install') && ! $this->runProcess($feDir, 'npm ci', 'Installing FE dependencies from lock')) {
                 return self::FAILURE;
             }
             if (! $this->runProcess($feDir, 'npm run build', 'Building FE bundle')) {
