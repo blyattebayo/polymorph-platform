@@ -29,7 +29,7 @@ use Throwable;
 /**
  * Application-level (bootstrap/app.php) configuration that a ServiceProvider cannot reach:
  * middleware/exceptions/commands are wired in Laravel 12's Application::configure(). The thin
- * host delegates to these static configurators (ADR 0006 §4.7). A single class avoids the
+ * host delegates to these static configurators. A single class avoids the
  * name collision between a `Http\Middleware` configurator and the `Http\Middleware\` namespace.
  */
 final class HostBootstrap

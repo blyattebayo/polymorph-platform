@@ -28,8 +28,8 @@ use Polymorph\Sdk\Extension\ExtensionServices;
  * The context must name an installed extension; otherwise access is denied.
  * ВАЖНО про модель угроз: плагины исполняются in-process как доверенный PHP-код,
  * поэтому ext-префиксы и эта сверка — защита от ошибок и случайного залезания в
- * чужой неймспейс, а не криптографическая граница. Полная атрибуция «какой плагин
- * сейчас исполняется» — этап «песочница расширений» (см. docs/ACCESS_CONTROL_AUDIT.md).
+ * чужой неймспейс, а не криптографическая граница. Полной изоляции и надёжной
+ * атрибуции исполняемого плагина in-process модель не даёт.
  */
 final class HostExtensionServices implements ExtensionServices
 {

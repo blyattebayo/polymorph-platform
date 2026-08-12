@@ -11,7 +11,7 @@ use Polymorph\Sdk\Events\RecordDeleted as SdkRecordDeleted;
 
 /**
  * Translates the platform's internal record-lifecycle events into the declared Extension SDK
- * contract (ADR 0005 Фаза 4). Extensions listen to `Polymorph\Sdk\Events\*` instead of the
+ * contract. Extensions listen to `Polymorph\Sdk\Events\*` instead of the
  * platform's internal event/model classes; this bridge is the single place that couples the
  * two, and it only re-emits for extension-owned records (schema code parses as `ext__…`).
  */

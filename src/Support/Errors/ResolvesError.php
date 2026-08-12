@@ -21,7 +21,7 @@ use Throwable;
  * слой, и вверх он не смотрит даже комментарием.
  *
  * Интерфейс лежит в Support, а не в SharedKernel, намеренно: он принимает
- * Illuminate\Request, а нейтральность SharedKernel остаётся целью (ADR 0006 §13).
+ * Illuminate\Request, а нейтральность SharedKernel остаётся целью.
  */
 interface ResolvesError
 {
