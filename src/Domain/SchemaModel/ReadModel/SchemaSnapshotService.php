@@ -8,10 +8,9 @@ use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
-use Polymorph\Platform\Domain\SchemaModel\ReadModel\Contracts\SchemaSnapshotServiceInterface;
 use Polymorph\Platform\Domain\SchemaModelValidation\FieldPathBuilder;
 
-final class SchemaSnapshotService implements SchemaSnapshotServiceInterface
+final class SchemaSnapshotService
 {
     /** @var array<int, SchemaSnapshot> */
     private array $snapshotCache = [];
@@ -185,19 +184,6 @@ final class SchemaSnapshotService implements SchemaSnapshotServiceInterface
         return hash('sha256', json_encode($data));
     }
 
-    public function clearCache(?int $recordDefinitionId = null): void
-    {
-        if ($recordDefinitionId === null) {
-            $this->snapshotCache = [];
-            $this->bumpL2NamespaceVersion();
-
-            return;
-        }
-
-        unset($this->snapshotCache[$recordDefinitionId]);
-        $this->forgetL2Snapshot($recordDefinitionId);
-    }
-
     public function clearCacheForSchema(int $schemaId): void
     {
         if ($schemaId <= 0) {
@@ -225,42 +211,9 @@ final class SchemaSnapshotService implements SchemaSnapshotServiceInterface
         return Cache::store($this->l2Store);
     }
 
-    private function namespaceVersionKey(): string
-    {
-        return $this->l2Prefix.'ns_version';
-    }
-
-    private function currentL2NamespaceVersion(): int
-    {
-        if (! $this->l2Enabled) {
-            return 1;
-        }
-
-        $cache = $this->cacheRepository();
-        $version = (int) ($cache->get($this->namespaceVersionKey()) ?? 1);
-        if ($version <= 0) {
-            $version = 1;
-        }
-
-        $cache->forever($this->namespaceVersionKey(), $version);
-
-        return $version;
-    }
-
-    private function bumpL2NamespaceVersion(): void
-    {
-        if (! $this->l2Enabled) {
-            return;
-        }
-
-        $cache = $this->cacheRepository();
-        $newVersion = $this->currentL2NamespaceVersion() + 1;
-        $cache->forever($this->namespaceVersionKey(), $newVersion);
-    }
-
     private function snapshotCacheKey(int $recordDefinitionId): string
     {
-        return $this->l2Prefix.'v'.$this->currentL2NamespaceVersion().':record_definition:'.$recordDefinitionId;
+        return $this->l2Prefix.'record_definition:'.$recordDefinitionId;
     }
 
     private function getL2Snapshot(int $recordDefinitionId): ?SchemaSnapshot

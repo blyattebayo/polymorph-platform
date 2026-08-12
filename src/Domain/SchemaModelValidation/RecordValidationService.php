@@ -11,12 +11,11 @@ use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\ValidationRules;
 use Polymorph\Platform\Domain\SchemaModelValidation\Cache\RuleSetCache;
 use Polymorph\Platform\Domain\SchemaModelValidation\Compilers\RuleCompilerRegistry;
-use Polymorph\Platform\Domain\SchemaModelValidation\Contracts\SchemaValidationRulesEngineInterface;
 use Polymorph\Platform\Domain\SchemaModelValidation\Rules\Iso8601DateTime;
 use Polymorph\Platform\Domain\SchemaModelValidation\Schema\FieldDescriptor;
 use Polymorph\Platform\Domain\SchemaModelValidation\Schema\SchemaDescriptor;
 
-final class RecordValidationService implements SchemaValidationRulesEngineInterface
+final class RecordValidationService
 {
     public function __construct(
         private readonly RuleCompilerRegistry $ruleCompilerRegistry,

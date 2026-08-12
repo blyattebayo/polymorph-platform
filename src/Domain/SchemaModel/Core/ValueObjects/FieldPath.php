@@ -62,14 +62,6 @@ final readonly class FieldPath
     }
 
     /**
-     * Получить глубину вложенности (количество сегментов).
-     */
-    public function depth(): int
-    {
-        return count($this->segments());
-    }
-
-    /**
      * Проверить, является ли потомком другого пути.
      */
     public function isChildOf(self $other): bool

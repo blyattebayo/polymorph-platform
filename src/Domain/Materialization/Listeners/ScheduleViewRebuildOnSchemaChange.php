@@ -4,24 +4,19 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Materialization\Listeners;
 
-use Polymorph\Platform\Domain\SchemaModel\Events\Contracts\SchemaChangeEvent;
-use Polymorph\Platform\Domain\SchemaModel\Services\SchemaViewRebuildScheduler;
+use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\Materialization\Services\RecordDefinitionViewManager;
+use Polymorph\Platform\Domain\SchemaModel\Events\SchemaChanged;
 
-/**
- * Планирует перестроение display-view определений при изменении схемы/полей.
- *
- * Перенесено из FieldObserver/SchemaObserver: материализация сама подписана на
- * SchemaChangeEvent, а write-домен SchemaModel больше не дёргает планировщик
- * напрямую. Планировщик дедуплицирует по schemaId и откладывает на afterCommit.
- */
+/** Rebuilds materialized views after the canonical schema transaction commits. */
 final class ScheduleViewRebuildOnSchemaChange
 {
     public function __construct(
-        private readonly SchemaViewRebuildScheduler $rebuildScheduler,
+        private readonly RecordDefinitionViewManager $viewManager,
     ) {}
 
-    public function handle(SchemaChangeEvent $event): void
+    public function handle(SchemaChanged $event): void
     {
-        $this->rebuildScheduler->schedule($event->schemaId());
+        DB::afterCommit(fn () => $this->viewManager->rebuildForSchema($event->schemaId));
     }
 }

@@ -34,16 +34,6 @@ final class FieldAccessService
         private readonly PathTreeFilter $pathTreeFilter,
     ) {}
 
-    public function canAccessField(?User $user, int $schemaId, string $action, ?string $fullPath = null): bool
-    {
-        $fieldPath = trim((string) $fullPath);
-        if ($user === null || $schemaId <= 0 || $fieldPath === '' || $action === '') {
-            return false;
-        }
-
-        return $this->gate->allows($user, $this->resourcePath($schemaId, $fieldPath), trim($action));
-    }
-
     /**
      * @return string[]
      */

@@ -6,7 +6,7 @@ namespace Polymorph\Platform\Domain\Materialization\Services;
 
 use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
-use Polymorph\Platform\Domain\SchemaModel\ReadModel\Contracts\SchemaSnapshotServiceInterface;
+use Polymorph\Platform\Domain\SchemaModel\ReadModel\SchemaSnapshotService;
 use Polymorph\Platform\TemplateEngine\Core\Pipeline\TemplateParsePipeline;
 
 final class RecordDefinitionViewManager
@@ -15,7 +15,7 @@ final class RecordDefinitionViewManager
     private array $builtDefinitionHashByRecordDefinitionId = [];
 
     public function __construct(
-        private readonly SchemaSnapshotServiceInterface $schemaService,
+        private readonly SchemaSnapshotService $schemaService,
         private readonly TemplateParsePipeline $templateParsePipeline,
         private readonly SqlViewValidator $sqlViewValidator,
         private readonly SqlViewCompiler $sqlViewCompiler,

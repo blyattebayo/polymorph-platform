@@ -9,7 +9,7 @@ use Polymorph\Platform\Domain\Records\Infrastructure\Extractors\RecordMediaExtra
 use Polymorph\Platform\Domain\Records\Infrastructure\Extractors\RecordRefExtractor;
 use Polymorph\Platform\Domain\Records\Support\RecordDataNormalizer;
 use Polymorph\Platform\Domain\Records\Support\RecordSchemaResolver;
-use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\SchemaFieldPathReadModel;
+use Polymorph\Platform\Domain\SchemaModel\ReadModel\SchemaFieldPathReadModel;
 
 final class RecordRelationshipResolver
 {

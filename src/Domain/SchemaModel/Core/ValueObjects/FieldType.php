@@ -22,17 +22,6 @@ enum FieldType: string
     case MEDIA = 'media';
 
     /**
-     * Требует ли тип дополнительных constraints.
-     */
-    public function requiresConstraints(): bool
-    {
-        return match ($this) {
-            self::REF, self::MEDIA => true,
-            default => false,
-        };
-    }
-
-    /**
      * Является ли контейнером для вложенных полей.
      */
     public function isContainer(): bool

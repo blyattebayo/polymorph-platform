@@ -18,13 +18,8 @@ use Polymorph\Platform\Domain\Materialization\Services\SqlViewValidator;
 use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionCreated;
 use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionDeleted;
 use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionSchemaChanged;
-use Polymorph\Platform\Domain\SchemaModel\Events\FieldAdded;
-use Polymorph\Platform\Domain\SchemaModel\Events\FieldDeleted;
-use Polymorph\Platform\Domain\SchemaModel\Events\FieldUpdated;
-use Polymorph\Platform\Domain\SchemaModel\Events\SchemaCreated;
-use Polymorph\Platform\Domain\SchemaModel\Events\SchemaDeleted;
-use Polymorph\Platform\Domain\SchemaModel\Events\SchemaUpdated;
-use Polymorph\Platform\Domain\SchemaModel\ReadModel\Contracts\SchemaSnapshotServiceInterface;
+use Polymorph\Platform\Domain\SchemaModel\Events\SchemaChanged;
+use Polymorph\Platform\Domain\SchemaModel\ReadModel\SchemaSnapshotService;
 use Polymorph\Platform\TemplateEngine\Core\Filters\FilterRegistry;
 use Polymorph\Platform\TemplateEngine\Core\Pipeline\TemplateParsePipeline;
 
@@ -43,7 +38,7 @@ class MaterializationServiceProvider extends ServiceProvider
 
         $this->app->singleton(RecordDefinitionViewManager::class, function ($app) {
             return new RecordDefinitionViewManager(
-                $app->make(SchemaSnapshotServiceInterface::class),
+                $app->make(SchemaSnapshotService::class),
                 $app->make(TemplateParsePipeline::class),
                 $app->make(SqlViewValidator::class),
                 $app->make(SqlViewCompiler::class),
@@ -68,15 +63,11 @@ class MaterializationServiceProvider extends ServiceProvider
         // Материализация partial-индексов records из is_indexed-полей схемы
         // (для admin- и plugin-определений одинаково; реконсайл create/drop).
         Event::listen(RecordDefinitionCreated::class, [SyncRecordIndexes::class, 'handleRecordDefinitionCreated']);
-        Event::listen(FieldAdded::class, [SyncRecordIndexes::class, 'handleSchemaChange']);
-        Event::listen(FieldUpdated::class, [SyncRecordIndexes::class, 'handleSchemaChange']);
-        Event::listen(FieldDeleted::class, [SyncRecordIndexes::class, 'handleSchemaChange']);
+        Event::listen(SchemaChanged::class, [SyncRecordIndexes::class, 'handleSchemaChange']);
 
         // Перестроение display-view определений при изменении схемы/полей
-        // (перенесено из FieldObserver/SchemaObserver).
-        foreach ([FieldAdded::class, FieldUpdated::class, FieldDeleted::class, SchemaCreated::class, SchemaUpdated::class, SchemaDeleted::class] as $event) {
-            Event::listen($event, ScheduleViewRebuildOnSchemaChange::class);
-        }
+        // Reconcile derived indexes after the canonical schema transaction.
+        Event::listen(SchemaChanged::class, ScheduleViewRebuildOnSchemaChange::class);
 
     }
 }

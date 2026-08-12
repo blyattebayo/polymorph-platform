@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\SchemaModelValidation\Schema;
 
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
-use Polymorph\Platform\Domain\SchemaModelValidation\Contracts\SchemaDescriptorProviderInterface;
 
-final class EloquentSchemaDescriptorProvider implements SchemaDescriptorProviderInterface
+final class SchemaDescriptorProvider
 {
     public function __construct(
         private readonly SchemaDescriptorFactory $factory,

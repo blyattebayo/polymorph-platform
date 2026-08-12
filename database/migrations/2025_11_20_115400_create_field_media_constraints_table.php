@@ -19,7 +19,6 @@ return new class extends Migration
 
             // Уникальность: одно поле не может иметь дубликатов MIME-типов
             $table->unique(['field_id', 'allowed_mime']);
-            $table->index('field_id');
         });
     }
 

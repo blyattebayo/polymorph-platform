@@ -18,8 +18,6 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
-
-            $table->index('code');
         });
     }
 

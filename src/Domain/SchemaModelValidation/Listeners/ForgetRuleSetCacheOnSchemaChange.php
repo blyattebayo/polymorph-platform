@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModelValidation\Listeners;
 
-use Polymorph\Platform\Domain\SchemaModel\Events\Contracts\SchemaChangeEvent;
+use Polymorph\Platform\Domain\SchemaModel\Events\SchemaChanged;
 use Polymorph\Platform\Domain\SchemaModelValidation\Cache\RuleSetCache;
 
 /**
  * Сбрасывает кэш скомпилированных правил валидации при изменении схемы/полей.
  *
- * Перенесено из FieldObserver/SchemaObserver (SchemaModel больше не лезет в
- * домен валидации напрямую) — домен валидации сам подписан на SchemaChangeEvent.
+ * Validation owns invalidation of its derived rule cache.
  */
 final class ForgetRuleSetCacheOnSchemaChange
 {
@@ -19,8 +18,8 @@ final class ForgetRuleSetCacheOnSchemaChange
         private readonly RuleSetCache $ruleSetCache,
     ) {}
 
-    public function handle(SchemaChangeEvent $event): void
+    public function handle(SchemaChanged $event): void
     {
-        $this->ruleSetCache->forget($event->schemaId());
+        $this->ruleSetCache->forget($event->schemaId);
     }
 }

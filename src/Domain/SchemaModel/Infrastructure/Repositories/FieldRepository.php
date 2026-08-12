@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\SchemaModel\Infrastructure\Repositories;
 
-use Polymorph\Platform\Domain\SchemaModel\Core\Collections\FieldCollection;
-use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\FieldRepository;
+use Illuminate\Database\Eloquent\Collection;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldPath;
 
-/**
- * Eloquent реализация FieldRepository.
- */
-class EloquentFieldRepository implements FieldRepository
+/** Concrete persistence operations; all field decisions belong to FieldMutationService. */
+final class FieldRepository
 {
     public function find(int|string $id): ?Field
     {
@@ -28,36 +25,23 @@ class EloquentFieldRepository implements FieldRepository
             ->first();
     }
 
+    /** @param array<string, mixed> $data */
     public function create(array $data): Field
     {
-        // Calculate full_path if not provided
-        if (! isset($data['full_path'])) {
-            if (isset($data['parent_id']) && $data['parent_id'] !== null) {
-                $parent = $this->find($data['parent_id']);
-                $data['full_path'] = $parent->full_path.'.'.$data['name'];
-            } else {
-                $data['full_path'] = $data['name'];
-            }
-        }
-
         return Field::create($data);
     }
 
+    /** @param array<string, mixed> $data */
     public function update(Field $field, array $data): Field
     {
         $field->update($data);
 
-        return $field->fresh();
+        return $field->fresh() ?? $field;
     }
 
     public function delete(Field $field): void
     {
-        // Удалить все дочерние поля рекурсивно
-        $descendants = $this->getAllDescendants($field);
-        foreach ($descendants as $descendant) {
-            $descendant->delete();
-        }
-
+        // The parent_id foreign key owns the physical subtree cascade.
         $field->delete();
     }
 
@@ -74,13 +58,12 @@ class EloquentFieldRepository implements FieldRepository
         return $query->exists();
     }
 
-    public function getAllDescendants(Field $field): FieldCollection
+    /** @return Collection<int, Field> */
+    public function getAllDescendants(Field $field): Collection
     {
-        $path = $field->full_path;
-
         return Field::query()
             ->where('schema_id', $field->schema_id)
-            ->where('full_path', 'like', "{$path}.%")
+            ->where('full_path', 'like', $field->full_path.'.%')
             ->orderBy('full_path')
             ->get();
     }

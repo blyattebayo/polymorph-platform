@@ -20,9 +20,6 @@ final class IndexSchemasRequest extends ApiFormRequest
     {
         return array_merge($this->pageRules(), [
             'search' => ['nullable', 'string', 'max:255'],
-            'sort_by' => ['nullable', 'in:created_at,name,code,recordDefinitions_count'],
-            'sort_dir' => ['nullable', 'in:asc,desc'],
-            'in_use' => ['nullable', 'boolean'],
         ]);
     }
 

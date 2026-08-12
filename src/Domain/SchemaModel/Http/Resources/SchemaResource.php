@@ -33,10 +33,6 @@ class SchemaResource extends JsonResource
                 isset($this->record_definitions_count),
                 (int) $this->record_definitions_count
             ),
-            'usage_count' => $this->when(
-                isset($this->usage_count),
-                $this->usage_count
-            ),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

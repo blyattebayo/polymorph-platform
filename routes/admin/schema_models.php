@@ -14,8 +14,6 @@ Route::prefix('schema-models')->name('schema-models.')->whereNumber('schema')->g
         ->group(function (): void {
             Route::get('/', [SchemaController::class, 'index'])->name('index');
             Route::get('/{schema}', [SchemaController::class, 'show'])->name('show');
-            Route::get('/{schema}/tree', [SchemaController::class, 'tree'])->name('tree');
-            Route::get('/{schema}/usage', [SchemaController::class, 'usage'])->name('usage');
         });
 
     Route::middleware(SchemaCapabilities::requireManage())->group(function (): void {

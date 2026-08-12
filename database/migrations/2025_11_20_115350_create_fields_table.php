@@ -26,13 +26,8 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->timestamps();
 
-            // Индексы для быстрого поиска
-            $table->index(['schema_id', 'full_path']);
-            $table->index(['schema_id', 'parent_id']);
-            $table->index('type');
-            $table->index('is_indexed');
-            $table->index('is_system');
             $table->unique(['schema_id', 'full_path']);
+            $table->index('parent_id');
         });
     }
 

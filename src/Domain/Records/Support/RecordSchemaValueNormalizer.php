@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Records\Support;
 
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\Cardinality;
-use Polymorph\Platform\Domain\SchemaModelValidation\Contracts\SchemaDescriptorProviderInterface;
+use Polymorph\Platform\Domain\SchemaModelValidation\Schema\SchemaDescriptorProvider;
 use Polymorph\Platform\Domain\SchemaModelValidation\Schema\FieldDescriptor;
 
 /**
@@ -14,7 +14,7 @@ use Polymorph\Platform\Domain\SchemaModelValidation\Schema\FieldDescriptor;
 final class RecordSchemaValueNormalizer
 {
     public function __construct(
-        private readonly SchemaDescriptorProviderInterface $schemaDescriptorProvider,
+        private readonly SchemaDescriptorProvider $schemaDescriptorProvider,
         private readonly RecordSchemaScalarValueNormalizer $scalarNormalizer,
     ) {}
 

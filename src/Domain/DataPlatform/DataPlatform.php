@@ -16,9 +16,8 @@ use Polymorph\Platform\Domain\Records\Pipeline\Handlers\UpdateRecordHandler;
 use Polymorph\Platform\Domain\Records\Query\RecordQueryCriteriaFactory;
 use Polymorph\Platform\Domain\Records\Services\RecordWriteAccessService;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
-use Polymorph\Platform\Domain\SchemaModel\Pipeline\Commands\SaveSchemaWithFieldsCommand;
-use Polymorph\Platform\Domain\SchemaModel\Pipeline\Handlers\SaveSchemaWithFieldsHandler;
 use Polymorph\Platform\Domain\SchemaModel\Services\FieldAccessService;
+use Polymorph\Platform\Domain\SchemaModel\Services\SchemaMutationService;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwner;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwnershipService;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceType;
@@ -45,7 +44,7 @@ use Polymorph\Sdk\Data\SchemaSpec;
 final class DataPlatform
 {
     public function __construct(
-        private readonly SaveSchemaWithFieldsHandler $schemaHandler,
+        private readonly SchemaMutationService $schemas,
         private readonly CreateRecordDefinitionHandler $definitionHandler,
         private readonly ResourceOwnershipService $ownership,
         private readonly CreateRecordHandler $createRecordHandler,
@@ -95,29 +94,22 @@ final class DataPlatform
         $schema = SchemaModel::query()->where('code', $schemaCode)->first();
 
         if (! $schema instanceof SchemaModel) {
-            $schema = $this->schemaHandler->handle(new SaveSchemaWithFieldsCommand(
-                schemaPayload: [
+            $schema = $this->schemas->create([
                     'name' => $name,
                     'code' => $schemaCode,
                     'metadata' => ['owner' => 'extension', 'extension_id' => $extensionId, 'entity' => $entity],
-                ],
-                fieldsUpsert: $this->toFieldsUpsert($spec->fields),
-                fieldsDelete: [],
-            ));
+                    'fields' => ['upsert' => $this->toFieldsUpsert($spec->fields)],
+                ], ResourceOwner::plugin($extensionId));
         } else {
             $missing = $this->missingFields($schema, $spec->fields);
             if ($missing !== []) {
-                $schema = $this->schemaHandler->handle(new SaveSchemaWithFieldsCommand(
-                    schemaPayload: ['name' => (string) $schema->name, 'code' => $schemaCode],
-                    fieldsUpsert: $this->toFieldsUpsert($missing),
-                    fieldsDelete: [],
-                    schema: $schema,
-                ));
+                $schema = $this->schemas->update((int) $schema->id, [
+                    'fields' => ['upsert' => $this->toFieldsUpsert($missing)],
+                ]);
             }
         }
 
         $owner = ResourceOwner::plugin($extensionId);
-        $this->ownership->set(ResourceType::SCHEMA, (int) $schema->id, $owner);
 
         $definition = RecordDefinition::query()->where('schema_id', (int) $schema->id)->first();
         if (! $definition instanceof RecordDefinition) {

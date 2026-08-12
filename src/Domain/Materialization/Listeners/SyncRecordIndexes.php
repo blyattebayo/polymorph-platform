@@ -6,7 +6,7 @@ namespace Polymorph\Platform\Domain\Materialization\Listeners;
 
 use Polymorph\Platform\Domain\Materialization\Services\RecordIndexSyncScheduler;
 use Polymorph\Platform\Domain\RecordDefinitions\Events\RecordDefinitionCreated;
-use Polymorph\Platform\Domain\SchemaModel\Events\Contracts\SchemaChangeEvent;
+use Polymorph\Platform\Domain\SchemaModel\Events\SchemaChanged;
 
 /**
  * Держит partial-индексы records в соответствии с is_indexed-полями схемы.
@@ -19,9 +19,9 @@ final class SyncRecordIndexes
         private readonly RecordIndexSyncScheduler $scheduler,
     ) {}
 
-    public function handleSchemaChange(SchemaChangeEvent $event): void
+    public function handleSchemaChange(SchemaChanged $event): void
     {
-        $this->scheduler->scheduleSchema($event->schemaId());
+        $this->scheduler->scheduleSchema($event->schemaId);
     }
 
     public function handleRecordDefinitionCreated(RecordDefinitionCreated $event): void

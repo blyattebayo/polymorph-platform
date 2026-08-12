@@ -2,15 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Polymorph\Platform\Domain\SchemaModel\Infrastructure\Repositories;
+namespace Polymorph\Platform\Domain\SchemaModel\ReadModel;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\SchemaFieldPathReadModel;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 use Polymorph\Platform\Domain\SchemaModelValidation\FieldPathBuilder;
 
-final class EloquentSchemaFieldPathReadModel implements SchemaFieldPathReadModel
+final class SchemaFieldPathReadModel
 {
     public function __construct(
         private readonly FieldPathBuilder $pathBuilder,

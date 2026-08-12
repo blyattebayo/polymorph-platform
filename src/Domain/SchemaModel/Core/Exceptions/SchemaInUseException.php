@@ -9,6 +9,7 @@ use Polymorph\Platform\SharedKernel\Contracts\DomainErrorDescriptor;
 use Polymorph\Platform\SharedKernel\Contracts\ErrorConvertible;
 use Polymorph\Platform\Support\Errors\ConvertsToErrorPayload;
 use Polymorph\Platform\Support\Errors\ErrorCode;
+use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\SchemaUsageInfo;
 
 /**
  * Исключение при попытке удалить схему, которая используется в RecordDefinition.
@@ -18,18 +19,22 @@ class SchemaInUseException extends LogicException implements DomainErrorDescript
     use ConvertsToErrorPayload;
 
     public function __construct(
-        private readonly string $schemaCode,
-        private readonly int $usageCount,
+        private readonly SchemaUsageInfo $usage,
     ) {
         parent::__construct(
-            "Cannot delete schema '{$schemaCode}': it is used by {$usageCount} record definition(s). ".
+            "Cannot delete schema '{$usage->schemaCode}': it is used by {$usage->usageCount()} record definition(s). ".
             'Delete or reassign the related record definitions first.'
         );
     }
 
-    public static function create(string $schemaCode, int $usageCount): self
+    public static function create(SchemaUsageInfo $usage): self
     {
-        return new self($schemaCode, $usageCount);
+        return new self($usage);
+    }
+
+    public function usage(): SchemaUsageInfo
+    {
+        return $this->usage;
     }
 
     public function errorCode(): ErrorCode
@@ -42,9 +47,6 @@ class SchemaInUseException extends LogicException implements DomainErrorDescript
      */
     public function errorMeta(): array
     {
-        return [
-            'schema_code' => $this->schemaCode,
-            'usage_count' => $this->usageCount,
-        ];
+        return $this->usage->toConflictMeta();
     }
 }

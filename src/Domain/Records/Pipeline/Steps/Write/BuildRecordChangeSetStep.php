@@ -9,7 +9,7 @@ use Polymorph\Platform\Domain\Records\Infrastructure\Extractors\RecordRefExtract
 use Polymorph\Platform\Domain\Records\Pipeline\Contexts\RecordWriteContext;
 use Polymorph\Platform\Domain\Records\Pipeline\Core\RecordChangeSet;
 use Polymorph\Platform\Domain\Records\Support\RecordSchemaResolver;
-use Polymorph\Platform\Domain\SchemaModel\Core\Contracts\SchemaFieldPathReadModel;
+use Polymorph\Platform\Domain\SchemaModel\ReadModel\SchemaFieldPathReadModel;
 use Polymorph\Platform\PipelineCore\Runtime\AbstractStep;
 use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\StepResult;
