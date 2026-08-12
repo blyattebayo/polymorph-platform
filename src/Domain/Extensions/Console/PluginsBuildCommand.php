@@ -152,7 +152,12 @@ final class PluginsBuildCommand extends Command
             $zip->addFile($composerManifest, 'composer.json');
         }
         $this->addTree($zip, $beVendorRoot.DIRECTORY_SEPARATOR.'be', 'be', ['tests']);
-        $this->addTree($zip, $beVendorRoot.DIRECTORY_SEPARATOR.'vendor', 'vendor');
+        $this->addTree(
+            $zip,
+            $beVendorRoot.DIRECTORY_SEPARATOR.'vendor',
+            'vendor',
+            ['test', 'tests', 'Test', 'Tests'],
+        );
         $this->addTree($zip, $distDir, 'fe/dist');
 
         $zip->close();
