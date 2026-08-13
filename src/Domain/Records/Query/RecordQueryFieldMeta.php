@@ -30,7 +30,7 @@ final readonly class RecordQueryFieldMeta
     /**
      * Есть ли partial expression-индекс, чьё выражение совпадёт с типизированным
      * выражением запроса ((data_json->>'k')::cast). is_indexed строит indexExpression
-     * с тем же кастом; unique-индекс теперь тоже типизирован (см. RecordIndexMaterializer).
+     * с тем же кастом; unique constraint index использует тот же типизированный expression.
      * Если такой индекс есть — equality выгоднее гнать по нему, а не по общему GIN.
      */
     public function hasMatchingExpressionIndex(): bool

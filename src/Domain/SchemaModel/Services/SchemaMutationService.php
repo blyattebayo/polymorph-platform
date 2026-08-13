@@ -7,6 +7,8 @@ namespace Polymorph\Platform\Domain\SchemaModel\Services;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Polymorph\Platform\Domain\DisplayViews\Services\RecordDefinitionDisplayViewSynchronizer;
+use Polymorph\Platform\Domain\RecordConstraints\Services\RecordUniqueConstraintSynchronizer;
 use Polymorph\Platform\Domain\SchemaModel\Core\Exceptions\DuplicateSchemaCodeException;
 use Polymorph\Platform\Domain\SchemaModel\Core\Exceptions\SchemaInUseException;
 use Polymorph\Platform\Domain\SchemaModel\Core\Exceptions\SchemaNotFoundException;
@@ -17,6 +19,7 @@ use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 use Polymorph\Platform\Domain\SchemaModel\Events\SchemaChanged;
 use Polymorph\Platform\Domain\SchemaModel\Infrastructure\Repositories\FieldRepository;
 use Polymorph\Platform\Domain\SchemaModel\Infrastructure\Repositories\SchemaRepository;
+use Polymorph\Platform\Domain\SchemaModel\ReadModel\SchemaSnapshotService;
 use Polymorph\Platform\PipelineCore\Locking\LockKey;
 use Polymorph\Platform\PipelineCore\Locking\LockManager;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwner;
@@ -36,6 +39,9 @@ final class SchemaMutationService
         private readonly FieldMutationService $fieldMutations,
         private readonly ResourceOwnershipService $ownership,
         private readonly LockManager $locks,
+        private readonly SchemaSnapshotService $schemaSnapshots,
+        private readonly RecordUniqueConstraintSynchronizer $uniqueConstraints,
+        private readonly RecordDefinitionDisplayViewSynchronizer $displayViews,
         private readonly AppLogger $logger,
     ) {}
 
@@ -60,6 +66,7 @@ final class SchemaMutationService
             }
 
             $this->ownership->set(ResourceType::SCHEMA, (int) $schema->id, $owner ?? ResourceOwner::platform());
+            $this->synchronizeDatabaseObjects((int) $schema->id);
             event(new SchemaChanged((int) $schema->id));
 
             return $schema->fresh('ownership') ?? $schema;
@@ -94,6 +101,7 @@ final class SchemaMutationService
             }
             $this->fieldMutations->deleteMany($schema, $validated['delete']);
 
+            $this->synchronizeDatabaseObjects($schemaId);
             event(new SchemaChanged($schemaId));
 
             return $schema->fresh('ownership') ?? $schema;
@@ -114,6 +122,7 @@ final class SchemaMutationService
 
             $this->ownership->delete(ResourceType::SCHEMA, $schemaId);
             $this->schemas->delete($schema);
+            $this->synchronizeDatabaseObjects($schemaId);
             event(new SchemaChanged($schemaId));
         });
     }
@@ -261,5 +270,12 @@ final class SchemaMutationService
                 'metadata' => $definition['metadata'] ?? null,
             ]);
         }
+    }
+
+    private function synchronizeDatabaseObjects(int $schemaId): void
+    {
+        $this->schemaSnapshots->clearCacheForSchema($schemaId);
+        $this->uniqueConstraints->synchronizeSchema($schemaId);
+        $this->displayViews->synchronizeSchema($schemaId);
     }
 }

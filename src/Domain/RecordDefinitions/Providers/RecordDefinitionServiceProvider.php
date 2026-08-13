@@ -7,10 +7,8 @@ namespace Polymorph\Platform\Domain\RecordDefinitions\Providers;
 use Illuminate\Support\ServiceProvider;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionDependencyChecker;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Contracts\RecordDefinitionRepository;
-use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use Polymorph\Platform\Domain\RecordDefinitions\Infrastructure\Repositories\EloquentRecordDefinitionDependencyChecker;
 use Polymorph\Platform\Domain\RecordDefinitions\Infrastructure\Repositories\EloquentRecordDefinitionRepository;
-use Polymorph\Platform\Domain\RecordDefinitions\Observers\RecordDefinitionObserver;
 
 /**
  * Service Provider для RecordDefinitions Domain.
@@ -36,12 +34,4 @@ class RecordDefinitionServiceProvider extends ServiceProvider
         );
     }
 
-    /**
-     * Загрузка сервисов приложения.
-     */
-    public function boot(): void
-    {
-        // Регистрируем Observer
-        RecordDefinition::observe(RecordDefinitionObserver::class);
-    }
 }

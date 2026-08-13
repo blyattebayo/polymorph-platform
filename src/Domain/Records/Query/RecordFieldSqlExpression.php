@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Records\Query;
 
+use Polymorph\Platform\SharedKernel\SystemFields\SystemFieldNames;
 use Polymorph\Platform\Support\Validation\ValidationConstraints;
 
 /**
- * Единый источник SQL-выражений по jsonb-полям для query engine и materializer.
+ * Единый источник SQL-выражений по jsonb-полям для query engine и PostgreSQL indexes.
  */
 final class RecordFieldSqlExpression
 {
     public static function safeJsonKey(string $key): string
     {
-        if (! ValidationConstraints::slug()->matches($key)) {
+        if (! ValidationConstraints::slug()->matches($key)
+            && ! in_array($key, SystemFieldNames::writableKeys(), true)) {
             throw new \InvalidArgumentException("Unsafe record field key '{$key}'.");
         }
 

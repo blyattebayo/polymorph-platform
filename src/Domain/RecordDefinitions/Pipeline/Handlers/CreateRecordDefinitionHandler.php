@@ -10,12 +10,14 @@ use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Contexts\CreateRecordDe
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\RecordDefinitionPipelineDefinitions;
 use Polymorph\Platform\PipelineCore\Observability\OperationId;
 use Polymorph\Platform\PipelineCore\Runtime\TransactionalPipelineRunner;
+use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 
 final class CreateRecordDefinitionHandler
 {
     public function __construct(
         private readonly TransactionalPipelineRunner $txRunner,
         private readonly RecordDefinitionPipelineDefinitions $definitions,
+        private readonly AppLogger $logger,
     ) {}
 
     public function handle(CreateRecordDefinitionCommand $command): RecordDefinition
@@ -32,6 +34,11 @@ final class CreateRecordDefinitionHandler
 
         $createdRecordDefinition = $context->createdRecordDefinition
             ?? throw new \RuntimeException('RecordDefinition create pipeline did not produce record definition');
+
+        $this->logger->event('schema.record_definition.created', [
+            'id' => $createdRecordDefinition->id,
+            'name' => $createdRecordDefinition->name,
+        ]);
 
         return $createdRecordDefinition;
     }

@@ -9,12 +9,14 @@ use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Contexts\DeleteRecordDe
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\RecordDefinitionPipelineDefinitions;
 use Polymorph\Platform\PipelineCore\Observability\OperationId;
 use Polymorph\Platform\PipelineCore\Runtime\TransactionalPipelineRunner;
+use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 
 final class DeleteRecordDefinitionHandler
 {
     public function __construct(
         private readonly TransactionalPipelineRunner $txRunner,
         private readonly RecordDefinitionPipelineDefinitions $definitions,
+        private readonly AppLogger $logger,
     ) {}
 
     public function handle(DeleteRecordDefinitionCommand $command): void
@@ -31,5 +33,10 @@ final class DeleteRecordDefinitionHandler
             $context,
             $operationId,
         );
+
+        $this->logger->event('schema.record_definition.deleted', [
+            'id' => $command->recordDefinition->id,
+            'name' => $command->recordDefinition->name,
+        ]);
     }
 }

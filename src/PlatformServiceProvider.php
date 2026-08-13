@@ -20,8 +20,8 @@ use Polymorph\Platform\Domain\Auth\Infrastructure\Http\SessionCookie;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsBuildCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsInstallCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsListCommand;
-use Polymorph\Platform\Domain\Materialization\Console\Commands\RebuildRecordDefinitionDisplayViewsCommand;
-use Polymorph\Platform\Domain\Materialization\Console\Commands\RecordIndexesDoctorCommand;
+use Polymorph\Platform\Domain\DisplayViews\Console\RebuildRecordDefinitionDisplayViewsCommand;
+use Polymorph\Platform\Domain\RecordIndexes\Console\RecordIndexesDoctorCommand;
 use Polymorph\Platform\Domain\Routing\Console\LintRoutesCommand;
 use Polymorph\Platform\Http\ApiErrorHandler;
 use Polymorph\Platform\Http\Middleware\AddCacheVary;
@@ -45,8 +45,7 @@ final class PlatformServiceProvider extends ServiceProvider
 
     /**
      * Domain providers in dependency order (mirrors the former bootstrap/providers.php).
-     * Order is load-bearing: PipelineCore early; Schema -> RecordDefinitions -> Records ->
-     * Materialization.
+     * Order is load-bearing: PipelineCore early; TemplateEngine precedes display-view compilation.
      *
      * @var array<int, string>
      */
@@ -73,7 +72,8 @@ final class PlatformServiceProvider extends ServiceProvider
         Domain\Menu\Providers\MenuServiceProvider::class,
         Domain\EntryView\Providers\EntryViewServiceProvider::class,
         TemplateEngine\Providers\TemplateEngineServiceProvider::class,
-        Domain\Materialization\Providers\MaterializationServiceProvider::class,
+        Domain\DisplayViews\Providers\DisplayViewsServiceProvider::class,
+        Domain\RecordIndexes\Providers\RecordIndexesServiceProvider::class,
     ];
 
     /** @var list<string> */
@@ -81,7 +81,6 @@ final class PlatformServiceProvider extends ServiceProvider
         'admin',
         'authentication',
         'errors',
-        'materialization',
         'media',
         'plugins',
         'records',

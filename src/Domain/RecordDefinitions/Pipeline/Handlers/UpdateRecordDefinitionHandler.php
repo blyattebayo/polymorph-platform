@@ -10,12 +10,14 @@ use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Contexts\UpdateRecordDe
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\RecordDefinitionPipelineDefinitions;
 use Polymorph\Platform\PipelineCore\Observability\OperationId;
 use Polymorph\Platform\PipelineCore\Runtime\TransactionalPipelineRunner;
+use Polymorph\Platform\Support\Logging\Contracts\AppLogger;
 
 final class UpdateRecordDefinitionHandler
 {
     public function __construct(
         private readonly TransactionalPipelineRunner $txRunner,
         private readonly RecordDefinitionPipelineDefinitions $definitions,
+        private readonly AppLogger $logger,
     ) {}
 
     public function handle(UpdateRecordDefinitionCommand $command): RecordDefinition
@@ -35,6 +37,11 @@ final class UpdateRecordDefinitionHandler
 
         $updatedRecordDefinition = $context->updatedRecordDefinition
             ?? throw new \RuntimeException('RecordDefinition update pipeline did not produce record definition');
+
+        $this->logger->event('schema.record_definition.updated', [
+            'id' => $updatedRecordDefinition->id,
+            'name' => $updatedRecordDefinition->name,
+        ]);
 
         return $updatedRecordDefinition;
     }

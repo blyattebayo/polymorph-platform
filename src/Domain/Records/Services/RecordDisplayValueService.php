@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Records\Services;
 
 use LogicException;
-use Polymorph\Platform\Domain\Materialization\Contracts\RecordDisplayValueProvider;
+use Polymorph\Platform\Domain\DisplayViews\Services\SqlViewRecordDisplayValueReader;
 use Polymorph\Platform\Domain\RecordDefinitions\Core\Models\RecordDefinition;
 use Polymorph\Platform\Domain\Records\Core\Models\Record;
 
 final class RecordDisplayValueService
 {
     public function __construct(
-        private readonly RecordDisplayValueProvider $displayValueProvider,
+        private readonly SqlViewRecordDisplayValueReader $reader,
     ) {}
 
     /**
@@ -39,7 +39,7 @@ final class RecordDisplayValueService
         $groups = $this->groupByDefinition($records, $displayByRecordId);
 
         foreach ($groups as $group) {
-            $resolved = $this->displayValueProvider->getDisplayValues($group['definition'], $group['ids']);
+            $resolved = $this->reader->read($group['definition'], $group['ids']);
             foreach ($resolved as $id => $displayValue) {
                 $displayByRecordId[$id] = $displayValue;
             }

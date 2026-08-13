@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Polymorph\Platform\Domain\DisplayViews\Http\Controllers\DisplayTemplateController;
 use Polymorph\Platform\Domain\EntryView\Http\Controllers\EntryViewController;
 use Polymorph\Platform\Domain\RecordDefinitions\Http\Controllers\RecordDefinitionController;
 use Polymorph\Platform\Domain\SchemaModel\Access\SchemaCapabilities;
@@ -25,6 +26,8 @@ Route::prefix('record-definitions')
         Route::middleware(SchemaCapabilities::requireManage())->group(function (): void {
             Route::post('/', [RecordDefinitionController::class, 'store'])->name('store');
             Route::put('/{id}', [RecordDefinitionController::class, 'update'])->name('update');
+            Route::post('/{id}/display-template/validate', [DisplayTemplateController::class, 'validateTemplate'])
+                ->name('display-template.validate');
             Route::delete('/{id}', [RecordDefinitionController::class, 'destroy'])->name('destroy');
             Route::put('/{record_definition_id}/form-config/{schema}', [EntryViewController::class, 'update'])
                 ->name('form-config.update');

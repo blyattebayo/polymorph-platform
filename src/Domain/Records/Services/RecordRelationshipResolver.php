@@ -25,7 +25,7 @@ final class RecordRelationshipResolver
      */
     public function resolveBatch(iterable $records): array
     {
-        $records = $this->materializeRecords($records);
+        $records = $this->collectRecords($records);
 
         $pathsBySchemaId = $this->prefetchPathsBySchemaId($records);
 
@@ -85,7 +85,7 @@ final class RecordRelationshipResolver
      * @param  iterable<Record>  $records
      * @return list<Record>
      */
-    private function materializeRecords(iterable $records): array
+    private function collectRecords(iterable $records): array
     {
         if (is_array($records)) {
             return array_values($records);

@@ -11,13 +11,14 @@ use Polymorph\Platform\Domain\SchemaModel\Core\Exceptions\InvalidParentFieldExce
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\Field;
 use Polymorph\Platform\Domain\SchemaModel\Core\Models\SchemaModel;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\Cardinality;
-use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldPath;
+use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\FieldType;
 use Polymorph\Platform\Domain\SchemaModel\Core\ValueObjects\ValidationRules;
 use Polymorph\Platform\Domain\SchemaModel\Infrastructure\Repositories\FieldRepository;
 use Polymorph\Platform\Domain\SchemaModelValidation\DslValidation\DslValidator;
 use Polymorph\Platform\Domain\SchemaModelValidation\Schema\SchemaDescriptorProvider;
 use Polymorph\Platform\SharedKernel\SystemFields\SystemFieldNames;
+use Polymorph\Platform\Support\Validation\ValidationConstraints;
 
 /** Owns every invariant of the field tree inside one schema transaction. */
 final class FieldMutationService
@@ -48,6 +49,13 @@ final class FieldMutationService
         $validationRules = $this->validationRules($payload);
         $this->assertValidDsl($schema, $fullPath->toString(), $validationRules);
         $this->assertConstraintsMatchType($type, $payload);
+        $this->assertDatabaseCapabilities(
+            $type,
+            $cardinality,
+            $fullPath,
+            (bool) ($payload['is_indexed'] ?? false),
+            is_array($payload['metadata'] ?? null) ? $payload['metadata'] : [],
+        );
 
         $field = $this->fields->create([
             'schema_id' => (int) $schema->id,
@@ -123,6 +131,17 @@ final class FieldMutationService
             $this->assertValidDsl($schema, $newPath?->toString() ?? (string) $field->full_path, $validationRules);
             $update['validation_rules'] = $validationRules;
         }
+
+        $this->assertDatabaseCapabilities(
+            $field->type,
+            $field->cardinality,
+            $newPath ?? $field->getPathObject(),
+            array_key_exists('is_indexed', $payload) ? (bool) $payload['is_indexed'] : (bool) $field->is_indexed,
+            array_key_exists('metadata', $payload)
+                ? (is_array($payload['metadata']) ? $payload['metadata'] : [])
+                : (is_array($field->metadata) ? $field->metadata : []),
+        );
+
         foreach (['is_indexed', 'sort_order', 'metadata'] as $key) {
             if (array_key_exists($key, $payload)) {
                 $update[$key] = $payload[$key];
@@ -146,7 +165,7 @@ final class FieldMutationService
     /**
      * A selected parent owns deletion of its whole subtree; repeated descendant ids are ignored.
      *
-     * @param list<int> $fieldIds
+     * @param  list<int>  $fieldIds
      */
     public function deleteMany(SchemaModel $schema, array $fieldIds): void
     {
@@ -294,6 +313,32 @@ final class FieldMutationService
                 'constraints',
                 'Constraint keys do not match the field type.',
             );
+        }
+    }
+
+    /** @param array<string, mixed> $metadata */
+    private function assertDatabaseCapabilities(
+        FieldType $type,
+        Cardinality $cardinality,
+        FieldPath $path,
+        bool $isIndexed,
+        array $metadata,
+    ): void {
+        $isUnique = (bool) ($metadata['unique'] ?? false);
+        if (! $isIndexed && ! $isUnique) {
+            return;
+        }
+
+        $capability = $isUnique ? 'unique' : 'is_indexed';
+        $reason = match (true) {
+            $type->isContainer() => 'JSON container fields do not support scalar database indexes.',
+            $cardinality === Cardinality::MANY => 'Many-valued fields require an array-aware index and are not supported yet.',
+            ! ValidationConstraints::slug()->matches($path->toString()) => 'Nested field paths do not support dedicated database indexes yet.',
+            default => null,
+        };
+
+        if ($reason !== null) {
+            throw ConstraintViolationException::create($path->toString(), $capability, $reason);
         }
     }
 

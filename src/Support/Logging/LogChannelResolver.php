@@ -13,7 +13,6 @@ final class LogChannelResolver
         'api' => LogChannel::API,
         'auth' => LogChannel::AUTH,
         'entry_view' => LogChannel::SCHEMA,
-        'materialization' => LogChannel::SCHEMA,
         'media' => LogChannel::MEDIA,
         'pipeline' => LogChannel::PIPELINE,
         'plugin' => LogChannel::PLUGINS,

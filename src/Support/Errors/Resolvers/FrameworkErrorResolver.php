@@ -170,6 +170,14 @@ final class FrameworkErrorResolver implements ResolvesError
             return new ErrorResolution($previous->payload());
         }
 
+        if ($this->sqlState($exception) === '23505') {
+            return new ErrorResolution(
+                $this->factory->for(ErrorCode::CONFLICT)
+                    ->detail('The request conflicts with an existing unique value.')
+                    ->build(),
+            );
+        }
+
         return new ErrorResolution(
             $this->factory->for(ErrorCode::INTERNAL_SERVER_ERROR)->build(),
             new ErrorReport(
@@ -181,6 +189,13 @@ final class FrameworkErrorResolver implements ResolvesError
                 ],
             ),
         );
+    }
+
+    private function sqlState(QueryException $exception): string
+    {
+        $previous = $exception->getPrevious();
+
+        return (string) ($previous?->getCode() ?: $exception->getCode());
     }
 
     private function serviceUnavailable(ServiceUnavailableHttpException $exception): ErrorPayload

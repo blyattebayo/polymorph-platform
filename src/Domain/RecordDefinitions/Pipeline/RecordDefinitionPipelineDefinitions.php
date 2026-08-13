@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\RecordDefinitions\Pipeline;
 
+use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\ApplyCreatedRecordDefinitionDatabaseObjectsStep;
+use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\ApplyUpdatedRecordDefinitionDatabaseObjectsStep;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\DeleteRecordDefinitionOwnershipStep;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\EnsureCreatedRecordDefinitionOwnershipStep;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\PersistCreatedRecordDefinitionStep;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\PersistDeletedRecordDefinitionStep;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\PersistUpdatedRecordDefinitionStep;
+use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\RemoveDeletedRecordDefinitionDatabaseObjectsStep;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\ValidateDeleteRecordDefinitionStep;
 use Polymorph\Platform\PipelineCore\Runtime\PipelineDefinition;
 use Polymorph\Platform\PipelineCore\Runtime\Stage;
@@ -18,9 +21,12 @@ final class RecordDefinitionPipelineDefinitions
     public function __construct(
         private readonly PersistCreatedRecordDefinitionStep $persistCreatedRecordDefinitionStep,
         private readonly EnsureCreatedRecordDefinitionOwnershipStep $ensureCreatedRecordDefinitionOwnershipStep,
+        private readonly ApplyCreatedRecordDefinitionDatabaseObjectsStep $applyCreatedDatabaseObjectsStep,
         private readonly PersistUpdatedRecordDefinitionStep $persistUpdatedRecordDefinitionStep,
+        private readonly ApplyUpdatedRecordDefinitionDatabaseObjectsStep $applyUpdatedDatabaseObjectsStep,
         private readonly PersistDeletedRecordDefinitionStep $persistDeletedRecordDefinitionStep,
         private readonly DeleteRecordDefinitionOwnershipStep $deleteRecordDefinitionOwnershipStep,
+        private readonly RemoveDeletedRecordDefinitionDatabaseObjectsStep $removeDeletedDatabaseObjectsStep,
         private readonly ValidateDeleteRecordDefinitionStep $validateDeleteRecordDefinitionStep,
     ) {}
 
@@ -30,7 +36,10 @@ final class RecordDefinitionPipelineDefinitions
             name: 'record_definition.create',
             requiresLock: false,
             writeSteps: [$this->persistCreatedRecordDefinitionStep],
-            derivedWriteSteps: [$this->ensureCreatedRecordDefinitionOwnershipStep],
+            derivedWriteSteps: [
+                $this->ensureCreatedRecordDefinitionOwnershipStep,
+                $this->applyCreatedDatabaseObjectsStep,
+            ],
         );
     }
 
@@ -40,6 +49,7 @@ final class RecordDefinitionPipelineDefinitions
             name: 'record_definition.update',
             requiresLock: true,
             writeSteps: [$this->persistUpdatedRecordDefinitionStep],
+            derivedWriteSteps: [$this->applyUpdatedDatabaseObjectsStep],
         );
     }
 
@@ -50,7 +60,10 @@ final class RecordDefinitionPipelineDefinitions
             requiresLock: true,
             validationSteps: [$this->validateDeleteRecordDefinitionStep],
             writeSteps: [$this->persistDeletedRecordDefinitionStep],
-            derivedWriteSteps: [$this->deleteRecordDefinitionOwnershipStep],
+            derivedWriteSteps: [
+                $this->deleteRecordDefinitionOwnershipStep,
+                $this->removeDeletedDatabaseObjectsStep,
+            ],
         );
     }
 
