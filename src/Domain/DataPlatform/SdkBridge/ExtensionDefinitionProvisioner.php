@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\DataPlatform\SdkBridge;
 
 use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\DataPlatform\Control\DefinitionMetadataService;
 use Polymorph\Platform\Domain\DataPlatform\Control\DefinitionService;
 use Polymorph\Platform\Domain\DataPlatform\Control\FieldSpecification;
 use Polymorph\Platform\Domain\DataPlatform\Control\SchemaDraftService;
@@ -19,6 +20,8 @@ use Polymorph\Platform\Domain\DataPlatform\Migration\SchemaMigrationRunner;
 use Polymorph\Platform\Domain\DataPlatform\Migration\SchemaMigrationService;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaState;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaStorage;
+use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwner;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwnershipService;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceType;
@@ -32,12 +35,14 @@ final class ExtensionDefinitionProvisioner
 {
     public function __construct(
         private readonly DefinitionService $definitions,
+        private readonly DefinitionMetadataService $definitionMetadata,
         private readonly SchemaDraftService $drafts,
         private readonly SchemaLifecycleService $lifecycle,
         private readonly SchemaCatalog $schemas,
         private readonly SchemaMigrationService $migrations,
         private readonly SchemaMigrationRunner $migrationRunner,
         private readonly ResourceOwnershipService $ownership,
+        private readonly DatabaseJson $json,
     ) {}
 
     public function ensure(string $extensionId, string $entity, SchemaSpec $spec): DefinitionRef
@@ -58,12 +63,13 @@ final class ExtensionDefinitionProvisioner
         return DB::transaction(function () use ($extensionId, $entity, $spec): DefinitionRef {
             $code = ExtensionStorageKey::schemaCode($extensionId, $entity);
             $definition = $this->schemas->findDefinitionByCode($code);
+            $repairOwnerMetadata = false;
             if ($definition === null) {
                 $created = $this->definitions->create(
                     $code,
                     trim($spec->name) !== '' ? trim($spec->name) : $entity,
                     array_map($this->sdkField(...), $spec->fields),
-                    ['owner' => ['type' => 'extension', 'id' => $extensionId]],
+                    ['owner' => ['type' => 'plugin', 'id' => $extensionId]],
                 );
                 $definitionId = $created->definitionId;
                 $versionId = $created->schemaVersionId;
@@ -80,6 +86,23 @@ final class ExtensionDefinitionProvisioner
                     );
                 }
                 $versionId = $this->addMissingFields($definitionId, $versionId, $spec->fields, $code);
+                $metadata = $this->json->decodeMap(
+                    $definition['metadata'] ?? null,
+                    SchemaStorage::DEFINITION_METADATA_CONTEXT,
+                );
+                $owner = $metadata['owner'] ?? null;
+                $repairOwnerMetadata = ! is_array($owner)
+                    || ($owner['type'] ?? null) !== 'plugin'
+                    || ($owner['id'] ?? null) !== $extensionId;
+            }
+
+            if ($repairOwnerMetadata) {
+                // Definition metadata is part of the public control-plane contract.
+                // Definitions created by pre-6.1 hosts used the legacy "extension"
+                // discriminator; repair those once without rewriting healthy rows.
+                $this->definitionMetadata->update($definitionId, null, [
+                    'owner' => ['type' => 'plugin', 'id' => $extensionId],
+                ]);
             }
 
             $this->ownership->set(
