@@ -28,8 +28,8 @@ use Polymorph\Platform\TemplateEngine\Core\Filters\FilterRegistry;
  * 3. Path must end with field() accessor (ref() terminal is forbidden)
  * 4. Wildcard [*] is forbidden in SQL VIEW runtime
  * 5. (reserved)
- * 6. field() IDs must be positive integers (> 0)
- * 7. ref() ID must be positive integers (> 0)
+ * 6. field() IDs must be non-empty stable IDs
+ * 7. ref() IDs must be non-empty stable IDs
  *
  * Filter Validation (via FilterRegistry):
  * 8. Filter name must exist in registry
@@ -37,22 +37,12 @@ use Polymorph\Platform\TemplateEngine\Core\Filters\FilterRegistry;
  *
  * EXAMPLES:
  * ✅ Valid:
- * - {{ field(10) }}                        - Simple field access
- * - {{ ref(100).field(20) }}               - Ref traversal ending in field
- * - {{ field(10) | upper }}                - Filter without args
- * - {{ field(10) | truncate(50) }}         - Filter with args
+ * - {{ field('stable-field-id') }} - Simple field access
+ * - {{ ref('stable-ref-id').field('stable-field-id') }} - Ref traversal
  *
  * Invalid:
- * - {{ ref(100) }}                         - Path must end with field() (rule 3)
- * - {{ field(10).ref(20) }}                - Path must end with field() (rule 3)
- * - {{ field(0) }}                         - Zero ID (rule 6)
- * - {{ field(-5) }}                        - Negative ID (rule 6)
- * - {{ ref(0) }}                           - Zero ref ID (rule 7)
- * - {{ field(10)[*] }}                     - Wildcard is not supported in SQL VIEW runtime
- * - {{ ref(10)[*] }}                       - Wildcard is not supported in SQL VIEW runtime
- * - {{ field(10) | unknown }}              - Unknown filter (filter rule 8)
- * - {{ field(10) | truncate }}             - Too few args (rule 9)
- * - {{ field(10) | upper(5) }}             - Too many args (rule 9)
+ * - {{ ref('stable-ref-id') }} - Path must end with field() (rule 3)
+ * - {{ field('') }} - Empty stable ID (rule 6)
  *
  * ERROR REPORTING:
  * Throws ValidationException with:
@@ -116,10 +106,10 @@ class ASTValidator
         // Rule 4: wildcard [*] is forbidden in SQL VIEW runtime
         $this->validateNoWildcard($path);
 
-        // Rule 6: field() IDs must be positive integers
+        // Rule 6: field() IDs must be non-empty stable IDs.
         $this->validateFieldIds($path);
 
-        // Rule 7: ref() ID must be positive integer
+        // Rule 7: ref() IDs must be non-empty stable IDs.
         $this->validateRefId($path);
     }
 
@@ -194,7 +184,7 @@ class ASTValidator
     }
 
     /**
-     * Rule 6: field() IDs must be positive integers
+     * Rule 6: field() IDs must be non-empty stable IDs.
      */
     private function validateFieldIds(PathNode $path): void
     {
@@ -211,9 +201,9 @@ class ASTValidator
         }
 
         foreach ($allFields as $field) {
-            if ($field->fieldId <= 0) {
+            if (trim($field->fieldId) === '') {
                 throw new ValidationException(
-                    "field() ID must be a positive integer, got {$field->fieldId}",
+                    'field() requires a non-empty stable field ID',
                     spanStart: $field->start,
                     spanEnd: $field->end
                 );
@@ -222,7 +212,7 @@ class ASTValidator
     }
 
     /**
-     * Rule 7: ref() ID must be positive integer
+     * Rule 7: ref() IDs must be non-empty stable IDs.
      */
     private function validateRefId(PathNode $path): void
     {
@@ -240,9 +230,9 @@ class ASTValidator
         }
 
         foreach ($allRefs as $ref) {
-            if ($ref->fieldId <= 0) {
+            if (trim($ref->fieldId) === '') {
                 throw new ValidationException(
-                    "ref() ID must be a positive integer, got {$ref->fieldId}",
+                    'ref() requires a non-empty stable field ID',
                     spanStart: $ref->start,
                     spanEnd: $ref->end
                 );

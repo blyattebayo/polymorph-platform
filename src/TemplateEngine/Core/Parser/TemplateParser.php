@@ -25,10 +25,10 @@ use Polymorph\Platform\TemplateEngine\Core\Lexer\TokenType;
  * template     → (text | expression)*
  * expression   → '{{' path filters? '}}'
  * path         → accessor segments*
- * ref_accessor → 'ref' '(' INTEGER ')'
- * field_accessor → 'field' '(' INTEGER ')'
+ * ref_accessor → 'ref' '(' STRING ')'
+ * field_accessor → 'field' '(' STRING ')'
  * segments     → (path_segment | wildcard)*
- * path_segment → '.' ('ref' | 'field') '(' INTEGER ')'
+ * path_segment → '.' ('ref' | 'field') '(' STRING ')'
  * wildcard     → '[' '*' ']'
  * filters      → ('|' filter)+
  * filter       → IDENT ('(' args ')')?
@@ -45,11 +45,8 @@ use Polymorph\Platform\TemplateEngine\Core\Lexer\TokenType;
  * - FilterNode: filter(args) transformation
  *
  * EXAMPLES:
- * {{ field(10) }}                          - Simple field access
- * {{ ref(100).field(200) }}                - Reference traversal to field
- * {{ field(10)[*] }}                       - Field with wildcard
- * {{ field(10) | uppercase }}              - Field with filter
- * {{ ref(1).field(2)[*] | join(', ') }}   - Complex expression
+ * {{ field('stable-field-id') }} - Simple field access
+ * {{ ref('stable-ref-id').field('stable-field-id') }} - Reference traversal
  *
  * ERROR HANDLING:
  * Throws ParserException on:
@@ -129,7 +126,7 @@ class TemplateParser
     }
 
     /**
-     * Parse path: ref(10).field(20)[*] or field(30)
+     * Parse a path built from quoted stable field IDs.
      */
     private function parsePath(): PathNode
     {
@@ -154,7 +151,7 @@ class TemplateParser
     }
 
     /**
-     * Parse path head: ref(10) or field(10)
+     * Parse a ref() or field() path head.
      */
     private function parsePathHead(): RefNode|FieldNode
     {
@@ -163,11 +160,11 @@ class TemplateParser
 
         if ($this->match(TokenType::REF)) {
             $this->expect(TokenType::LPAREN);
-            $idToken = $this->expect(TokenType::INTEGER);
+            $idToken = $this->expectFieldId();
             $endToken = $this->expect(TokenType::RPAREN);
 
             return new RefNode(
-                (int) $idToken->value,
+                $idToken->value,
                 $start,
                 $endToken->position + $endToken->length
             );
@@ -175,11 +172,11 @@ class TemplateParser
 
         if ($this->match(TokenType::FIELD)) {
             $this->expect(TokenType::LPAREN);
-            $idToken = $this->expect(TokenType::INTEGER);
+            $idToken = $this->expectFieldId();
             $endToken = $this->expect(TokenType::RPAREN);
 
             return new FieldNode(
-                (int) $idToken->value,
+                $idToken->value,
                 $start,
                 $endToken->position + $endToken->length
             );
@@ -192,7 +189,7 @@ class TemplateParser
     }
 
     /**
-     * Parse path segment: field(10) or ref(10)
+     * Parse a field() or ref() path segment.
      */
     private function parsePathSegment(): RefNode|FieldNode
     {
@@ -201,11 +198,11 @@ class TemplateParser
 
         if ($this->match(TokenType::REF)) {
             $this->expect(TokenType::LPAREN);
-            $idToken = $this->expect(TokenType::INTEGER);
+            $idToken = $this->expectFieldId();
             $endToken = $this->expect(TokenType::RPAREN);
 
             return new RefNode(
-                (int) $idToken->value,
+                $idToken->value,
                 $start,
                 $endToken->position + $endToken->length
             );
@@ -213,11 +210,11 @@ class TemplateParser
 
         if ($this->match(TokenType::FIELD)) {
             $this->expect(TokenType::LPAREN);
-            $idToken = $this->expect(TokenType::INTEGER);
+            $idToken = $this->expectFieldId();
             $endToken = $this->expect(TokenType::RPAREN);
 
             return new FieldNode(
-                (int) $idToken->value,
+                $idToken->value,
                 $start,
                 $endToken->position + $endToken->length
             );
@@ -353,6 +350,19 @@ class TemplateParser
         throw new ParserException(
             "Expected {$type->value}, got {$current->type->value}",
             $current
+        );
+    }
+
+    private function expectFieldId(): Token
+    {
+        if ($this->check(TokenType::STRING)) {
+            return $this->advance();
+        }
+
+        $current = $this->current();
+        throw new ParserException(
+            "Expected quoted stable field ID, got {$current->type->value}",
+            $current,
         );
     }
 }

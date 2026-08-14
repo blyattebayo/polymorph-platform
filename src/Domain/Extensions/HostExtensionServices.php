@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Extensions;
 
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\AccessControlAdministration;
-use Polymorph\Platform\Domain\DataPlatform\DataPlatform;
-use Polymorph\Platform\Domain\DataPlatform\ScopedExtensionData;
+use Polymorph\Platform\Domain\DataPlatform\Access\DataAccessDenied;
+use Polymorph\Platform\Domain\DataPlatform\SdkBridge\ExtensionDataGateway;
+use Polymorph\Platform\Domain\DataPlatform\SdkBridge\ScopedExtensionData;
 use Polymorph\Platform\Domain\DataPlatform\SdkBridge\SdkDefinitionRegistry;
 use Polymorph\Platform\Domain\Extensions\SdkBridge\SdkAccessGrants;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionDiscoveryService;
@@ -20,31 +21,18 @@ use Polymorph\Sdk\Data\Repository;
 use Polymorph\Sdk\Extension\ExtensionContext;
 use Polymorph\Sdk\Extension\ExtensionServices;
 
-/**
- * Хост-реализация {@see ExtensionServices}: строит scoped-сервисы по ЯВНОМУ
- * {@see ExtensionContext}. Data-часть идёт через единый шов {@see DataPlatform};
- * гранты — через {@see SdkAccessGrants} с enforcement 'ext.{id}.'.
- *
- * The context must name an installed extension; otherwise access is denied.
- * ВАЖНО про модель угроз: плагины исполняются in-process как доверенный PHP-код,
- * поэтому ext-префиксы и эта сверка — защита от ошибок и случайного залезания в
- * чужой неймспейс, а не криптографическая граница. Полной изоляции и надёжной
- * атрибуции исполняемого плагина in-process модель не даёт.
- */
+/** Builds host SDK adapters for an explicit, installed extension context. */
 final class HostExtensionServices implements ExtensionServices
 {
     public function __construct(
-        private readonly DataPlatform $platform,
+        private readonly ExtensionDataGateway $platform,
         private readonly AccessControlAdministration $admin,
         private readonly AccessGate $gate,
         private readonly UserRepository $users,
         private readonly ExtensionDiscoveryService $discovery,
     ) {}
 
-    /**
-     * @param  class-string<Entity>  $entityClass
-     * @return Repository<Entity>
-     */
+    /** @param class-string<Entity> $entityClass @return Repository<Entity> */
     public function repository(ExtensionContext $context, string $entity, string $entityClass = Entity::class): Repository
     {
         $this->assertKnown($context);
@@ -70,21 +58,13 @@ final class HostExtensionServices implements ExtensionServices
     {
         $this->assertKnown($context);
 
-        return new SdkAccessGrants(
-            $this->admin,
-            $this->gate,
-            $this->users,
-            $context,
-        );
+        return new SdkAccessGrants($this->admin, $this->gate, $this->users, $context);
     }
 
     private function assertKnown(ExtensionContext $context): void
     {
         if ($this->discovery->find($context->id->value) === null) {
-            throw new \LogicException(sprintf(
-                "ExtensionContext '%s' does not match an installed extension.",
-                $context->id->value,
-            ));
+            throw DataAccessDenied::for('extension.'.$context->id->value, 'use-sdk');
         }
     }
 }

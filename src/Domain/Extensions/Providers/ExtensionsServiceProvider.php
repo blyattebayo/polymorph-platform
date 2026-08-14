@@ -8,17 +8,17 @@ use Composer\Autoload\ClassLoader;
 use Illuminate\Database\Events\MigrationsEnded;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Polymorph\Platform\Domain\DataPlatform\Outbox\DataPlatformEvent;
 use Polymorph\Platform\Domain\Extensions\Access\ExtensionsCapabilityProvider;
 use Polymorph\Platform\Domain\Extensions\Core\Exceptions\ExtensionException;
 use Polymorph\Platform\Domain\Extensions\Core\ValueObjects\DiscoveredExtension;
-use Polymorph\Platform\Domain\Extensions\Events\EloquentRecordDefinitionSchemaCode;
+use Polymorph\Platform\Domain\Extensions\Events\DataPlatformRecordDefinitionSchemaCode;
 use Polymorph\Platform\Domain\Extensions\Events\RecordDefinitionSchemaCode;
 use Polymorph\Platform\Domain\Extensions\Events\RecordLifecycleSdkBridge;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionAclManifestParser;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionCapabilityService;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionDiscoveryService;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionFrontendManifestService;
-use Polymorph\Platform\Domain\Records\Events\RecordDeleted;
 use Polymorph\Platform\Support\Logging\Contracts\SecretRedactor;
 use Polymorph\Platform\Support\Logging\PayloadRedactor;
 use Polymorph\Sdk\Extension\ExtensionProvider;
@@ -32,7 +32,7 @@ final class ExtensionsServiceProvider extends ServiceProvider
         $this->app->singleton(ExtensionCapabilityService::class);
         $this->app->singleton(ExtensionFrontendManifestService::class);
         $this->app->singleton(SecretRedactor::class, PayloadRedactor::class);
-        $this->app->singleton(RecordDefinitionSchemaCode::class, EloquentRecordDefinitionSchemaCode::class);
+        $this->app->singleton(RecordDefinitionSchemaCode::class, DataPlatformRecordDefinitionSchemaCode::class);
 
         // One immutable installed set is validated before any extension code loads.
         $extensions = $this->app->make(ExtensionDiscoveryService::class)->discoverAll();
@@ -43,7 +43,7 @@ final class ExtensionsServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->app->tag([ExtensionsCapabilityProvider::class], 'access.capability_providers');
-        Event::listen(RecordDeleted::class, RecordLifecycleSdkBridge::class);
+        Event::listen(DataPlatformEvent::class, RecordLifecycleSdkBridge::class);
         Event::listen(MigrationsEnded::class, fn (): mixed => $this->provisionAccessControl());
     }
 

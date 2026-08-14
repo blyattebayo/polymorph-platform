@@ -10,7 +10,7 @@ use Polymorph\Platform\TemplateEngine\Core\Errors\LexerException;
  * Lexer for the template engine.
  *
  * Tokenizes ID-based template syntax:
- * {{ ref(10).field(20)[*] | filter(arg) }}
+ * {{ ref('stable-ref-id').field('stable-field-id') | filter(arg) }}
  *
  * SUPPORTED FEATURES:
  * - Text outside expressions

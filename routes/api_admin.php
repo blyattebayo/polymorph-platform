@@ -17,16 +17,14 @@ Route::middleware(['api', 'auth:session'])
     ->prefix('api/v1/admin')
     ->name('admin.v1.')
     ->group(function (): void {
-        foreach ([
+        $files = [
             'acl',
             'media',
             'menu',
-            'record_definitions',
-            'records',
-            'schema_models',
             'table_configs',
             'users_roles',
-        ] as $file) {
+        ];
+        foreach ($files as $file) {
             require __DIR__."/admin/{$file}.php";
         }
     });

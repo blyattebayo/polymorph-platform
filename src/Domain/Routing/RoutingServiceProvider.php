@@ -17,6 +17,7 @@ final class RoutingServiceProvider extends ServiceProvider
         'web.php',
         'oauth.php',
         'api.php',
+        'api_data.php',
         'api_plugins.php',
         'api_admin.php',
     ];

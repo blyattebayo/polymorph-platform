@@ -5,41 +5,42 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Extensions\Events;
 
 use Illuminate\Support\Facades\Event;
-use Polymorph\Platform\Domain\DataPlatform\StorageKey;
-use Polymorph\Platform\Domain\Records\Events\RecordDeleted;
+use Polymorph\Platform\Domain\DataPlatform\Outbox\DataPlatformEvent;
+use Polymorph\Platform\Domain\DataPlatform\SdkBridge\ExtensionStorageKey;
 use Polymorph\Sdk\Events\RecordDeleted as SdkRecordDeleted;
 
-/**
- * Translates the platform's internal record-lifecycle events into the declared Extension SDK
- * contract. Extensions listen to `Polymorph\Sdk\Events\*` instead of the
- * platform's internal event/model classes; this bridge is the single place that couples the
- * two, and it only re-emits for extension-owned records (schema code parses as `ext__…`).
- */
+/** Translates internal deletion events into the public SDK event for extension-owned records. */
 final class RecordLifecycleSdkBridge
 {
-    public function __construct(
-        private readonly RecordDefinitionSchemaCode $schemaCodes,
-    ) {}
+    public function __construct(private readonly RecordDefinitionSchemaCode $schemaCodes) {}
 
-    public function handle(RecordDeleted $event): void
+    public function handle(DataPlatformEvent $event): void
     {
-        $schemaCode = $this->schemaCodes->forDefinition($event->before->recordDefinitionId);
+        if ($event->type !== 'data.record.deleted') {
+            return;
+        }
+        $definitionId = (int) ($event->payload['record_definition_id'] ?? 0);
+        $recordId = (int) ($event->payload['record_id'] ?? 0);
+        if ($definitionId <= 0 || $recordId <= 0) {
+            return;
+        }
+        $schemaCode = $this->schemaCodes->forDefinition($definitionId);
         if ($schemaCode === null) {
             return;
         }
 
-        $parsed = StorageKey::parse($schemaCode);
+        $parsed = ExtensionStorageKey::parse($schemaCode);
         if ($parsed === null) {
-            // Platform-owned record (not `ext__…`): no extension contract to emit.
             return;
         }
+        $data = $event->payload['data'] ?? [];
 
         Event::dispatch(new SdkRecordDeleted(
             extensionId: $parsed['extensionId'],
             entity: $parsed['entity'],
             schemaCode: $schemaCode,
-            recordId: $event->before->id->value,
-            data: $event->before->dataJson,
+            recordId: $recordId,
+            data: is_array($data) ? $data : [],
         ));
     }
 }

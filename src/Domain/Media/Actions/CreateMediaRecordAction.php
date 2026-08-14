@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\Media\Actions;
 
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\Media\Core\Dto\MediaMetadataDto;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Domain\Media\Core\Models\MediaAvMetadata;
 use Polymorph\Platform\Domain\Media\Core\Models\MediaImage;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
+use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaProcessingState;
 
 /**
  * Action для создания Media записи и связанных метаданных.
@@ -70,6 +72,12 @@ final readonly class CreateMediaRecordAction
         ]);
 
         $media->save();
+        DB::table('dp_media_processing_states')->insert([
+            'media_id' => (string) $media->id,
+            'state' => MediaProcessingState::Ready->value,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         // 2. Для изображений: создать MediaImage если есть размеры
         // Валидация размеров выполнена на уровне Request

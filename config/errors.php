@@ -51,6 +51,12 @@ return [
             'status' => 409,
             'detail' => 'The request conflicts with the current state of the resource.',
         ],
+        ErrorCode::PRECONDITION_REQUIRED->value => [
+            'uri' => 'https://polymorph.dev/problems/precondition-required',
+            'title' => 'Precondition Required',
+            'status' => 428,
+            'detail' => 'A revision precondition is required for this request.',
+        ],
         ErrorCode::TOO_MANY_REQUESTS->value => [
             'uri' => 'https://polymorph.dev/problems/too-many-requests',
             'title' => 'Too Many Requests',

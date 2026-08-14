@@ -17,11 +17,13 @@ use Polymorph\Platform\Domain\AccessControl\Console\GenerateFeCapabilityCatalogC
 use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneAuthSessionsCommand;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneOAuthCredentialsCommand;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\SessionCookie;
+use Polymorph\Platform\Domain\DataPlatform\Console\ApplyProjectionIndexesCommand;
+use Polymorph\Platform\Domain\DataPlatform\Console\DispatchOutboxCommand;
+use Polymorph\Platform\Domain\DataPlatform\Console\RebuildProjectionsCommand;
+use Polymorph\Platform\Domain\DataPlatform\Console\RunSchemaMigrationCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsBuildCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsInstallCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsListCommand;
-use Polymorph\Platform\Domain\DisplayViews\Console\RebuildRecordDefinitionDisplayViewsCommand;
-use Polymorph\Platform\Domain\RecordIndexes\Console\RecordIndexesDoctorCommand;
 use Polymorph\Platform\Domain\Routing\Console\LintRoutesCommand;
 use Polymorph\Platform\Http\ApiErrorHandler;
 use Polymorph\Platform\Http\Middleware\AddCacheVary;
@@ -63,27 +65,21 @@ final class PlatformServiceProvider extends ServiceProvider
         // AdminServiceProvider, иначе catch-all админки затенит маршруты ядра.
         Domain\Routing\RoutingServiceProvider::class,
         Admin\Providers\AdminServiceProvider::class,
-        Domain\SchemaModel\Providers\SchemaServiceProvider::class,
-        Domain\SchemaModelValidation\Providers\SchemaModelValidationServiceProvider::class,
-        Domain\RecordDefinitions\Providers\RecordDefinitionServiceProvider::class,
-        Domain\Records\Providers\RecordsServiceProvider::class,
+        Domain\DataPlatform\Providers\DataPlatformServiceProvider::class,
         Domain\Media\Providers\MediaServiceProvider::class,
         Domain\TableConfig\Providers\TableConfigServiceProvider::class,
         Domain\Menu\Providers\MenuServiceProvider::class,
-        Domain\EntryView\Providers\EntryViewServiceProvider::class,
         TemplateEngine\Providers\TemplateEngineServiceProvider::class,
-        Domain\DisplayViews\Providers\DisplayViewsServiceProvider::class,
-        Domain\RecordIndexes\Providers\RecordIndexesServiceProvider::class,
     ];
 
     /** @var list<string> */
     private const CONFIG_KEYS = [
         'admin',
         'authentication',
+        'data_platform',
         'errors',
         'media',
         'plugins',
-        'records',
         'routing',
         'secret_redaction',
         'security',
@@ -100,8 +96,10 @@ final class PlatformServiceProvider extends ServiceProvider
         PluginsInstallCommand::class,
         PluginsBuildCommand::class,
         LintRoutesCommand::class,
-        RebuildRecordDefinitionDisplayViewsCommand::class,
-        RecordIndexesDoctorCommand::class,
+        DispatchOutboxCommand::class,
+        RebuildProjectionsCommand::class,
+        RunSchemaMigrationCommand::class,
+        ApplyProjectionIndexesCommand::class,
     ];
 
     public function register(): void

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Media\Services;
 
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\Media\Core\Contracts\MediaIncludedProvider;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
@@ -26,10 +27,15 @@ final class DefaultMediaIncludedProvider implements MediaIncludedProvider
             ->whereNull('deleted_at')
             ->with(['image', 'avMetadata'])
             ->get();
+        $states = DB::table('dp_media_processing_states')->whereIn('media_id', $mediaIds)
+            ->pluck('state', 'media_id')->all();
 
         $result = new \stdClass;
         foreach ($mediaItems as $media) {
-            $result->{(string) $media->id} = $this->mapMediaIncluded($media);
+            $result->{(string) $media->id} = $this->mapMediaIncluded(
+                $media,
+                (string) ($states[(string) $media->id] ?? 'ready'),
+            );
         }
 
         return $result;
@@ -38,7 +44,7 @@ final class DefaultMediaIncludedProvider implements MediaIncludedProvider
     /**
      * @return array<string, mixed>
      */
-    private function mapMediaIncluded(Media $media): array
+    private function mapMediaIncluded(Media $media, string $processingState): array
     {
         $payload = [
             'id' => $media->id,
@@ -47,6 +53,7 @@ final class DefaultMediaIncludedProvider implements MediaIncludedProvider
             'ext' => $media->ext,
             'mime' => $media->mime,
             'size_bytes' => (int) $media->size_bytes,
+            'processing_state' => $processingState,
             'title' => $media->title,
             'alt' => $media->alt,
             'created_at' => $media->created_at?->toIso8601String(),

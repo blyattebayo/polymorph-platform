@@ -10,7 +10,7 @@ namespace Polymorph\Platform\TemplateEngine\Core\AST;
 readonly class RefNode implements ASTNode
 {
     public function __construct(
-        public int $fieldId,
+        public string $fieldId,
         public int $start,
         public int $end
     ) {}
