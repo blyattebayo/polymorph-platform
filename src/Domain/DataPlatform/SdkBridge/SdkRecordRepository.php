@@ -11,7 +11,6 @@ use Polymorph\Platform\Domain\DataPlatform\Delete\RecordDeleteCommand;
 use Polymorph\Platform\Domain\DataPlatform\Delete\RecordDeleteCommandHandler;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformBadRequest;
 use Polymorph\Platform\Domain\DataPlatform\Fields\Cardinality;
-use Polymorph\Platform\Domain\DataPlatform\Fields\DocumentPathAccessor;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldType;
 use Polymorph\Platform\Domain\DataPlatform\Query\BooleanNode;
@@ -49,7 +48,6 @@ final class SdkRecordRepository implements QueryExecutor, Repository
         private readonly SchemaCatalog $schemas,
         private readonly AuthenticationContext $auth,
         private readonly RecordStore $records,
-        private readonly DocumentPathAccessor $paths,
         private readonly LogicalDocumentReader $logicalDocuments,
     ) {}
 
@@ -140,13 +138,14 @@ final class SdkRecordRepository implements QueryExecutor, Repository
                     ['record_id' => $id, 'record_definition_id' => $this->definitionId],
                 );
             }
-            $logical = $this->logicalDocuments->current(
+            $logicalState = $this->logicalDocuments->current(
                 $record->definitionId,
                 $record->schemaVersionId,
                 $record->document,
-            )['document'];
-            [, $current] = $this->paths->get($logical, $definition->path);
-            $current ??= 0;
+            );
+            $logical = $logicalState['document'];
+            $tree = $this->schemas->tree($logicalState['logical_schema_version_id']);
+            $current = $tree->values($logical, $definition)[0]['value'] ?? 0;
             if (! is_int($current) && ! is_float($current)) {
                 throw DataPlatformBadRequest::because(
                     'field_value_not_numeric',
@@ -154,7 +153,7 @@ final class SdkRecordRepository implements QueryExecutor, Repository
                     ['field' => $definition->path],
                 );
             }
-            $patch = $this->paths->set([], $definition->path, $current + $delta);
+            $patch = $tree->patch($definition, $current + $delta);
 
             return $this->fromWrite($this->writes->dispatch(new RecordWriteCommand(
                 $this->definitionId,

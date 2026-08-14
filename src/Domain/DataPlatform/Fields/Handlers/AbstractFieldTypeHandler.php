@@ -21,7 +21,7 @@ abstract class AbstractFieldTypeHandler implements FieldTypeHandler
 {
     private const COMMON_OPERATORS = ['eq', 'in', 'is_null', 'is_not_null'];
 
-    public function __construct(private readonly CanonicalJson $canonicalJson) {}
+    public function __construct(protected readonly CanonicalJson $canonicalJson) {}
 
     public function validateSchema(FieldDefinition $field): void
     {

@@ -122,6 +122,8 @@ final class DataControlReadModel
     /** @param list<object> $fields @return array<string, mixed> */
     private function mapVersion(object $row, array $fields): array
     {
+        $fieldTree = $this->fieldTree($fields);
+
         return [
             'id' => (string) $row->id,
             'record_definition_id' => (int) $row->record_definition_id,
@@ -137,12 +139,31 @@ final class DataControlReadModel
             'archived_at' => $row->archived_at === null ? null : (string) $row->archived_at,
             'created_at' => (string) $row->created_at,
             'updated_at' => (string) $row->updated_at,
-            'fields' => array_map(fn (object $field): array => $this->mapField($field), $fields),
+            'fields' => $fieldTree,
         ];
     }
 
-    /** @return array<string,mixed> */
-    private function mapField(object $field): array
+    /** @param list<object> $fields @return list<array<string,mixed>> */
+    private function fieldTree(array $fields): array
+    {
+        $byParent = [];
+        foreach ($fields as $field) {
+            $parent = $field->parent_field_id === null ? '$' : (string) $field->parent_field_id;
+            $byParent[$parent][] = $field;
+        }
+
+        $map = function (object $field) use (&$map, $byParent): array {
+            return $this->mapField(
+                $field,
+                array_map($map, $byParent[(string) $field->field_id] ?? []),
+            );
+        };
+
+        return array_map($map, $byParent['$'] ?? []);
+    }
+
+    /** @param list<array<string,mixed>> $children @return array<string,mixed> */
+    private function mapField(object $field, array $children): array
     {
         return [
             'id' => (int) $field->id,
@@ -164,6 +185,7 @@ final class DataControlReadModel
                 : $this->json->decodeMap($field->metadata, 'dp_schema_fields.metadata'),
             'created_at' => (string) $field->created_at,
             'updated_at' => (string) $field->updated_at,
+            'children' => $children,
         ];
     }
 

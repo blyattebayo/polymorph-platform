@@ -26,6 +26,8 @@ final readonly class FieldDefinition
         public ?string $parentId = null,
         public bool $multiValued = false,
         public int $position = 0,
+        /** @var list<string> */
+        public array $collectionPaths = [],
     ) {
         $this->type = is_string($type) ? (FieldType::tryFrom($type) ?? $type) : $type;
     }

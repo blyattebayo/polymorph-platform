@@ -17,6 +17,7 @@ use Polymorph\Platform\Domain\DataPlatform\Fields\Handlers\FloatFieldTypeHandler
 use Polymorph\Platform\Domain\DataPlatform\Fields\Handlers\IntFieldTypeHandler;
 use Polymorph\Platform\Domain\DataPlatform\Fields\Handlers\JsonFieldTypeHandler;
 use Polymorph\Platform\Domain\DataPlatform\Fields\Handlers\MediaFieldTypeHandler;
+use Polymorph\Platform\Domain\DataPlatform\Fields\Handlers\RawJsonFieldTypeHandler;
 use Polymorph\Platform\Domain\DataPlatform\Fields\Handlers\RefFieldTypeHandler;
 use Polymorph\Platform\Domain\DataPlatform\Fields\Handlers\StringFieldTypeHandler;
 use Polymorph\Platform\Domain\DataPlatform\Fields\Handlers\TextFieldTypeHandler;
@@ -43,6 +44,7 @@ final class DataPlatformServiceProvider extends ServiceProvider
                 new BoolFieldTypeHandler($canonicalJson),
                 new DateTimeFieldTypeHandler($canonicalJson),
                 new JsonFieldTypeHandler($canonicalJson),
+                new RawJsonFieldTypeHandler($canonicalJson),
                 new RefFieldTypeHandler($canonicalJson),
                 new MediaFieldTypeHandler($canonicalJson),
             ], static function () use ($app, $canonicalJson): iterable {

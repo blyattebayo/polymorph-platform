@@ -37,10 +37,17 @@ final class JsonPathExpression
     public function jsonPath(FieldDefinition|string $field): string
     {
         $path = $field instanceof FieldDefinition ? $field->path : $field;
-        $segments = array_map(
-            static fn (string $segment): string => '"'.str_replace(['\\', '"'], ['\\\\', '\\"'], $segment).'"',
-            explode('.', $path),
-        );
+        $collectionPaths = $field instanceof FieldDefinition ? array_fill_keys($field->collectionPaths, true) : [];
+        $prefix = [];
+        $segments = [];
+        foreach (explode('.', $path) as $segment) {
+            $prefix[] = $segment;
+            $encoded = '"'.str_replace(['\\', '"'], ['\\\\', '\\"'], $segment).'"';
+            if (isset($collectionPaths[implode('.', $prefix)])) {
+                $encoded .= '[*]';
+            }
+            $segments[] = $encoded;
+        }
         $jsonPath = '$.'.implode('.', $segments);
 
         return "'".str_replace("'", "''", $jsonPath)."'";

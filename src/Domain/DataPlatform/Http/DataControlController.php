@@ -15,7 +15,6 @@ use Polymorph\Platform\Domain\DataPlatform\Control\FieldSpecification;
 use Polymorph\Platform\Domain\DataPlatform\Control\SchemaDraftService;
 use Polymorph\Platform\Domain\DataPlatform\Control\SchemaLifecycleService;
 use Polymorph\Platform\Domain\DataPlatform\Migration\MigrationClassification;
-use Polymorph\Platform\Domain\DataPlatform\Migration\MigrationOperation;
 use Polymorph\Platform\Domain\DataPlatform\Migration\SchemaMigrationRunner;
 use Polymorph\Platform\Domain\DataPlatform\Migration\SchemaMigrationService;
 use Polymorph\Platform\Domain\DataPlatform\Projection\DisplayTemplateCompiler;
@@ -154,17 +153,11 @@ final readonly class DataControlController
             'from_schema_version_id' => ['required', 'string', 'size:26'],
             'to_schema_version_id' => ['required', 'string', 'size:26'],
             'classification' => ['required', 'string', 'in:'.implode(',', MigrationClassification::values())],
-            'operations' => ['required', 'array'],
-            'operations.*' => ['array'],
         ]);
         $id = $this->migrations->createPlan(
             $payload['from_schema_version_id'],
             $payload['to_schema_version_id'],
             MigrationClassification::from($payload['classification']),
-            array_map(
-                static fn (array $operation): MigrationOperation => MigrationOperation::fromArray($operation),
-                $payload['operations'],
-            ),
         );
 
         return response()->json(['data' => $this->readModel->migrationPlan($id)], 201);

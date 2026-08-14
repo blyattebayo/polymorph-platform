@@ -9,10 +9,13 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\DataPlatform\Access\DataAccessPolicy;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformBadRequest;
+use Polymorph\Platform\Domain\DataPlatform\Fields\Cardinality;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldType;
 use Polymorph\Platform\Domain\DataPlatform\Media\MediaMetadataRepository;
 use Polymorph\Platform\Domain\DataPlatform\Projection\DisplayTemplateRenderer;
+use Polymorph\Platform\Domain\DataPlatform\Schema\CompiledSchemaTree;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCompiler;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaFieldMapper;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaStorage;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
@@ -29,6 +32,7 @@ final class RecordReadService
         private readonly MediaIncludedProvider $mediaIncluded,
         private readonly DisplayTemplateRenderer $displayTemplates,
         private readonly SchemaFieldMapper $schemaFields,
+        private readonly SchemaCompiler $schemaCompiler,
         private readonly DatabaseJson $json,
         private readonly RecordRowPresenter $rows,
         private readonly MediaMetadataRepository $mediaMetadata,
@@ -386,6 +390,7 @@ final class RecordReadService
             }
         }
         $fieldsByVersion = $this->fieldsForVersions(array_values(array_unique($versionIds)));
+        $treesByVersion = array_map($this->schemaCompiler->compile(...), $fieldsByVersion);
         $groups = [];
         foreach ($sourceIds as $sourceId) {
             $record = $records[$sourceId] ?? null;
@@ -396,7 +401,9 @@ final class RecordReadService
             $versionId = (string) $record['logical_schema_version_id'];
             $fieldIds = [];
             foreach ($fieldsByVersion[$versionId] ?? [] as $field) {
-                if ($field->type === $type && $this->access->canReadField($actorId, $definitionId, $field)) {
+                if ($field->type === $type
+                    && isset($treesByVersion[$versionId])
+                    && $this->canReadField($actorId, $definitionId, $treesByVersion[$versionId], $field)) {
                     $fieldIds[] = $field->id;
                 }
             }
@@ -457,60 +464,72 @@ final class RecordReadService
         return $result;
     }
 
-    /** @param list<FieldDefinition> $fields @return array<string,mixed> */
-    private function filterDocument(array $document, array $fields, ?int $actorId, int $definitionId): array
-    {
-        $readable = [];
-        $known = [];
-        foreach ($fields as $field) {
-            $known[$field->path] = true;
-            if ($this->access->canReadField($actorId, $definitionId, $field)) {
-                $readable[$field->path] = true;
+    private function canReadField(
+        ?int $actorId,
+        int $definitionId,
+        CompiledSchemaTree $tree,
+        FieldDefinition $field,
+    ): bool {
+        foreach ([...$tree->ancestors($field), $field] as $candidate) {
+            if (! $this->access->canReadField($actorId, $definitionId, $candidate)) {
+                return false;
             }
         }
 
-        return $this->filterNode($document, '', $known, $readable);
+        return true;
     }
 
-    /**
-     * @param  array<string,true>  $known
-     * @param  array<string,true>  $readable
-     * @return array<string,mixed>
-     */
-    private function filterNode(array $node, string $parentPath, array $known, array $readable): array
+    /** @param list<FieldDefinition> $fields @return array<string,mixed> */
+    private function filterDocument(array $document, array $fields, ?int $actorId, int $definitionId): array
     {
+        return $this->filterObject(
+            $document,
+            $this->schemaCompiler->compile($fields),
+            null,
+            $actorId,
+            $definitionId,
+        );
+    }
+
+    /** @return array<string,mixed> */
+    private function filterObject(
+        array $node,
+        CompiledSchemaTree $tree,
+        ?FieldDefinition $container,
+        ?int $actorId,
+        int $definitionId,
+    ): array {
         $result = [];
-        foreach ($node as $key => $value) {
-            if ($key === '_item_id') {
-                $result[$key] = $value;
+        foreach ($container === null ? $tree->roots() : $tree->childrenOf($container) as $field) {
+            if (! array_key_exists($field->name, $node)
+                || ! $this->access->canReadField($actorId, $definitionId, $field)) {
+                continue;
+            }
+            $value = $node[$field->name];
+            if ($field->typeName() !== 'json' || $value === null) {
+                $result[$field->name] = $value;
 
                 continue;
             }
-            $path = $parentPath === '' ? (string) $key : $parentPath.'.'.$key;
-            $hasChildren = false;
-            $hasReadableChildren = false;
-            foreach ($known as $candidate => $_) {
-                if (str_starts_with($candidate, $path.'.')) {
-                    $hasChildren = true;
-                    $hasReadableChildren = $hasReadableChildren || isset($readable[$candidate]);
+            if (! is_array($value)) {
+                continue;
+            }
+            if ($field->cardinality === Cardinality::ONE) {
+                $result[$field->name] = $this->filterObject($value, $tree, $field, $actorId, $definitionId);
+
+                continue;
+            }
+            $result[$field->name] = array_map(function (mixed $item) use ($tree, $field, $actorId, $definitionId): mixed {
+                if (! is_array($item)) {
+                    return [];
                 }
-            }
-            if (isset($readable[$path]) && ! $hasChildren) {
-                $result[$key] = $value;
+                $filtered = $this->filterObject($item, $tree, $field, $actorId, $definitionId);
+                if (is_string($item['_item_id'] ?? null)) {
+                    $filtered = ['_item_id' => $item['_item_id'], ...$filtered];
+                }
 
-                continue;
-            }
-            if (! $hasReadableChildren || ! is_array($value)) {
-                continue;
-            }
-            if (array_is_list($value)) {
-                $result[$key] = array_map(
-                    fn (mixed $item): mixed => is_array($item) ? $this->filterNode($item, $path, $known, $readable) : $item,
-                    $value,
-                );
-            } else {
-                $result[$key] = $this->filterNode($value, $path, $known, $readable);
-            }
+                return $filtered;
+            }, $value);
         }
 
         return $result;

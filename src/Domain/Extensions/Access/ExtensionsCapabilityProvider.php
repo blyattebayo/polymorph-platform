@@ -7,6 +7,7 @@ namespace Polymorph\Platform\Domain\Extensions\Access;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\CapabilityDefinitionProvider;
 use Polymorph\Platform\Domain\AccessControl\Core\ValueObjects\CapabilityDefinition;
 use Polymorph\Platform\Domain\Extensions\Services\ExtensionDiscoveryService;
+
 final class ExtensionsCapabilityProvider implements CapabilityDefinitionProvider
 {
     public function capabilities(): array

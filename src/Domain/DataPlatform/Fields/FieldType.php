@@ -14,6 +14,7 @@ enum FieldType: string
     case BOOL = 'bool';
     case DATETIME = 'datetime';
     case JSON = 'json';
+    case RAW_JSON = 'raw_json';
     case REF = 'ref';
     case MEDIA = 'media';
 

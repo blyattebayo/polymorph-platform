@@ -6,7 +6,7 @@ namespace Polymorph\Platform\Domain\DataPlatform\Projection;
 
 use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformResourceNotFound;
-use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Schema\CompiledSchemaTree;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\CanonicalJson;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
@@ -175,14 +175,13 @@ final class ProjectionRebuilder
     }
 
     /**
-     * @param  list<FieldDefinition>|null  $fields
      * @return array{changed:bool,expected_hash:string,actual_hash:string}
      */
     private function rebuildLockedRecord(
         object $record,
         ProjectionChangeSet $actual,
         bool $dryRun,
-        ?array $fields = null,
+        ?CompiledSchemaTree $tree = null,
     ): array {
         $recordId = (int) $record->id;
         $versionId = (string) $record->schema_version_id;
@@ -190,7 +189,7 @@ final class ProjectionRebuilder
             (int) $record->record_definition_id,
             $versionId,
             $this->json->decodeMap($record->data, 'dp_records.data'),
-            $fields ?? $this->schemas->fields($versionId),
+            $tree ?? $this->schemas->tree($versionId),
         );
         $expected->displayValue ??= "Record #{$recordId}";
         $expectedHash = $this->hash($expected);
@@ -212,7 +211,7 @@ final class ProjectionRebuilder
             $records = DB::table('dp_records')->whereIn('id', $recordIds)
                 ->orderBy('id')->lockForUpdate()->get()->keyBy('id');
             $actual = $this->actualMany($recordIds);
-            $fieldsByVersion = [];
+            $treesByVersion = [];
             $changed = [];
             foreach ($recordIds as $recordId) {
                 $record = $records->get($recordId);
@@ -220,8 +219,8 @@ final class ProjectionRebuilder
                     throw DataPlatformResourceNotFound::for('record', $recordId);
                 }
                 $versionId = (string) $record->schema_version_id;
-                $fields = $fieldsByVersion[$versionId] ??= $this->schemas->fields($versionId);
-                $result = $this->rebuildLockedRecord($record, $actual[$recordId], $dryRun, $fields);
+                $tree = $treesByVersion[$versionId] ??= $this->schemas->tree($versionId);
+                $result = $this->rebuildLockedRecord($record, $actual[$recordId], $dryRun, $tree);
                 if (! $result['changed']) {
                     continue;
                 }

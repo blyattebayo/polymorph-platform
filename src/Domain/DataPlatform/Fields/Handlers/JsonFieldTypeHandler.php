@@ -12,9 +12,8 @@ final class JsonFieldTypeHandler extends AbstractFieldTypeHandler
     public function validateSchema(FieldDefinition $field): void
     {
         parent::validateSchema($field);
-        $shape = $field->constraints['shape'] ?? null;
-        if ($shape !== null && ! in_array($shape, ['object', 'array'], true)) {
-            throw DataValidationException::one('invalid_schema_constraint', "Constraint 'shape' must be object or array.", $field->path);
+        if (array_key_exists('shape', $field->constraints)) {
+            throw DataValidationException::one('obsolete_schema_constraint', "JSON containers do not accept the obsolete 'shape' constraint.", $field->path);
         }
     }
 
@@ -25,10 +24,8 @@ final class JsonFieldTypeHandler extends AbstractFieldTypeHandler
 
     protected function normalizeOne(mixed $value, FieldDefinition $field, string $occurrence): mixed
     {
-        try {
-            json_encode($value, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            throw DataValidationException::one('json', 'Value is not JSON serializable.', $field->path, $occurrence);
+        if (! is_array($value) || ($value !== [] && array_is_list($value))) {
+            throw DataValidationException::one('container_type', 'Expected an object.', $field->path, $occurrence);
         }
 
         return $value;
@@ -36,13 +33,7 @@ final class JsonFieldTypeHandler extends AbstractFieldTypeHandler
 
     protected function validateOne(mixed $value, FieldDefinition $field, string $occurrence): void
     {
-        $shape = $field->constraints['shape'] ?? null;
-        if ($shape === 'object' && (! is_array($value) || array_is_list($value))) {
-            throw DataValidationException::one('shape', 'Expected a JSON object.', $field->path, $occurrence);
-        }
-        if ($shape === 'array' && (! is_array($value) || ! array_is_list($value))) {
-            throw DataValidationException::one('shape', 'Expected a JSON array.', $field->path, $occurrence);
-        }
+        // Structural children and unknown keys are validated by SchemaDocumentProcessor.
     }
 
     /** @return list<string> */

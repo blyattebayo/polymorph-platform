@@ -251,7 +251,8 @@ final class RecordDeleteCommandHandler
             return;
         }
         $document = $this->runtime->json->decodeMap($source->data, 'dp_records.data');
-        $fields = collect($this->runtime->schemas->fields((string) $source->schema_version_id))->keyBy('id');
+        $tree = $this->runtime->schemas->tree((string) $source->schema_version_id);
+        $fields = collect($tree->fields())->keyBy('id');
 
         foreach ($fieldIds as $fieldId) {
             /** @var FieldDefinition|null $field */
@@ -263,9 +264,9 @@ final class RecordDeleteCommandHandler
                     ['field_id' => $fieldId],
                 );
             }
-            $document = $this->runtime->paths->map(
+            $document = $tree->map(
                 $document,
-                $field->path,
+                $field,
                 static function (mixed $value) use ($field, $targetId): mixed {
                     if ($field->cardinality === Cardinality::MANY) {
                         return array_values(array_filter(

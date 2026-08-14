@@ -29,22 +29,13 @@ final class StableFieldRegistry
             return $specification->fieldId;
         }
 
-        if ($specification->key === '') {
-            throw DataPlatformBadRequest::because('missing_stable_field_key', 'A field requires a stable key.');
-        }
-        $existing = DB::table('dp_fields')
-            ->where('record_definition_id', $definitionId)
-            ->where('key', $specification->key)
-            ->value('id');
-        if (is_string($existing)) {
-            return $existing;
-        }
-
         $fieldId = (string) Str::ulid();
         DB::table('dp_fields')->insert([
             'id' => $fieldId,
             'record_definition_id' => $definitionId,
-            'key' => $specification->key,
+            // Stable identity is the ULID. This storage key is deliberately
+            // opaque so renames and moves cannot mutate or recreate identity.
+            'key' => $fieldId,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

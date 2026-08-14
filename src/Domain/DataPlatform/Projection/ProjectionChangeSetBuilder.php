@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\DataPlatform\Projection;
 
-use Polymorph\Platform\Domain\DataPlatform\Fields\DocumentPathAccessor;
-use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldTypeRegistry;
+use Polymorph\Platform\Domain\DataPlatform\Schema\CompiledSchemaTree;
 
 /** Builds every synchronous projection from the canonical document and schema. */
 final class ProjectionChangeSetBuilder
 {
     public function __construct(
         private readonly FieldTypeRegistry $types,
-        private readonly DocumentPathAccessor $paths,
         private readonly DisplayTemplateRenderer $displayTemplates,
     ) {}
 
@@ -24,15 +22,14 @@ final class ProjectionChangeSetBuilder
 
     /**
      * @param  array<string,mixed>  $document
-     * @param  list<FieldDefinition>  $fields
      */
-    public function build(int $definitionId, string $schemaVersionId, array $document, array $fields): ProjectionChangeSet
+    public function build(int $definitionId, string $schemaVersionId, array $document, CompiledSchemaTree $tree): ProjectionChangeSet
     {
         $result = new ProjectionChangeSet;
-        foreach ($fields as $field) {
+        foreach ($tree->fields() as $field) {
             $result->observeField($field);
             $handler = $this->types->get($field->type);
-            foreach ($this->paths->values($document, $field->path) as $value) {
+            foreach ($tree->values($document, $field) as $value) {
                 $result->merge($handler->buildProjectionChanges($value['value'], $field, $value['occurrence']));
             }
         }

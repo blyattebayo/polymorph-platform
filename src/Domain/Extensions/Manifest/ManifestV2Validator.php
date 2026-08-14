@@ -103,5 +103,4 @@ final class ManifestV2Validator
             throw new \InvalidArgumentException("{$source}: version '{$version}' is not semver (major.minor.patch).");
         }
     }
-
 }

@@ -7,18 +7,18 @@ namespace Polymorph\Platform\Domain\DataPlatform\Control;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformBadRequest;
 use Polymorph\Platform\Domain\DataPlatform\Fields\Cardinality;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Fields\FieldName;
 
-/** Typed boundary for one field submitted to the schema editor. */
+/** One node in the canonical nested control-plane schema contract. */
 final readonly class FieldSpecification
 {
     /**
-     * @param  array<string, mixed>  $constraints
-     * @param  array<string, mixed>  $metadata
+     * @param  array<string,mixed>  $constraints
+     * @param  array<string,mixed>  $metadata
+     * @param  list<FieldSpecification>  $children
      */
     public function __construct(
         public ?string $fieldId,
-        public string $key,
-        public string $path,
         public string $name,
         public string $type,
         public Cardinality $cardinality,
@@ -27,50 +27,89 @@ final readonly class FieldSpecification
         public int $projectionVersion,
         public array $constraints,
         public array $metadata,
-        public ?string $parentFieldId,
+        public array $children,
     ) {}
 
-    /** @param array<string, mixed> $input */
+    /** @param array<string,mixed> $input */
     public static function fromArray(array $input, int $defaultPosition = 0): self
     {
-        $path = trim((string) ($input['path'] ?? $input['name'] ?? ''));
-        $name = trim((string) ($input['name'] ?? basename(str_replace('.', '/', $path))));
+        foreach (['path', 'full_path'] as $forbidden) {
+            if (array_key_exists($forbidden, $input)) {
+                throw DataPlatformBadRequest::because(
+                    'client_supplied_field_path',
+                    'Field path is server-computed and cannot be supplied by a client.',
+                    ['property' => $forbidden],
+                );
+            }
+        }
+        foreach (['parent_field_id', 'parent_id', 'key'] as $forbidden) {
+            if (array_key_exists($forbidden, $input)) {
+                throw DataPlatformBadRequest::because(
+                    'flat_field_tree_contract_rejected',
+                    "Field property '{$forbidden}' is not accepted; express structure with nested children.",
+                    ['property' => $forbidden],
+                );
+            }
+        }
+
+        $name = FieldName::from((string) ($input['name'] ?? ''))->value;
+        $type = trim((string) ($input['type'] ?? ''));
+        if ($type === '') {
+            throw DataPlatformBadRequest::because(
+                'missing_field_type',
+                "Field '{$name}' requires a type.",
+                ['name' => $name],
+            );
+        }
         $cardinalityValue = trim((string) ($input['cardinality'] ?? Cardinality::ONE->value));
         $cardinality = Cardinality::tryFrom($cardinalityValue);
         if (! $cardinality instanceof Cardinality) {
             throw DataPlatformBadRequest::because(
                 'invalid_field_cardinality',
                 "Unsupported field cardinality '{$cardinalityValue}'.",
-                ['path' => $path, 'cardinality' => $cardinalityValue],
+                ['name' => $name, 'cardinality' => $cardinalityValue],
             );
         }
-
         $fieldId = trim((string) ($input['field_id'] ?? ''));
-        $parentFieldId = isset($input['parent_field_id']) && $input['parent_field_id'] !== null
-            ? trim((string) $input['parent_field_id'])
-            : null;
+        $childrenInput = $input['children'] ?? [];
+        if (! is_array($childrenInput)) {
+            throw DataPlatformBadRequest::because(
+                'invalid_field_children',
+                "Field '{$name}' children must be a list.",
+                ['name' => $name],
+            );
+        }
+        $children = [];
+        foreach (array_values($childrenInput) as $index => $child) {
+            if (! is_array($child)) {
+                throw DataPlatformBadRequest::because(
+                    'invalid_field_child',
+                    "Field '{$name}' contains an invalid child specification.",
+                    ['name' => $name, 'index' => $index],
+                );
+            }
+            $children[] = self::fromArray($child, $index);
+        }
 
         return new self(
             fieldId: $fieldId === '' ? null : $fieldId,
-            key: trim((string) ($input['key'] ?? $path)),
-            path: $path,
             name: $name,
-            type: trim((string) ($input['type'] ?? '')),
+            type: $type,
             cardinality: $cardinality,
             system: (bool) ($input['is_system'] ?? false),
             position: (int) ($input['position'] ?? $defaultPosition),
             projectionVersion: max(1, (int) ($input['projection_version'] ?? 1)),
             constraints: is_array($input['constraints'] ?? null) ? $input['constraints'] : [],
             metadata: is_array($input['metadata'] ?? null) ? $input['metadata'] : [],
-            parentFieldId: $parentFieldId === '' ? null : $parentFieldId,
+            children: $children,
         );
     }
 
-    public function toField(string $fieldId): FieldDefinition
+    public function toField(string $fieldId, ?string $parentFieldId): FieldDefinition
     {
         return new FieldDefinition(
             id: $fieldId,
-            path: $this->path,
+            path: '',
             name: $this->name,
             type: $this->type,
             cardinality: $this->cardinality,
@@ -78,7 +117,7 @@ final readonly class FieldSpecification
             projectionVersion: $this->projectionVersion,
             constraints: $this->constraints,
             metadata: $this->metadata,
-            parentId: $this->parentFieldId,
+            parentId: $parentFieldId,
             position: $this->position,
         );
     }

@@ -83,6 +83,7 @@ final class ExtensionDiscoveryService
         $contributes = $manifest->contributes;
         $routeFile = $directory.DIRECTORY_SEPARATOR.'be/routes.php';
         $frontendBundle = $directory.DIRECTORY_SEPARATOR.'fe'.DIRECTORY_SEPARATOR.'dist'.DIRECTORY_SEPARATOR.'plugin.js';
+
         return new DiscoveredExtension(
             id: $manifest->id,
             name: $manifest->name,

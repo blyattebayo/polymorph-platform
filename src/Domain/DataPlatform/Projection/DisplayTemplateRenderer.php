@@ -8,8 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\DataPlatform\Access\DataAccessPolicy;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformInvariantViolation;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformStateConflict;
-use Polymorph\Platform\Domain\DataPlatform\Fields\DocumentPathAccessor;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Schema\CompiledSchemaTree;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCompiler;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaFieldMapper;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaStorage;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
@@ -33,6 +34,9 @@ final class DisplayTemplateRenderer
     /** @var array<string,list<FieldDefinition>> */
     private array $schemaFields = [];
 
+    /** @var array<string,CompiledSchemaTree> */
+    private array $schemaTrees = [];
+
     /** @var array<int,object|null> */
     private array $targetRecords = [];
 
@@ -48,8 +52,8 @@ final class DisplayTemplateRenderer
     public function __construct(
         private readonly TemplateParsePipeline $templates,
         private readonly FilterRegistry $filters,
-        private readonly DocumentPathAccessor $paths,
         private readonly SchemaFieldMapper $fields,
+        private readonly SchemaCompiler $compiler,
         private readonly DatabaseJson $json,
     ) {}
 
@@ -59,6 +63,7 @@ final class DisplayTemplateRenderer
         $this->fieldCache = [];
         $this->definitionMetadata = [];
         $this->schemaFields = [];
+        $this->schemaTrees = [];
         $this->targetRecords = [];
         $this->targetReadability = [];
         $this->referenceTemplates = [];
@@ -188,7 +193,7 @@ final class DisplayTemplateRenderer
             );
             foreach ($fields as $field) {
                 if (($field->metadata['display'] ?? false) === true
-                    && ! $access->canReadField($actorId, $definitionId, $field)) {
+                    && ! $this->canReadField($access, $actorId, $definitionId, $this->tree($schemaVersionId), $field)) {
                     return false;
                 }
             }
@@ -248,11 +253,17 @@ final class DisplayTemplateRenderer
             if ($access !== null) {
                 $definition = $this->fields->fromRow($field);
                 if (! $access->canReadDefinition($actorId, $activeDefinitionId)
-                    || ! $access->canReadField($actorId, $activeDefinitionId, $definition)) {
+                    || ! $this->canReadField(
+                        $access,
+                        $actorId,
+                        $activeDefinitionId,
+                        $this->tree($activeVersionId),
+                        $definition,
+                    )) {
                     return ['allowed' => false, 'value' => null];
                 }
             }
-            $values = $this->paths->values($activeDocument, (string) $field->path);
+            $values = $this->tree($activeVersionId)->values($activeDocument, (string) $field->field_id);
             $value = $values[0]['value'] ?? null;
             if ($segment instanceof RefNode) {
                 $targetId = is_array($value) ? ($value['id'] ?? null) : $value;
@@ -272,6 +283,33 @@ final class DisplayTemplateRenderer
         }
 
         return ['allowed' => true, 'value' => $value];
+    }
+
+    private function tree(string $schemaVersionId): CompiledSchemaTree
+    {
+        return $this->schemaTrees[$schemaVersionId] ??= $this->compiler->compile(
+            $this->schemaFields[$schemaVersionId] ??= $this->fields->fromRows(
+                SchemaStorage::orderedFields(
+                    DB::table('dp_schema_fields')->where('schema_version_id', $schemaVersionId),
+                )->get(),
+            ),
+        );
+    }
+
+    private function canReadField(
+        DataAccessPolicy $access,
+        ?int $actorId,
+        int $definitionId,
+        CompiledSchemaTree $tree,
+        FieldDefinition $field,
+    ): bool {
+        foreach ([...$tree->ancestors($field), $field] as $candidate) {
+            if (! $access->canReadField($actorId, $definitionId, $candidate)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function field(int $definitionId, string $versionId, string $identifier): object

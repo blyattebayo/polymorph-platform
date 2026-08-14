@@ -11,8 +11,8 @@ use Polymorph\Platform\Domain\Auth\Application\OAuth\Data\AuthorizationRequest;
 use Polymorph\Platform\Domain\Auth\Application\OAuth\Data\OAuthClient;
 use Polymorph\Platform\Domain\Auth\Application\OAuth\Data\OAuthGrant;
 use Polymorph\Platform\Domain\Auth\Application\OAuth\Data\OAuthTokenSet;
-use Polymorph\Platform\Domain\Users\Infrastructure\Repositories\UserRepository;
 use Polymorph\Platform\Domain\Users\Core\Models\User;
+use Polymorph\Platform\Domain\Users\Infrastructure\Repositories\UserRepository;
 
 final readonly class OAuthAuthorizationServer
 {

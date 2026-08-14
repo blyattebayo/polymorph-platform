@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformBadRequest;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformResourceNotFound;
-use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Schema\CompiledSchemaTree;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 
@@ -17,21 +17,20 @@ final class SchemaMigrationService
     /** @var array<string,MigrationPlan> */
     private array $planCache = [];
 
-    /** @var array<string,array<string,FieldDefinition>> */
-    private array $targetFieldCache = [];
+    /** @var array<string,CompiledSchemaTree> */
+    private array $treeCache = [];
 
     public function __construct(
         private readonly SchemaCatalog $schemas,
         private readonly MigrationOperationExecutor $operations,
+        private readonly SchemaMigrationCompiler $compiler,
         private readonly DatabaseJson $json,
     ) {}
 
-    /** @param list<MigrationOperation> $operations */
     public function createPlan(
         string $fromVersionId,
         string $toVersionId,
         MigrationClassification $classification,
-        array $operations,
     ): string {
         $from = DB::table('dp_schema_versions')->where('id', $fromVersionId)->first();
         $to = DB::table('dp_schema_versions')->where('id', $toVersionId)->first();
@@ -49,6 +48,10 @@ final class SchemaMigrationService
                 ['from_schema_version_id' => $fromVersionId, 'to_schema_version_id' => $toVersionId],
             );
         }
+        $operations = $this->compiler->compile(
+            $this->schemas->tree($fromVersionId),
+            $this->schemas->tree($toVersionId),
+        );
 
         $id = (string) Str::ulid();
         DB::table('dp_schema_migration_plans')->insert([
@@ -83,14 +86,14 @@ final class SchemaMigrationService
         if ($plan->operations === []) {
             return $document;
         }
-        $targetVersionId = $plan->toVersionId;
-        $targetFields = $this->targetFieldCache[$targetVersionId]
-            ??= $this->schemas->fieldsByPath($targetVersionId);
+        $from = $this->treeCache[$plan->fromVersionId] ??= $this->schemas->tree($plan->fromVersionId);
+        $to = $this->treeCache[$plan->toVersionId] ??= $this->schemas->tree($plan->toVersionId);
 
         return $this->operations->execute(
             $document,
             $plan->operations,
-            $targetFields,
+            $from,
+            $to,
         );
     }
 }

@@ -19,12 +19,15 @@ use Polymorph\Platform\Domain\DataPlatform\Fields\FieldType;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldTypeHandler;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldTypeRegistry;
 use Polymorph\Platform\Domain\DataPlatform\Projection\ProjectionState;
+use Polymorph\Platform\Domain\DataPlatform\Schema\CompiledSchemaTree;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\CanonicalJson;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 
 final class QueryPlanner
 {
+    private ?CompiledSchemaTree $tree = null;
+
     public function __construct(
         private readonly SchemaCatalog $schemas,
         private readonly FieldTypeRegistry $types,
@@ -41,7 +44,8 @@ final class QueryPlanner
         }
 
         $schema = $this->schemas->writableDefinition($spec->recordDefinitionId);
-        $fields = $this->fieldMap($schema['fields']);
+        $this->tree = $this->schemas->tree((string) $schema['version']['id']);
+        $fields = $this->fieldMap($this->tree->fields());
         $expressionIndexes = $this->appliedExpressionIndexes($spec->recordDefinitionId, $schema['fields']);
         $uniqueProjections = $this->appliedUniqueProjections($spec->recordDefinitionId, $schema['fields']);
         $query = DB::table('dp_records as r')
@@ -57,6 +61,13 @@ final class QueryPlanner
         foreach ($spec->sort as $sort) {
             $field = $this->field($fields, $sort['field']);
             $this->assertReadable($actorId, $spec->recordDefinitionId, $field);
+            if ($field->multiValued) {
+                throw DataPlatformBadRequest::because(
+                    'ambiguous_repeated_field_sort',
+                    "Sorting by repeated field '{$field->path}' requires an explicit reducer.",
+                    ['field_id' => $field->id, 'path' => $field->path],
+                );
+            }
             if (! $this->hasAppliedExpressionIndex($field, $expressionIndexes) && ! $spec->allowScan) {
                 $this->rejectOrWarn("Sorting by unindexed field '{$field->path}' is disabled.", $warnings);
             }
@@ -590,8 +601,9 @@ final class QueryPlanner
                 ['field_id' => $fieldId],
             );
         }
+        $reverseTree = $this->schemas->tree((string) $row->schema_version_id);
         if (! $this->access->canReadDefinition($actorId, $definitionId)
-            || ! $this->access->canReadField($actorId, $definitionId, $field)) {
+            || ! $this->isReadable($actorId, $definitionId, $reverseTree, $field)) {
             throw DataPlatformResourceNotFound::for('reverse-reference-field', $fieldId);
         }
 
@@ -644,9 +656,29 @@ final class QueryPlanner
 
     private function assertReadable(?int $actorId, int $definitionId, FieldDefinition $field): void
     {
-        if (! $this->access->canReadField($actorId, $definitionId, $field)) {
-            throw DataAccessDenied::for('field.'.$field->id, 'query');
+        $lineage = $this->tree instanceof CompiledSchemaTree
+            ? [...$this->tree->ancestors($field), $field]
+            : [$field];
+        foreach ($lineage as $candidate) {
+            if (! $this->access->canReadField($actorId, $definitionId, $candidate)) {
+                throw DataAccessDenied::for('field.'.$field->id, 'query');
+            }
         }
+    }
+
+    private function isReadable(
+        ?int $actorId,
+        int $definitionId,
+        CompiledSchemaTree $tree,
+        FieldDefinition $field,
+    ): bool {
+        foreach ([...$tree->ancestors($field), $field] as $candidate) {
+            if (! $this->access->canReadField($actorId, $definitionId, $candidate)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -666,7 +698,8 @@ final class QueryPlanner
                 continue;
             }
             $checked[$field->id] = true;
-            if (! $this->access->canReadField($actorId, $definitionId, $field)) {
+            if (! $this->tree instanceof CompiledSchemaTree
+                || ! $this->isReadable($actorId, $definitionId, $this->tree, $field)) {
                 throw DataAccessDenied::for('$search', 'query');
             }
         }
@@ -757,9 +790,7 @@ final class QueryPlanner
 
     private function sortExpression(FieldDefinition $field): string
     {
-        $expression = $field->multiValued
-            ? "(SELECT dp_sort_occurrence.value #>> '{}' FROM jsonb_path_query(r.data, ".$this->expressions->jsonPath($field)."::jsonpath) AS dp_sort_occurrence(value) WHERE dp_sort_occurrence.value <> 'null'::jsonb LIMIT 1)"
-            : $this->expressions->text($field);
+        $expression = $this->expressions->text($field);
         $cast = $this->expressions->cast($field->type);
 
         return $cast === null ? $expression : "({$expression})::{$cast}";

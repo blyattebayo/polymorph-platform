@@ -16,6 +16,7 @@ use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
 use Polymorph\Platform\Domain\DataPlatform\Outbox\RecordAuditEntry;
 use Polymorph\Platform\Domain\DataPlatform\Outbox\RecordEventMessage;
 use Polymorph\Platform\Domain\DataPlatform\Outbox\RecordEventType;
+use Polymorph\Platform\Domain\DataPlatform\Schema\CompiledSchemaTree;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaState;
 use Polymorph\Platform\Domain\DataPlatform\Validation\DataValidationException;
 
@@ -133,31 +134,31 @@ final class RecordCommandBus
                 ),
             };
             $versionId = (string) $schema['version']['id'];
-            $fields = $schema['fields'];
+            $tree = $this->runtime->schemas->tree($versionId);
+            $fields = $tree->fields();
 
             $candidate = $command->recordId !== null && ! $command->replace
-                ? $this->runtime->paths->mergePatch($before, $command->document)
+                ? $this->runtime->documents->mergePatch($before, $command->document)
                 : $command->document;
-            $candidate = $this->runtime->paths->ensureStableItemIds($candidate);
-            $beforeValues = $this->encodedFieldValues($before, $fields);
-            $candidateValues = $this->encodedFieldValues($candidate, $fields);
-            $this->assertKnownAndOwnedFields(
-                $candidate,
+            $candidate = $this->runtime->documents->prepare($tree, $candidate, $before);
+            $beforeValues = $this->encodedFieldValues($before, $tree);
+            $candidateValues = $this->encodedFieldValues($candidate, $tree);
+            $this->assertSystemFields(
                 $command->document,
-                $fields,
+                $tree,
                 $beforeValues,
                 $candidateValues,
             );
-            $this->authorizeChangedFields($command, $fields, $beforeValues, $candidateValues);
+            $this->authorizeChangedFields($command, $tree, $beforeValues, $candidateValues);
 
-            $normalized = $this->normalizeAndValidate($candidate, $fields);
-            $this->resolveAndValidateDependencies($normalized, $fields);
-            $normalizedValues = $this->encodedFieldValues($normalized, $fields);
+            $normalized = $this->runtime->documents->normalizeAndValidate($tree, $candidate);
+            $this->resolveAndValidateDependencies($normalized, $tree);
+            $normalizedValues = $this->encodedFieldValues($normalized, $tree);
             $this->runtime->projectionChanges->beginOperation();
             $changes = $this->buildChangeSet(
                 $before,
                 $normalized,
-                $fields,
+                $tree,
                 $this->changedFieldIds($fields, $beforeValues, $normalizedValues),
                 $command,
                 $versionId,
@@ -258,20 +259,22 @@ final class RecordCommandBus
      */
     private function authorizeChangedFields(
         RecordWriteCommand $command,
-        array $fields,
+        CompiledSchemaTree $tree,
         array $beforeValues,
         array $candidateValues,
     ): void {
-        foreach ($fields as $field) {
+        foreach ($tree->fields() as $field) {
             if ($beforeValues[$field->id] === $candidateValues[$field->id]) {
                 continue;
             }
-            if (! $this->access->canWriteField(
-                $command->actorId,
-                $command->recordDefinitionId,
-                $field,
-            )) {
-                throw DataAccessDenied::for('field.'.$field->id, 'write');
+            foreach ([...$tree->ancestors($field), $field] as $candidate) {
+                if (! $this->access->canWriteField(
+                    $command->actorId,
+                    $command->recordDefinitionId,
+                    $candidate,
+                )) {
+                    throw DataAccessDenied::for('field.'.$field->id, 'write');
+                }
             }
         }
     }
@@ -281,39 +284,17 @@ final class RecordCommandBus
      * @param  array<string,string>  $beforeValues
      * @param  array<string,string>  $documentValues
      */
-    private function assertKnownAndOwnedFields(
-        array $document,
+    private function assertSystemFields(
         array $incoming,
-        array $fields,
+        CompiledSchemaTree $tree,
         array $beforeValues,
         array $documentValues,
     ): void {
-        $knownPaths = [];
-        $containerPaths = [];
-        foreach ($fields as $field) {
-            $knownPaths[$field->path] = true;
-            $segments = explode('.', $field->path);
-            array_pop($segments);
-            while ($segments !== []) {
-                $containerPaths[implode('.', $segments)] = true;
-                array_pop($segments);
-            }
-        }
-        $unknown = $this->unknownDocumentPaths($document, '', $knownPaths, $containerPaths);
-        if ($unknown !== []) {
-            throw DataValidationException::one(
-                'unknown_fields',
-                'Unknown fields: '.implode(', ', $unknown).'.',
-                '$',
-                meta: ['fields' => $unknown],
-            );
-        }
-
-        foreach ($fields as $field) {
+        foreach ($tree->fields() as $field) {
             if (! $field->system) {
                 continue;
             }
-            $incomingValues = $this->runtime->paths->values($incoming, $field->path);
+            $incomingValues = $tree->values($incoming, $field);
             $changed = $beforeValues[$field->id] !== $documentValues[$field->id];
             if ($incomingValues !== [] || $changed) {
                 throw DataValidationException::one('system_field', 'System-owned fields cannot be written.', $field->path);
@@ -321,103 +302,20 @@ final class RecordCommandBus
         }
     }
 
-    /**
-     * @param  array<string,true>  $knownPaths
-     * @param  array<string,true>  $containerPaths
-     * @return list<string>
-     */
-    private function unknownDocumentPaths(
-        mixed $node,
-        string $parentPath,
-        array $knownPaths,
-        array $containerPaths,
-    ): array {
-        if (! is_array($node)) {
-            return [];
-        }
-        if (array_is_list($node)) {
-            $unknown = [];
-            foreach ($node as $item) {
-                array_push($unknown, ...$this->unknownDocumentPaths(
-                    $item,
-                    $parentPath,
-                    $knownPaths,
-                    $containerPaths,
-                ));
-            }
-
-            return array_values(array_unique($unknown));
-        }
-
-        $unknown = [];
-        foreach ($node as $key => $value) {
-            if ($key === '_item_id') {
-                continue;
-            }
-            $path = $parentPath === '' ? (string) $key : $parentPath.'.'.$key;
-            if (! isset($knownPaths[$path]) && ! isset($containerPaths[$path])) {
-                $unknown[] = $path;
-
-                continue;
-            }
-            if (isset($containerPaths[$path])) {
-                array_push($unknown, ...$this->unknownDocumentPaths(
-                    $value,
-                    $path,
-                    $knownPaths,
-                    $containerPaths,
-                ));
-            }
-        }
-
-        return array_values(array_unique($unknown));
-    }
-
-    /** @param list<FieldDefinition> $fields @return array<string,mixed> */
-    private function normalizeAndValidate(array $document, array $fields): array
-    {
-        foreach ($fields as $field) {
-            if ($field->system) {
-                continue;
-            }
-            $handler = $this->runtime->types->get($field->type);
-            $values = $this->runtime->paths->values($document, $field->path);
-            if ($values === []) {
-                $handler->validateValue(null, $field, '$.'.$field->path);
-
-                continue;
-            }
-
-            $document = $this->runtime->paths->map(
-                $document,
-                $field->path,
-                static function (mixed $value, string $occurrence) use ($handler, $field): mixed {
-                    $normalized = $handler->normalize($value, $field, $occurrence);
-                    $handler->validateValue($normalized, $field, $occurrence);
-
-                    return $normalized;
-                },
-            );
-        }
-
-        return $document;
-    }
-
-    /** @param list<FieldDefinition> $fields */
-    private function resolveAndValidateDependencies(array $document, array $fields): void
+    private function resolveAndValidateDependencies(array $document, CompiledSchemaTree $tree): void
     {
         $set = new DependencySet;
-        foreach ($fields as $field) {
+        foreach ($tree->fields() as $field) {
             $handler = $this->runtime->types->get($field->type);
-            foreach ($this->runtime->paths->values($document, $field->path) as $value) {
+            foreach ($tree->values($document, $field) as $value) {
                 $handler->collectBatchDependencies($value['value'], $field, $value['occurrence'], $set);
             }
         }
 
         $resolved = $this->runtime->dependencies->resolve($set);
-        foreach ($fields as $field) {
+        foreach ($tree->fields() as $field) {
             $handler = $this->runtime->types->get($field->type);
-            foreach ($this->runtime->paths->values($document, $field->path) as $value) {
+            foreach ($tree->values($document, $field) as $value) {
                 $handler->validateResolvedDependencies($value['value'], $field, $value['occurrence'], $resolved);
             }
         }
@@ -428,16 +326,17 @@ final class RecordCommandBus
     private function buildChangeSet(
         array $before,
         array $document,
-        array $fields,
+        CompiledSchemaTree $tree,
         array $changedFieldIds,
         RecordWriteCommand $command,
         string $schemaVersionId,
     ): RecordChangeSet {
+        $fields = $tree->fields();
         $projections = $this->runtime->projectionChanges->build(
             $command->recordDefinitionId,
             $schemaVersionId,
             $document,
-            $fields,
+            $tree,
         );
         $refEdgesByField = [];
         foreach ($projections->refEdges as $edge) {
@@ -514,13 +413,13 @@ final class RecordCommandBus
         return $changed;
     }
 
-    /** @param list<FieldDefinition> $fields @return array<string,string> */
-    private function encodedFieldValues(array $document, array $fields): array
+    /** @return array<string,string> */
+    private function encodedFieldValues(array $document, CompiledSchemaTree $tree): array
     {
         $values = [];
-        foreach ($fields as $field) {
+        foreach ($tree->fields() as $field) {
             $values[$field->id] = $this->runtime->canonicalJson->encode(
-                $this->runtime->paths->values($document, $field->path),
+                $tree->values($document, $field),
             );
         }
 

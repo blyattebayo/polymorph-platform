@@ -11,7 +11,10 @@ use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
 
 final class SchemaCatalog
 {
-    public function __construct(private readonly SchemaFieldMapper $fields) {}
+    public function __construct(
+        private readonly SchemaFieldMapper $fields,
+        private readonly SchemaCompiler $compiler,
+    ) {}
 
     /** @return array<string, mixed>|null */
     public function findDefinitionByCode(string $code): ?array
@@ -96,6 +99,11 @@ final class SchemaCatalog
         )->get();
 
         return $this->fields->fromRows($rows);
+    }
+
+    public function tree(string $schemaVersionId): CompiledSchemaTree
+    {
+        return $this->compiler->compile($this->fields($schemaVersionId));
     }
 
     /** @return array<string, FieldDefinition> */

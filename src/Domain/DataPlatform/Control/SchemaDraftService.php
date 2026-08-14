@@ -10,6 +10,7 @@ use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformResourceNotFound;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformStateConflict;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldTypeRegistry;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCompiler;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaState;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaStorage;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
@@ -20,6 +21,7 @@ final class SchemaDraftService
     public function __construct(
         private readonly StableFieldRegistry $stableFields,
         private readonly FieldTypeRegistry $types,
+        private readonly SchemaCompiler $compiler,
         private readonly SchemaValidator $validator,
         private readonly DatabaseJson $json,
         private readonly SchemaCatalog $schemas,
@@ -74,13 +76,21 @@ final class SchemaDraftService
                 );
             }
 
-            $rows = [];
-            $fields = [];
-            foreach (array_values($specifications) as $specification) {
+            $uncompiled = [];
+            $materialize = function (FieldSpecification $specification, ?string $parentId) use (&$materialize, &$uncompiled, $version): void {
                 $fieldId = $this->stableFields->resolve((int) $version->record_definition_id, $specification);
-                $field = $specification->toField($fieldId);
+                $uncompiled[] = $specification->toField($fieldId, $parentId);
+                foreach ($specification->children as $child) {
+                    $materialize($child, $fieldId);
+                }
+            };
+            foreach (array_values($specifications) as $specification) {
+                $materialize($specification, null);
+            }
+            $fields = $this->compiler->compile($uncompiled)->fields();
+            $rows = [];
+            foreach ($fields as $field) {
                 $this->types->get($field->type)->validateSchema($field);
-                $fields[] = $field;
                 $rows[] = [
                     'schema_version_id' => $schemaVersionId,
                     'field_id' => $field->id,
@@ -90,7 +100,7 @@ final class SchemaDraftService
                     'type' => $field->typeName(),
                     'cardinality' => $field->cardinality->value,
                     'is_system' => $field->system,
-                    'position' => $specification->position,
+                    'position' => $field->position,
                     'projection_version' => $field->projectionVersion,
                     'constraints' => $this->json->encodeNullableMap($field->constraints),
                     'metadata' => $this->json->encodeNullableMap($field->metadata),

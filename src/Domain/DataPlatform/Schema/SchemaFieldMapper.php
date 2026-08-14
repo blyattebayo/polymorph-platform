@@ -12,9 +12,12 @@ use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 /** Maps one dp_schema_fields row into the stable domain representation. */
 final class SchemaFieldMapper
 {
-    public function __construct(private readonly DatabaseJson $json) {}
+    public function __construct(
+        private readonly DatabaseJson $json,
+        private readonly SchemaCompiler $compiler,
+    ) {}
 
-    public function fromRow(object|array $row, bool $multiValued = false): FieldDefinition
+    public function fromRow(object|array $row): FieldDefinition
     {
         $row = (array) $row;
         $cardinalityValue = (string) $row['cardinality'];
@@ -40,7 +43,6 @@ final class SchemaFieldMapper
             parentId: isset($row['parent_field_id'])
                 ? (string) $row['parent_field_id']
                 : null,
-            multiValued: $multiValued,
             position: (int) $row['position'],
         );
     }
@@ -48,24 +50,8 @@ final class SchemaFieldMapper
     /** @return list<FieldDefinition> */
     public function fromRows(iterable $rows): array
     {
-        $rows = array_map(static fn (object|array $row): array => (array) $row, [...$rows]);
-        $cardinalityByPath = [];
-        foreach ($rows as $row) {
-            $cardinalityByPath[(string) $row['path']] = (string) $row['cardinality'];
-        }
+        $fields = array_map($this->fromRow(...), [...$rows]);
 
-        return array_map(function (array $row) use ($cardinalityByPath): FieldDefinition {
-            $prefix = [];
-            $multiValued = false;
-            foreach (explode('.', (string) $row['path']) as $part) {
-                $prefix[] = $part;
-                if (($cardinalityByPath[implode('.', $prefix)] ?? null) === Cardinality::MANY->value) {
-                    $multiValued = true;
-                    break;
-                }
-            }
-
-            return $this->fromRow($row, $multiValued);
-        }, $rows);
+        return $this->compiler->compile($fields)->fields();
     }
 }

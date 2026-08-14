@@ -14,10 +14,10 @@ use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformBadRequest;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformStateConflict;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition as CoreFieldDefinition;
 use Polymorph\Platform\Domain\DataPlatform\Migration\MigrationClassification;
-use Polymorph\Platform\Domain\DataPlatform\Migration\MigrationOperation;
 use Polymorph\Platform\Domain\DataPlatform\Migration\MigrationPlanState;
 use Polymorph\Platform\Domain\DataPlatform\Migration\SchemaMigrationRunner;
 use Polymorph\Platform\Domain\DataPlatform\Migration\SchemaMigrationService;
+use Polymorph\Platform\Domain\DataPlatform\Schema\CompiledSchemaTree;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaState;
 use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaStorage;
@@ -119,9 +119,11 @@ final class ExtensionDefinitionProvisioner
     private function addMissingFields(int $definitionId, string $currentVersionId, array $fields, string $code): string
     {
         $existing = $this->schemas->fieldsByPath($currentVersionId);
+        $sdkByPath = $this->sdkFieldsByPath($fields);
         $missing = array_values(array_filter(
-            $fields,
-            static fn (FieldDefinition $field): bool => ! isset($existing[$field->name]),
+            $sdkByPath,
+            static fn (FieldDefinition $field, string $path): bool => ! isset($existing[$path]),
+            ARRAY_FILTER_USE_BOTH,
         ));
         if ($missing === []) {
             return $currentVersionId;
@@ -135,8 +137,7 @@ final class ExtensionDefinitionProvisioner
         }
 
         $draftId = $this->drafts->create($definitionId);
-        $specifications = array_map($this->existingField(...), array_values($existing), array_keys(array_values($existing)));
-        array_push($specifications, ...array_map($this->sdkField(...), $missing));
+        $specifications = $this->mergedSpecifications($this->schemas->tree($currentVersionId), $fields);
         $this->drafts->replaceFields($draftId, $specifications);
         $this->lifecycle->transition($draftId, SchemaState::Validating);
         $this->lifecycle->transition($draftId, SchemaState::Backfilling);
@@ -144,11 +145,6 @@ final class ExtensionDefinitionProvisioner
             $currentVersionId,
             $draftId,
             MigrationClassification::Additive,
-            array_map(static fn (FieldDefinition $field): MigrationOperation => MigrationOperation::fromArray([
-                'op' => 'add_field',
-                'path' => $field->name,
-                'default' => null,
-            ]), $missing),
         );
 
         do {
@@ -166,21 +162,20 @@ final class ExtensionDefinitionProvisioner
         return $draftId;
     }
 
-    private function existingField(CoreFieldDefinition $field, int $position): FieldSpecification
+    /** @param list<FieldSpecification> $children */
+    private function existingField(CoreFieldDefinition $field, array $children): FieldSpecification
     {
         return FieldSpecification::fromArray([
             'field_id' => $field->id,
-            'key' => $field->path,
-            'path' => $field->path,
             'name' => $field->name,
             'type' => $field->typeName(),
             'cardinality' => $field->cardinality->value,
             'is_system' => $field->system,
-            'position' => $position,
+            'position' => $field->position,
             'projection_version' => $field->projectionVersion,
             'constraints' => $field->constraints,
             'metadata' => $field->metadata,
-            'parent_field_id' => $field->parentId,
+            'children' => array_map(fn (FieldSpecification $child): array => $this->specificationArray($child), $children),
         ]);
     }
 
@@ -207,15 +202,92 @@ final class ExtensionDefinitionProvisioner
         }
 
         return FieldSpecification::fromArray([
-            'key' => $field->name,
-            'path' => $field->name,
             'name' => $field->name,
             'type' => $field->type->value,
             'cardinality' => $field->cardinality->value,
             'position' => $field->sortOrder,
             'constraints' => $constraints,
             'metadata' => ['indexed' => $field->indexed, 'unique' => $field->unique],
+            'children' => array_map(
+                fn (FieldDefinition $child): array => $this->specificationArray($this->sdkField($child)),
+                $field->children,
+            ),
         ]);
+    }
+
+    /** @param list<FieldDefinition> $sdkRoots @return list<FieldSpecification> */
+    private function mergedSpecifications(CompiledSchemaTree $tree, array $sdkRoots): array
+    {
+        $sdkByParent = [];
+        $walkSdk = function (array $fields, string $parentPath) use (&$walkSdk, &$sdkByParent): void {
+            foreach ($fields as $field) {
+                $sdkByParent[$parentPath][] = $field;
+                $path = $parentPath === '$' ? $field->name : $parentPath.'.'.$field->name;
+                $walkSdk($field->children, $path);
+            }
+        };
+        $walkSdk($sdkRoots, '$');
+
+        $mergeLevel = function (?CoreFieldDefinition $parent, string $parentPath) use (&$mergeLevel, $tree, $sdkByParent): array {
+            $existingChildren = $parent === null ? $tree->roots() : $tree->childrenOf($parent);
+            $specifications = [];
+            $existingNames = [];
+            foreach ($existingChildren as $child) {
+                $existingNames[$child->name] = true;
+                $specifications[] = $this->existingField(
+                    $child,
+                    $mergeLevel($child, $child->path),
+                );
+            }
+            foreach ($sdkByParent[$parentPath] ?? [] as $sdkField) {
+                if (! isset($existingNames[$sdkField->name])) {
+                    $specifications[] = $this->sdkField($sdkField);
+                }
+            }
+
+            return $specifications;
+        };
+
+        return $mergeLevel(null, '$');
+    }
+
+    /** @param list<FieldDefinition> $fields @return array<string,FieldDefinition> */
+    private function sdkFieldsByPath(array $fields): array
+    {
+        $result = [];
+        $walk = function (array $nodes, string $parentPath) use (&$walk, &$result): void {
+            foreach ($nodes as $field) {
+                $path = $parentPath === '' ? $field->name : $parentPath.'.'.$field->name;
+                $result[$path] = $field;
+                $walk($field->children, $path);
+            }
+        };
+        $walk($fields, '');
+
+        return $result;
+    }
+
+    /** @return list<array<string,mixed>> */
+    private function specificationChildren(FieldSpecification $specification): array
+    {
+        return array_map(fn (FieldSpecification $child): array => $this->specificationArray($child), $specification->children);
+    }
+
+    /** @return array<string,mixed> */
+    private function specificationArray(FieldSpecification $specification): array
+    {
+        return [
+            'field_id' => $specification->fieldId,
+            'name' => $specification->name,
+            'type' => $specification->type,
+            'cardinality' => $specification->cardinality->value,
+            'is_system' => $specification->system,
+            'position' => $specification->position,
+            'projection_version' => $specification->projectionVersion,
+            'constraints' => $specification->constraints,
+            'metadata' => $specification->metadata,
+            'children' => $this->specificationChildren($specification),
+        ];
     }
 
     private function entityName(string $entity): string
