@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\DataPlatform\Delete;
 
-final readonly class RecordDeleteResult
+use Polymorph\Platform\Domain\DataPlatform\Write\IdempotencyResult;
+
+final readonly class RecordDeleteResult implements IdempotencyResult
 {
     /** @param list<int> $deletedRecordIds */
     public function __construct(

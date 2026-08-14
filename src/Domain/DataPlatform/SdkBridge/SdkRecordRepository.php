@@ -7,13 +7,13 @@ namespace Polymorph\Platform\Domain\DataPlatform\SdkBridge;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
-use Polymorph\Platform\Domain\DataPlatform\Control\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Delete\RecordDeleteCommand;
 use Polymorph\Platform\Domain\DataPlatform\Delete\RecordDeleteCommandHandler;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformBadRequest;
 use Polymorph\Platform\Domain\DataPlatform\Fields\Cardinality;
 use Polymorph\Platform\Domain\DataPlatform\Fields\DocumentPathAccessor;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Fields\FieldType;
 use Polymorph\Platform\Domain\DataPlatform\Query\BooleanNode;
 use Polymorph\Platform\Domain\DataPlatform\Query\PredicateNode;
 use Polymorph\Platform\Domain\DataPlatform\Query\QueryPlanner;
@@ -21,11 +21,12 @@ use Polymorph\Platform\Domain\DataPlatform\Query\QuerySpec;
 use Polymorph\Platform\Domain\DataPlatform\Query\RecordQueryService;
 use Polymorph\Platform\Domain\DataPlatform\Read\LogicalDocumentReader;
 use Polymorph\Platform\Domain\DataPlatform\Read\RecordReadService;
+use Polymorph\Platform\Domain\DataPlatform\Read\RecordStore;
+use Polymorph\Platform\Domain\DataPlatform\Read\StoredRecord;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Write\RecordCommandBus;
-use Polymorph\Platform\Domain\DataPlatform\Write\RecordStore;
 use Polymorph\Platform\Domain\DataPlatform\Write\RecordWriteCommand;
 use Polymorph\Platform\Domain\DataPlatform\Write\RecordWriteResult;
-use Polymorph\Platform\Domain\DataPlatform\Write\StoredRecord;
 use Polymorph\Sdk\Data\Entity;
 use Polymorph\Sdk\Data\EntityPage;
 use Polymorph\Sdk\Data\Query;
@@ -221,7 +222,7 @@ final class SdkRecordRepository implements QueryExecutor, Repository
 
     public function runPaginate(Query $query, int $page, int $perPage): EntityPage
     {
-        $result = $this->queries->execute($this->spec($query, $page, min(500, $perPage)), $this->actorId());
+        $result = $this->queries->execute($this->spec($query, $page, $perPage), $this->actorId());
 
         return new EntityPage(
             array_map($this->fromRow(...), $result['data']),
@@ -253,7 +254,12 @@ final class SdkRecordRepository implements QueryExecutor, Repository
                 ),
             };
             $predicate = new PredicateNode($condition['field'], $operator, $condition['value']);
-            $nodes[] = $condition['op'] === '!=' ? new BooleanNode('not', [$predicate]) : $predicate;
+            $nodes[] = $condition['op'] === '!='
+                ? new BooleanNode('or', [
+                    new PredicateNode($condition['field'], 'is_null', null),
+                    new BooleanNode('not', [$predicate]),
+                ])
+                : $predicate;
         }
         if ($query->authorId() !== null) {
             $nodes[] = new PredicateNode('$author_id', 'eq', $query->authorId());
@@ -267,7 +273,14 @@ final class SdkRecordRepository implements QueryExecutor, Repository
             'field' => $order['field'], 'direction' => $order['dir'],
         ], $query->orders());
 
-        return new QuerySpec($this->definitionId, $filter, $sort, $page, $perPage, allowScan: true);
+        return new QuerySpec(
+            $this->definitionId,
+            $filter,
+            $sort,
+            $page,
+            $perPage,
+            allowScan: (bool) config('data_platform.query.allow_scan_requests', false),
+        );
     }
 
     private function matchQuery(array $match): Query
@@ -305,7 +318,8 @@ final class SdkRecordRepository implements QueryExecutor, Repository
         $schema = $this->schemas->writableDefinition($this->definitionId);
         foreach ($schema['fields'] as $field) {
             if (($field->id === $identifier || $field->path === $identifier)
-                && in_array($field->type, ['int', 'float'], true)
+                && $field->type instanceof FieldType
+                && $field->type->isNumeric()
                 && $field->cardinality === Cardinality::ONE
                 && ! $field->multiValued) {
                 return $field;
@@ -321,8 +335,15 @@ final class SdkRecordRepository implements QueryExecutor, Repository
     private function fromWrite(RecordWriteResult $result): Entity
     {
         $class = $this->entityClass;
+        $actorId = $this->actorId();
+        $document = $this->reads->presentWriteDocument(
+            $this->definitionId,
+            $result->schemaVersionId,
+            $result->document,
+            $actorId,
+        );
 
-        return new $class($result->recordId, $result->document, $result->revision, $this->actorId());
+        return new $class($result->recordId, $document, $result->revision, $actorId);
     }
 
     /** @param array<string,mixed> $row */

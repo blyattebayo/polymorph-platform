@@ -7,7 +7,10 @@ namespace Polymorph\Platform\Domain\DataPlatform\Migration;
 use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformResourceNotFound;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformStateConflict;
+use Polymorph\Platform\Domain\DataPlatform\Projection\ProjectionDefinitionService;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaState;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
+use Polymorph\Platform\Domain\DataPlatform\Write\MaintenanceRecordCommandBus;
 use Polymorph\Platform\Domain\DataPlatform\Write\RecordWriteCommand;
 use Throwable;
 
@@ -17,6 +20,7 @@ final class SchemaMigrationRunner
         private readonly SchemaMigrationService $migrations,
         private readonly MaintenanceRecordCommandBus $records,
         private readonly DatabaseJson $json,
+        private readonly ProjectionDefinitionService $projections,
     ) {}
 
     /** @return array{processed:int,failed:int,remaining:int,state:string} */
@@ -27,7 +31,7 @@ final class SchemaMigrationRunner
             throw DataPlatformResourceNotFound::for('migration-plan', $planId);
         }
         $targetState = DB::table('dp_schema_versions')->where('id', $plan->to_schema_version_id)->value('state');
-        if (! in_array($targetState, ['backfilling', 'published'], true)) {
+        if (! in_array($targetState, [SchemaState::Backfilling->value, SchemaState::Published->value], true)) {
             throw DataPlatformStateConflict::because(
                 'migration_target_state_not_runnable',
                 'Target schema must be backfilling or published.',
@@ -38,10 +42,17 @@ final class SchemaMigrationRunner
         $checkpoint = $this->json->decodeMap($plan->checkpoint, 'dp_schema_migration_plans.checkpoint');
         $lastId = (int) ($checkpoint['last_id'] ?? 0);
         $invalid = $this->invalidRecords($plan->invalid_records);
-        $retryIds = array_map('intval', array_keys($invalid));
+        $limit = max(1, $batchSize);
+        $maxAttempts = max(1, (int) config('data_platform.migration.max_record_attempts', 3));
+        $retryIds = array_map('intval', array_slice(array_keys(array_filter(
+            $invalid,
+            static fn (array $failure): bool => ($failure['status'] ?? null) !== 'permanently_invalid'
+                && (int) ($failure['attempts'] ?? 0) < $maxAttempts,
+        )), 0, $limit));
         $rows = DB::table('dp_records')
             ->where('record_definition_id', $plan->record_definition_id)
             ->where('schema_version_id', $plan->from_schema_version_id)
+            ->whereNull('deleted_at')
             ->where(function ($query) use ($lastId, $retryIds): void {
                 $query->where('id', '>', $lastId);
                 if ($retryIds !== []) {
@@ -49,7 +60,7 @@ final class SchemaMigrationRunner
                 }
             })
             ->orderByRaw($retryIds === [] ? 'id' : 'CASE WHEN id IN ('.implode(',', array_fill(0, count($retryIds), '?')).') THEN 0 ELSE 1 END, id', $retryIds)
-            ->limit(max(1, $batchSize))->get();
+            ->limit($limit)->get();
         $processed = 0;
         $failed = 0;
 
@@ -77,18 +88,24 @@ final class SchemaMigrationRunner
             } catch (Throwable $exception) {
                 $failed++;
                 $previous = $invalid[(string) $recordId] ?? [];
+                $attempts = (int) ($previous['attempts'] ?? 0) + 1;
                 $invalid[(string) $recordId] = [
                     'record_id' => $recordId,
                     'revision' => (int) $row->revision,
-                    'attempts' => (int) ($previous['attempts'] ?? 0) + 1,
+                    'attempts' => $attempts,
+                    'status' => $attempts >= $maxAttempts ? 'permanently_invalid' : 'retryable',
                     'error' => $exception::class,
                 ];
             }
         }
 
+        // Tombstones are never rewritten, so they keep their stored version
+        // forever; counting them here would leave the plan permanently short of
+        // completion and wedge the definition's schema evolution.
         $remaining = (int) DB::table('dp_records')
             ->where('record_definition_id', $plan->record_definition_id)
             ->where('schema_version_id', $plan->from_schema_version_id)
+            ->whereNull('deleted_at')
             ->count();
         $state = match (true) {
             $remaining === 0 => MigrationPlanState::Completed->value,
@@ -96,20 +113,28 @@ final class SchemaMigrationRunner
             default => MigrationPlanState::RunningWithErrors->value,
         };
         if (! $dryRun) {
-            DB::table('dp_schema_migration_plans')->where('id', $planId)->update([
-                'state' => $state,
-                'checkpoint' => $this->json->encode(['last_id' => $lastId]),
-                'invalid_records' => $this->json->encode(array_values(array_slice($invalid, -1000, null, true))),
-                'processed_count' => DB::raw('processed_count + '.(int) $processed),
-                'failed_count' => count($invalid),
-                'updated_at' => now(),
-            ]);
+            DB::transaction(function () use ($planId, $plan, $state, $lastId, $invalid, $processed): void {
+                DB::table('dp_schema_migration_plans')->where('id', $planId)->update([
+                    'state' => $state,
+                    'checkpoint' => $this->json->encode(['last_id' => $lastId]),
+                    // Every retained failure remains actionable (retryable or
+                    // terminal), so the persisted report and counter must describe
+                    // exactly the same set. Truncation loses retry ownership.
+                    'invalid_records' => $this->json->encode(array_values($invalid)),
+                    'processed_count' => DB::raw('processed_count + '.(int) $processed),
+                    'failed_count' => count($invalid),
+                    'updated_at' => now(),
+                ]);
+                if ($state === MigrationPlanState::Completed->value && $invalid === []) {
+                    $this->projections->markSynchronousRebuilt((string) $plan->to_schema_version_id);
+                }
+            });
         }
 
         return compact('processed', 'failed', 'remaining', 'state');
     }
 
-    /** @return array<string,array{record_id:int,revision?:int,attempts?:int,error?:string}> */
+    /** @return array<string,array{record_id:int,revision?:int,attempts?:int,status?:string,error?:string}> */
     private function invalidRecords(mixed $value): array
     {
         $rows = $this->json->decodeList($value, 'dp_schema_migration_plans.invalid_records');

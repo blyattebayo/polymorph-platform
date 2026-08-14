@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\DataPlatform\Query;
 
 use Polymorph\Platform\Domain\DataPlatform\Read\RecordReadService;
-use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
+use Polymorph\Platform\Domain\DataPlatform\Read\RecordRowPresenter;
 
 final class RecordQueryService
 {
     public function __construct(
         private readonly QueryPlanner $planner,
         private readonly RecordReadService $reader,
-        private readonly DatabaseJson $json,
+        private readonly RecordRowPresenter $rows,
     ) {}
 
     /** @return array{data:list<array<string,mixed>>,meta:array<string,mixed>,included?:array<string,mixed>} */
@@ -24,12 +24,7 @@ final class RecordQueryService
         $rows = (clone $plan->builder)
             ->forPage($spec->page, $spec->perPage)
             ->get(['r.id', 'r.record_definition_id', 'r.schema_version_id', 'r.data', 'r.revision', 'r.author_id', 'r.created_at', 'r.updated_at'])
-            ->map(function (object $row): array {
-                $data = (array) $row;
-                $data['data'] = $this->json->decodeMap($row->data, 'dp_records.data');
-
-                return $data;
-            })
+            ->map($this->rows->present(...))
             ->all();
         $rows = $this->reader->presentQueryRows($rows, $actorId);
         if ($spec->include !== []) {

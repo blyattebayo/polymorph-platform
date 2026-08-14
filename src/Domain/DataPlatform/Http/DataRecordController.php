@@ -28,11 +28,13 @@ final readonly class DataRecordController
         private RecordReadService $reads,
         private RecordQueryService $queries,
         private RecordLocator $records,
+        private DataRecordResponsePresenter $presenter,
     ) {}
 
     public function store(Request $request, int $definitionId): JsonResponse
     {
-        $this->records->assertDefinitionExists($definitionId);
+        $actorId = $this->actorId();
+        $this->records->assertWritableDefinition($definitionId, $actorId);
         $payload = $request->validate([
             'data' => ['required', 'array'],
             'schema_version_id' => ['sometimes', 'nullable', 'string', 'size:26'],
@@ -41,48 +43,48 @@ final readonly class DataRecordController
         $result = $this->writes->dispatch(new RecordWriteCommand(
             recordDefinitionId: $definitionId,
             document: $payload['data'],
-            actorId: $this->actorId(),
+            actorId: $actorId,
             idempotencyKey: $this->idempotencyKey($request, $payload),
             schemaVersionId: $payload['schema_version_id'] ?? null,
         ));
 
-        $hydrated = $this->reads->hydrate([$result->recordId], $this->actorId(), ['relationships'], 1);
+        $hydrated = $this->reads->hydrate([$result->recordId], $actorId, ['relationships'], 1);
         $record = $hydrated['by_record_id'][(string) $result->recordId] ?? null;
 
-        return response()->json(['data' => $record, 'meta' => [
+        return response()->json(['data' => $this->presenter->record($record), 'meta' => [
             'operation_id' => $result->operationId,
             'no_op' => $result->noOp,
-        ], 'included' => $hydrated['included']], 201)
+        ], 'included' => $this->presenter->included($hydrated['included'])], 201)
             ->header('ETag', '"'.$result->revision.'"');
     }
 
     public function update(Request $request, int $definitionId, int $recordId): JsonResponse
     {
-        $this->records->assertDefinitionExists($definitionId);
+        $actorId = $this->actorId();
+        $this->records->assertWritableDefinition($definitionId, $actorId);
         $payload = $request->validate([
             'data' => ['required', 'array'],
             'expected_revision' => ['sometimes', 'integer', 'min:1'],
-            'replace' => ['sometimes', 'boolean'],
             'idempotency_key' => ['sometimes', 'nullable', 'string', 'max:255'],
         ]);
         $expectedRevision = $this->expectedRevision($request, $payload);
         $result = $this->writes->dispatch(new RecordWriteCommand(
             recordDefinitionId: $definitionId,
             document: $payload['data'],
-            actorId: $this->actorId(),
+            actorId: $actorId,
             recordId: $recordId,
             expectedRevision: $expectedRevision,
             idempotencyKey: $this->idempotencyKey($request, $payload),
-            replace: (bool) ($payload['replace'] ?? false),
+            replace: $request->isMethod('put'),
         ));
 
-        $hydrated = $this->reads->hydrate([$result->recordId], $this->actorId(), ['relationships'], 1);
+        $hydrated = $this->reads->hydrate([$result->recordId], $actorId, ['relationships'], 1);
         $record = $hydrated['by_record_id'][(string) $result->recordId] ?? null;
 
-        return response()->json(['data' => $record, 'meta' => [
+        return response()->json(['data' => $this->presenter->record($record), 'meta' => [
             'operation_id' => $result->operationId,
             'no_op' => $result->noOp,
-        ], 'included' => $hydrated['included']])
+        ], 'included' => $this->presenter->included($hydrated['included'])])
             ->header('ETag', '"'.$result->revision.'"');
     }
 
@@ -97,13 +99,17 @@ final readonly class DataRecordController
             throw DataPlatformResourceNotFound::for('record', $recordId);
         }
 
-        return response()->json(['data' => $record, 'included' => $hydrated['included']])
+        return response()->json([
+            'data' => $this->presenter->record($record),
+            'included' => $this->presenter->included($hydrated['included']),
+        ])
             ->header('ETag', '"'.$record['revision'].'"');
     }
 
     public function query(Request $request, int $definitionId): JsonResponse
     {
-        $this->records->assertDefinitionExists($definitionId);
+        $actorId = $this->actorId();
+        $this->records->assertReadableDefinition($definitionId, $actorId);
         $payload = $request->validate([
             'filter' => ['sometimes', 'array'],
             'sort' => ['sometimes', 'array'],
@@ -119,8 +125,16 @@ final readonly class DataRecordController
             'allow_scan' => ['sometimes', 'boolean'],
         ]);
         $payload['record_definition_id'] = $definitionId;
+        $payload['allow_scan'] = ($payload['allow_scan'] ?? false) === true
+            && (bool) config('data_platform.query.allow_scan_requests', false);
 
-        return response()->json($this->queries->execute(QuerySpec::fromArray($payload), $this->actorId()));
+        $result = $this->queries->execute(QuerySpec::fromArray($payload), $actorId);
+        $result['data'] = array_map($this->presenter->record(...), $result['data']);
+        if (isset($result['included']) && is_array($result['included'])) {
+            $result['included'] = $this->presenter->included($result['included']);
+        }
+
+        return response()->json($result);
     }
 
     public function hydrate(Request $request): JsonResponse
@@ -133,26 +147,36 @@ final readonly class DataRecordController
             'depth' => ['sometimes', 'integer', 'min:0'],
         ]);
 
-        $this->records->assertRecordsExist(array_values(array_map('intval', $payload['record_ids'])));
+        $recordIds = array_values(array_unique(array_map('intval', $payload['record_ids'])));
+        $actorId = $this->actorId();
 
-        return response()->json($this->reads->hydrate(
-            array_values(array_map('intval', $payload['record_ids'])),
-            $this->actorId(),
+        $hydrated = $this->reads->hydrate(
+            $recordIds,
+            $actorId,
             $payload['include'] ?? ['relationships'],
             (int) ($payload['depth'] ?? 1),
-        ));
+        );
+        if (count($hydrated['by_record_id']) !== count($recordIds)) {
+            throw DataPlatformResourceNotFound::for('record-set', 'requested');
+        }
+
+        return response()->json([
+            'by_record_id' => $this->presenter->records($hydrated['by_record_id']),
+            'included' => $this->presenter->included($hydrated['included']),
+        ]);
     }
 
     public function destroy(Request $request, int $recordId): JsonResponse
     {
-        $this->records->assertRecordExists($recordId);
+        $actorId = $this->actorId();
+        $this->records->assertDeletableRecord($recordId, $actorId);
         $payload = $request->validate([
             'expected_revision' => ['sometimes', 'integer', 'min:1'],
             'idempotency_key' => ['sometimes', 'nullable', 'string', 'max:255'],
         ]);
         $result = $this->deletes->execute(new RecordDeleteCommand(
             recordId: $recordId,
-            actorId: $this->actorId(),
+            actorId: $actorId,
             expectedRevision: $this->expectedRevision($request, $payload),
             idempotencyKey: $this->idempotencyKey($request, $payload),
         ));

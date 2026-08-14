@@ -14,7 +14,7 @@ final class DataAccessDenied extends \RuntimeException implements DomainErrorDes
     use ConvertsToErrorPayload;
 
     private function __construct(
-        public readonly string $resource,
+        string $resource,
         public readonly string $action,
     ) {
         parent::__construct("Access denied for {$action} on {$resource}.");

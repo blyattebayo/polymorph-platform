@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\DataPlatform\SdkBridge;
 
+use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\DataPlatform\Control\DefinitionService;
 use Polymorph\Platform\Domain\DataPlatform\Control\FieldSpecification;
-use Polymorph\Platform\Domain\DataPlatform\Control\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Control\SchemaDraftService;
 use Polymorph\Platform\Domain\DataPlatform\Control\SchemaLifecycleService;
-use Polymorph\Platform\Domain\DataPlatform\Control\SchemaState;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformBadRequest;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformStateConflict;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition as CoreFieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Migration\MigrationClassification;
 use Polymorph\Platform\Domain\DataPlatform\Migration\MigrationOperation;
 use Polymorph\Platform\Domain\DataPlatform\Migration\MigrationPlanState;
 use Polymorph\Platform\Domain\DataPlatform\Migration\SchemaMigrationRunner;
 use Polymorph\Platform\Domain\DataPlatform\Migration\SchemaMigrationService;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaState;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwner;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceOwnershipService;
 use Polymorph\Platform\SharedKernel\Ownership\ResourceType;
@@ -49,39 +51,45 @@ final class ExtensionDefinitionProvisioner
             );
         }
 
-        $code = ExtensionStorageKey::schemaCode($extensionId, $entity);
-        $definition = $this->schemas->findDefinitionByCode($code);
-        if ($definition === null) {
-            $created = $this->definitions->create(
-                $code,
-                trim($spec->name) !== '' ? trim($spec->name) : $entity,
-                array_map($this->sdkField(...), $spec->fields),
-                ['owner' => ['type' => 'extension', 'id' => $extensionId]],
-            );
-            $definitionId = $created->definitionId;
-            $versionId = $created->schemaVersionId;
-            $this->lifecycle->transition($versionId, SchemaState::Validating);
-            $this->lifecycle->transition($versionId, SchemaState::Published);
-        } else {
-            $definitionId = (int) $definition['id'];
-            $versionId = (string) ($definition['current_schema_version_id'] ?? '');
-            if ($versionId === '') {
-                throw DataPlatformStateConflict::because(
-                    'extension_definition_has_no_published_schema',
-                    "Definition '{$code}' has no published schema.",
-                    ['definition_code' => $code],
+        // Provisioning is synchronous and externally idempotent. Keep every
+        // lifecycle transition, migration write, publication, and ownership
+        // update in one transaction so a failed batch leaves no unreachable
+        // validating/backfilling version for the next ensure call.
+        return DB::transaction(function () use ($extensionId, $entity, $spec): DefinitionRef {
+            $code = ExtensionStorageKey::schemaCode($extensionId, $entity);
+            $definition = $this->schemas->findDefinitionByCode($code);
+            if ($definition === null) {
+                $created = $this->definitions->create(
+                    $code,
+                    trim($spec->name) !== '' ? trim($spec->name) : $entity,
+                    array_map($this->sdkField(...), $spec->fields),
+                    ['owner' => ['type' => 'extension', 'id' => $extensionId]],
                 );
+                $definitionId = $created->definitionId;
+                $versionId = $created->schemaVersionId;
+                $this->lifecycle->transition($versionId, SchemaState::Validating);
+                $this->lifecycle->transition($versionId, SchemaState::Published);
+            } else {
+                $definitionId = (int) $definition['id'];
+                $versionId = (string) ($definition['current_schema_version_id'] ?? '');
+                if ($versionId === '') {
+                    throw DataPlatformStateConflict::because(
+                        'extension_definition_has_no_published_schema',
+                        "Definition '{$code}' has no published schema.",
+                        ['definition_code' => $code],
+                    );
+                }
+                $versionId = $this->addMissingFields($definitionId, $versionId, $spec->fields, $code);
             }
-            $versionId = $this->addMissingFields($definitionId, $versionId, $spec->fields, $code);
-        }
 
-        $this->ownership->set(
-            ResourceType::RECORD_DEFINITION,
-            $definitionId,
-            ResourceOwner::plugin($extensionId),
-        );
+            $this->ownership->set(
+                ResourceType::RECORD_DEFINITION,
+                $definitionId,
+                ResourceOwner::plugin($extensionId),
+            );
 
-        return new DefinitionRef($definitionId, $versionId, $entity);
+            return new DefinitionRef($definitionId, $versionId, $entity);
+        }, 3);
     }
 
     /** @param list<FieldDefinition> $fields */
@@ -112,7 +120,7 @@ final class ExtensionDefinitionProvisioner
         $planId = $this->migrations->createPlan(
             $currentVersionId,
             $draftId,
-            'additive',
+            MigrationClassification::Additive,
             array_map(static fn (FieldDefinition $field): MigrationOperation => MigrationOperation::fromArray([
                 'op' => 'add_field',
                 'path' => $field->name,
@@ -142,7 +150,7 @@ final class ExtensionDefinitionProvisioner
             'key' => $field->path,
             'path' => $field->path,
             'name' => $field->name,
-            'type' => $field->type,
+            'type' => $field->typeName(),
             'cardinality' => $field->cardinality->value,
             'is_system' => $field->system,
             'position' => $position,

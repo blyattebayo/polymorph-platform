@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\DataPlatform\Fields\Handlers;
 
-use Polymorph\Platform\Domain\DataPlatform\Fields\Cardinality;
 use Polymorph\Platform\Domain\DataPlatform\Fields\DependencySet;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Fields\ReferenceDeletionPolicy;
 use Polymorph\Platform\Domain\DataPlatform\Fields\ResolvedDependencies;
 use Polymorph\Platform\Domain\DataPlatform\Projection\FieldProjectionChanges;
-use Polymorph\Platform\Domain\DataPlatform\Query\CompiledPredicate;
-use Polymorph\Platform\Domain\DataPlatform\Query\QueryPredicate;
 use Polymorph\Platform\Domain\DataPlatform\Validation\DataValidationException;
 
-final class RefFieldTypeHandler extends AbstractFieldTypeHandler
+final class RefFieldTypeHandler extends EdgeFieldTypeHandler
 {
     public function type(): string
     {
@@ -32,11 +30,12 @@ final class RefFieldTypeHandler extends AbstractFieldTypeHandler
             );
         }
 
-        $policy = (string) ($field->constraints['deletion_policy'] ?? 'restrict');
-        if (! in_array($policy, ['restrict', 'nullify', 'preserve_tombstone', 'cascade'], true)) {
+        $rawPolicy = $field->constraints['deletion_policy'] ?? ReferenceDeletionPolicy::Restrict->value;
+        $policy = is_string($rawPolicy) ? ReferenceDeletionPolicy::tryFrom($rawPolicy) : null;
+        if ($policy === null) {
             throw DataValidationException::one('deletion_policy', 'Unsupported ref deletion policy.', $field->path);
         }
-        if ($policy === 'cascade' && ($field->constraints['allow_cascade'] ?? false) !== true) {
+        if ($policy === ReferenceDeletionPolicy::Cascade && ($field->constraints['allow_cascade'] ?? false) !== true) {
             throw DataValidationException::one('cascade_not_allowed', 'Cascade must be explicitly allowed.', $field->path);
         }
     }
@@ -81,7 +80,7 @@ final class RefFieldTypeHandler extends AbstractFieldTypeHandler
         foreach ($this->values($value, $field) as $index => $id) {
             $id = (int) $id;
             $target = $dependencies->records[$id] ?? null;
-            $itemOccurrence = $field->cardinality === Cardinality::MANY ? $occurrence.'['.$index.']' : $occurrence;
+            $itemOccurrence = $this->itemOccurrence($field, $occurrence, $index);
             if ($target === null) {
                 throw DataValidationException::one('ref_missing', 'Referenced record does not exist.', $field->path, $itemOccurrence, ['target_id' => $id]);
             }
@@ -99,32 +98,33 @@ final class RefFieldTypeHandler extends AbstractFieldTypeHandler
         FieldDefinition $field,
         string $occurrence,
     ): FieldProjectionChanges {
-        $edges = [];
-        foreach ($this->values($value, $field) as $position => $id) {
-            $edges[] = [
-                'field_id' => $field->id,
-                'occurrence' => $occurrence,
-                'position' => $position,
+        $rawPolicy = $field->constraints['deletion_policy'] ?? ReferenceDeletionPolicy::Restrict->value;
+        $policy = is_string($rawPolicy) ? ReferenceDeletionPolicy::tryFrom($rawPolicy) : null;
+        $edges = $this->edgeRows(
+            $value,
+            $field,
+            $occurrence,
+            static fn (mixed $id): array => [
                 'target_record_id' => (int) $id,
-                'deletion_policy' => (string) ($field->constraints['deletion_policy'] ?? 'restrict'),
-                'projection_version' => $field->projectionVersion,
-            ];
-        }
+                'deletion_policy' => ($policy ?? ReferenceDeletionPolicy::Restrict)->value,
+            ],
+        );
 
         return new FieldProjectionChanges(refEdges: $edges);
     }
 
-    public function compileQuery(QueryPredicate $predicate): CompiledPredicate
+    protected function edgeStrategy(): string
     {
-        $this->assertSupportedQueryOperator(
-            $predicate,
-            'unsupported_ref_operator',
-            "Unsupported ref operator '{$predicate->operator}'.",
-        );
+        return 'ref_edge';
+    }
 
-        return new CompiledPredicate(
-            strategy: 'ref_edge',
-            cast: null,
-        );
+    protected function unsupportedOperatorReason(): string
+    {
+        return 'unsupported_ref_operator';
+    }
+
+    protected function operatorSubject(): string
+    {
+        return 'ref';
     }
 }

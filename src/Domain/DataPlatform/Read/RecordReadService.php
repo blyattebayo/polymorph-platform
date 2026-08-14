@@ -8,10 +8,13 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\DataPlatform\Access\DataAccessPolicy;
-use Polymorph\Platform\Domain\DataPlatform\Control\SchemaFieldMapper;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformBadRequest;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Fields\FieldType;
+use Polymorph\Platform\Domain\DataPlatform\Media\MediaMetadataRepository;
 use Polymorph\Platform\Domain\DataPlatform\Projection\DisplayTemplateRenderer;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaFieldMapper;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaStorage;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 use Polymorph\Platform\Domain\Media\Core\Contracts\MediaIncludedProvider;
 
@@ -27,6 +30,8 @@ final class RecordReadService
         private readonly DisplayTemplateRenderer $displayTemplates,
         private readonly SchemaFieldMapper $schemaFields,
         private readonly DatabaseJson $json,
+        private readonly RecordRowPresenter $rows,
+        private readonly MediaMetadataRepository $mediaMetadata,
     ) {}
 
     /** @return array<string,mixed>|null */
@@ -44,6 +49,7 @@ final class RecordReadService
      */
     public function hydrate(array $recordIds, ?int $actorId, array $include = [], int $depth = 1): array
     {
+        $this->displayTemplates->beginOperation();
         $rootIds = array_values(array_unique(array_filter(array_map('intval', $recordIds), static fn (int $id): bool => $id > 0)));
 
         return $this->hydrateRoots($this->loadReadableRecords($rootIds, $actorId), $actorId, $include, $depth);
@@ -58,6 +64,7 @@ final class RecordReadService
      */
     public function hydratePresentedRows(array $rows, ?int $actorId, array $include = [], int $depth = 1): array
     {
+        $this->displayTemplates->beginOperation();
         $roots = [];
         foreach ($rows as $row) {
             $id = (int) ($row['id'] ?? 0);
@@ -95,10 +102,10 @@ final class RecordReadService
 
         for ($level = 0; $level <= $depth && $frontier !== []; $level++) {
             $refEdges = $includeRecords
-                ? $this->loadReadableRelationshipEdges('dp_ref_edges', $frontier, $allRecords, $actorId, 'ref')
+                ? $this->loadReadableRelationshipEdges('dp_ref_edges', $frontier, $allRecords, $actorId, FieldType::REF)
                 : collect();
             $mediaEdges = $includeMedia
-                ? $this->loadReadableRelationshipEdges('dp_media_edges', $frontier, $allRecords, $actorId, 'media')
+                ? $this->loadReadableRelationshipEdges('dp_media_edges', $frontier, $allRecords, $actorId, FieldType::MEDIA)
                 : collect();
 
             $targetIds = $refEdges->pluck('target_record_id')->map('intval')->unique()->values()->all();
@@ -118,6 +125,11 @@ final class RecordReadService
                     ! isset($readableTargetSet[$targetId]) => 'forbidden',
                     default => 'resolved',
                 };
+                // A relationship is emitted only when the actor may read its
+                // source field. That field value already contains the target
+                // identity, so `forbidden` suppresses target payload access but
+                // deliberately retains the edge ID. `deleted` retains it as
+                // preserve-tombstone evidence for the same reason.
                 $isCycle = isset($visited[$targetId]);
                 $relationships[(string) $sourceId][$fieldId][] = [
                     'kind' => 'ref',
@@ -134,7 +146,7 @@ final class RecordReadService
             }
 
             $mediaIds = $mediaEdges->pluck('media_id')->map(static fn (mixed $id): string => (string) $id)->unique()->values()->all();
-            $mediaMeta = $this->mediaMetadata($mediaIds);
+            $mediaMeta = $this->mediaMetadata->findMany($mediaIds);
             $readableMediaSet = $mediaIds === []
                 ? []
                 : array_fill_keys($this->access->readableMediaIds($actorId, $mediaIds), true);
@@ -165,10 +177,10 @@ final class RecordReadService
 
             $requestedMediaIds = array_values(array_unique($readableMediaIds));
             if ($requestedMediaIds !== []) {
-                $mediaPayloads = get_object_vars($this->mediaIncluded->buildIncludedByIds($requestedMediaIds));
+                $mediaPayloads = $this->mediaIncluded->buildIncludedByIds($requestedMediaIds);
                 foreach ($requestedMediaIds as $mediaId) {
-                    if (is_array($mediaPayloads[$mediaId] ?? null)) {
-                        $includedMedia[$mediaId] = $mediaPayloads[$mediaId];
+                    if (is_array($mediaPayloads->{$mediaId} ?? null)) {
+                        $includedMedia[$mediaId] = $mediaPayloads->{$mediaId};
                     }
                 }
             }
@@ -211,11 +223,21 @@ final class RecordReadService
      */
     public function presentQueryRows(array $rows, ?int $actorId): array
     {
+        $this->displayTemplates->beginOperation();
         if ($rows === []) {
             return [];
         }
-        $versions = array_values(array_unique(array_map(static fn (array $row): string => (string) $row['schema_version_id'], $rows)));
-        $fields = $this->fieldsForVersions($versions);
+        $logicalDocuments = $this->logicalDocuments->currentMany(array_map(static fn (array $row): array => [
+            'definition_id' => (int) $row['record_definition_id'],
+            'stored_version_id' => (string) $row['schema_version_id'],
+            'document' => is_array($row['data']) ? $row['data'] : [],
+        ], $rows));
+        $versions = [];
+        foreach ($rows as $index => $row) {
+            $versions[] = (string) $row['schema_version_id'];
+            $versions[] = $logicalDocuments[$index]['logical_schema_version_id'];
+        }
+        $fields = $this->fieldsForVersions(array_values(array_unique($versions)));
         $displayValues = DB::table('dp_display_values')
             ->whereIn('record_id', array_map(static fn (array $row): int => (int) $row['id'], $rows))
             ->pluck('value', 'record_id')->all();
@@ -225,15 +247,17 @@ final class RecordReadService
         }
         $this->displayTemplates->primeTargets($displaySources, $actorId, $this->access);
 
-        return array_map(function (array $row) use ($actorId, $fields, $displayValues): array {
-            $storedVersionId = (string) $row['schema_version_id'];
+        $presented = [];
+        foreach ($rows as $index => $row) {
             $definitionId = (int) $row['record_definition_id'];
-            $document = is_array($row['data']) ? $row['data'] : [];
-            $logical = $this->logicalDocuments->current($definitionId, $storedVersionId, $document);
-            $logicalFields = $logical['logical_schema_version_id'] === $storedVersionId
-                ? ($fields[$storedVersionId] ?? [])
-                : $this->fieldsForVersions([$logical['logical_schema_version_id']])[$logical['logical_schema_version_id']] ?? [];
-            $row['data'] = $this->filterDocument($logical['document'], $logicalFields, $actorId, $definitionId);
+            $logical = $logicalDocuments[$index];
+            $logicalFields = $fields[$logical['logical_schema_version_id']] ?? [];
+            $row['data'] = $this->filterDocument(
+                $logical['document'],
+                $logicalFields,
+                $actorId,
+                $definitionId,
+            );
             $row['logical_schema_version_id'] = $logical['logical_schema_version_id'];
             $row['display_value'] = $this->displayTemplates->canExpose(
                 $definitionId,
@@ -243,8 +267,29 @@ final class RecordReadService
                 $this->access,
             ) ? ($displayValues[(int) $row['id']] ?? 'Record #'.$row['id']) : 'Record #'.$row['id'];
 
-            return $row;
-        }, $rows);
+            $presented[] = $row;
+        }
+
+        return $presented;
+    }
+
+    /**
+     * Applies the read-side field policy to a document returned by a write.
+     * Persistence results intentionally retain the full normalized document;
+     * SDK/transport presenters must not expose fields the actor cannot read.
+     *
+     * @param  array<string,mixed>  $document
+     * @return array<string,mixed>
+     */
+    public function presentWriteDocument(
+        int $definitionId,
+        string $schemaVersionId,
+        array $document,
+        ?int $actorId,
+    ): array {
+        $fields = $this->fieldsForVersions([$schemaVersionId])[$schemaVersionId] ?? [];
+
+        return $this->filterDocument($document, $fields, $actorId, $definitionId);
     }
 
     /** @param list<int> $ids @return array<int,array<string,mixed>> */
@@ -270,30 +315,38 @@ final class RecordReadService
             ->leftJoin('dp_display_values as display', 'display.record_id', '=', 'record.id')
             ->whereIn('record.id', $allowed)->whereNull('record.deleted_at')
             ->get(['record.*', 'display.value as display_value']);
-        $versions = $rows->pluck('schema_version_id')->map(static fn (mixed $id): string => (string) $id)->unique()->values()->all();
-        $fields = $this->fieldsForVersions($versions);
+        $rowObjects = $rows->values()->all();
+        $presentedRows = array_map($this->rows->present(...), $rowObjects);
+        $logicalDocuments = $this->logicalDocuments->currentMany(array_map(static fn (array $row): array => [
+            'definition_id' => $row['record_definition_id'],
+            'stored_version_id' => $row['schema_version_id'],
+            'document' => $row['data'],
+        ], $presentedRows));
+        $versions = [];
+        foreach ($presentedRows as $index => $row) {
+            $versions[] = $row['schema_version_id'];
+            $versions[] = $logicalDocuments[$index]['logical_schema_version_id'];
+        }
+        $fields = $this->fieldsForVersions(array_values(array_unique($versions)));
         $displaySources = [];
-        foreach ($rows as $row) {
-            $displaySources[(int) $row->id] = (int) $row->record_definition_id;
+        foreach ($presentedRows as $row) {
+            $displaySources[$row['id']] = $row['record_definition_id'];
         }
         $this->displayTemplates->primeTargets($displaySources, $actorId, $this->access);
         $result = [];
-        foreach ($rows as $row) {
-            $id = (int) $row->id;
-            $definitionId = (int) $row->record_definition_id;
-            $versionId = (string) $row->schema_version_id;
-            $document = $this->json->decodeMap($row->data, 'dp_records.data');
-            $logical = $this->logicalDocuments->current($definitionId, $versionId, $document);
+        foreach ($presentedRows as $index => $presented) {
+            $row = $rowObjects[$index];
+            $id = $presented['id'];
+            $definitionId = $presented['record_definition_id'];
+            $versionId = $presented['schema_version_id'];
+            $logical = $logicalDocuments[$index];
             $logicalVersionId = $logical['logical_schema_version_id'];
-            if (! isset($fields[$logicalVersionId])) {
-                $fields += $this->fieldsForVersions([$logicalVersionId]);
-            }
             $result[$id] = [
                 'id' => $id,
                 'record_definition_id' => $definitionId,
                 'schema_version_id' => $versionId,
                 'logical_schema_version_id' => $logicalVersionId,
-                'revision' => (int) $row->revision,
+                'revision' => $presented['revision'],
                 'data' => $this->filterDocument($logical['document'], $fields[$logicalVersionId] ?? [], $actorId, $definitionId),
                 'display_value' => $this->displayTemplates->canExpose(
                     $definitionId,
@@ -302,9 +355,9 @@ final class RecordReadService
                     $actorId,
                     $this->access,
                 ) && is_string($row->display_value) ? $row->display_value : "Record #{$id}",
-                'author_id' => $row->author_id === null ? null : (int) $row->author_id,
-                'created_at' => (string) $row->created_at,
-                'updated_at' => (string) $row->updated_at,
+                'author_id' => $presented['author_id'],
+                'created_at' => $presented['created_at'],
+                'updated_at' => $presented['updated_at'],
             ];
         }
 
@@ -316,13 +369,14 @@ final class RecordReadService
      *
      * @param  list<int>  $sourceIds
      * @param  array<int,array<string,mixed>>  $records
+     * @return Collection<int,\stdClass>
      */
     private function loadReadableRelationshipEdges(
         string $table,
         array $sourceIds,
         array $records,
         ?int $actorId,
-        string $type,
+        FieldType $type,
     ): Collection {
         $versionIds = [];
         foreach ($sourceIds as $sourceId) {
@@ -386,27 +440,6 @@ final class RecordReadService
             ->all();
     }
 
-    /** @param list<string> $ids @return array<string,array<string,mixed>> */
-    private function mediaMetadata(array $ids): array
-    {
-        if ($ids === []) {
-            return [];
-        }
-
-        return DB::table('media as m')
-            ->leftJoin('media_images as mi', 'mi.media_id', '=', 'm.id')
-            ->leftJoin('media_av_metadata as mav', 'mav.media_id', '=', 'm.id')
-            ->leftJoin('dp_media_processing_states as mps', 'mps.media_id', '=', 'm.id')
-            ->whereIn('m.id', $ids)
-            ->get([
-                'm.id', 'm.mime', 'm.size_bytes', 'm.title', 'm.alt', 'm.deleted_at',
-                'mi.width', 'mi.height', 'mav.duration_ms',
-                DB::raw("coalesce(mps.state, 'ready') as processing_state"),
-            ])
-            ->mapWithKeys(static fn (object $row): array => [(string) $row->id => (array) $row])
-            ->all();
-    }
-
     /** @param list<string> $versionIds @return array<string,list<FieldDefinition>> */
     private function fieldsForVersions(array $versionIds): array
     {
@@ -414,8 +447,9 @@ final class RecordReadService
             return [];
         }
         $result = [];
-        $rows = DB::table('dp_schema_fields')->whereIn('schema_version_id', $versionIds)
-            ->orderBy('position')->orderBy('path')->get();
+        $rows = SchemaStorage::orderedFields(
+            DB::table('dp_schema_fields')->whereIn('schema_version_id', $versionIds),
+        )->get();
         foreach ($rows->groupBy('schema_version_id') as $versionId => $versionRows) {
             $result[(string) $versionId] = $this->schemaFields->fromRows($versionRows);
         }

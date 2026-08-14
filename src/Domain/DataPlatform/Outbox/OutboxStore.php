@@ -29,7 +29,7 @@ final class OutboxStore
             'aggregate_id' => $aggregateId,
             'event_type' => $eventType,
             'payload' => $this->json->encode($payload),
-            'headers' => $this->json->encode($headers),
+            'headers' => $this->json->encodeNullableMap($headers),
             'available_at' => now(),
             'created_at' => now(),
             'updated_at' => now(),

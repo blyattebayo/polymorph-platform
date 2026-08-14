@@ -9,6 +9,7 @@ use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformBadRequest;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformResourceNotFound;
 use Polymorph\Platform\Domain\DataPlatform\Projection\DisplayTemplateCompiler;
 use Polymorph\Platform\Domain\DataPlatform\Projection\ProjectionRebuildScheduler;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaStorage;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 
 /** Updates definition metadata after validating every metadata-owned invariant. */
@@ -37,7 +38,7 @@ final class DefinitionMetadataService
                 throw DataPlatformResourceNotFound::for('record-definition', $definitionId);
             }
 
-            $metadata = $this->json->decodeMap($definition->metadata, 'dp_record_definitions.metadata');
+            $metadata = $this->json->decodeMap($definition->metadata, SchemaStorage::DEFINITION_METADATA_CONTEXT);
             $previousTemplate = trim((string) ($metadata['display_template'] ?? ''));
             $metadata = array_replace($metadata, $metadataPatch);
             if (array_key_exists('display_template', $metadataPatch)) {

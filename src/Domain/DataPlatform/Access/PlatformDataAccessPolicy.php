@@ -73,7 +73,7 @@ final class PlatformDataAccessPolicy implements DataAccessPolicy
 
     public function readableTargetRecordIds(?int $actorId, array $recordIds): array
     {
-        $recordIds = array_values(array_unique(array_filter(array_map('intval', $recordIds), static fn (int $id): bool => $id > 0)));
+        $recordIds = AccessIdentitySet::positiveInts($recordIds);
 
         return array_map('intval', $this->allowedIds(
             $actorId,
@@ -85,7 +85,7 @@ final class PlatformDataAccessPolicy implements DataAccessPolicy
 
     public function readableMediaIds(?int $actorId, array $mediaIds): array
     {
-        $ids = array_values(array_unique(array_filter(array_map('strval', $mediaIds))));
+        $ids = AccessIdentitySet::nonEmptyStrings($mediaIds);
 
         return array_map('strval', $this->allowedIds(
             $actorId,
@@ -97,7 +97,7 @@ final class PlatformDataAccessPolicy implements DataAccessPolicy
 
     public function attachableRecordIds(?int $actorId, int $sourceDefinitionId, FieldDefinition $field, array $recordIds): array
     {
-        $ids = array_values(array_unique(array_filter(array_map('intval', $recordIds), static fn (int $id): bool => $id > 0)));
+        $ids = AccessIdentitySet::positiveInts($recordIds);
 
         return array_map('intval', $this->allowedIds(
             $actorId,
@@ -111,7 +111,7 @@ final class PlatformDataAccessPolicy implements DataAccessPolicy
 
     public function attachableMediaIds(?int $actorId, int $sourceDefinitionId, FieldDefinition $field, array $mediaIds): array
     {
-        $ids = array_values(array_unique(array_filter(array_map('strval', $mediaIds))));
+        $ids = AccessIdentitySet::nonEmptyStrings($mediaIds);
 
         return array_map('strval', $this->allowedIds(
             $actorId,

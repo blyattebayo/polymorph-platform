@@ -5,17 +5,21 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\DataPlatform\Query;
 
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Polymorph\Platform\Domain\DataPlatform\Access\DataAccessDenied;
 use Polymorph\Platform\Domain\DataPlatform\Access\DataAccessPolicy;
-use Polymorph\Platform\Domain\DataPlatform\Control\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformBadRequest;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformInvariantViolation;
+use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformResourceNotFound;
 use Polymorph\Platform\Domain\DataPlatform\Fields\Cardinality;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Fields\FieldType;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldTypeHandler;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldTypeRegistry;
+use Polymorph\Platform\Domain\DataPlatform\Projection\ProjectionState;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\CanonicalJson;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 
@@ -39,6 +43,7 @@ final class QueryPlanner
         $schema = $this->schemas->writableDefinition($spec->recordDefinitionId);
         $fields = $this->fieldMap($schema['fields']);
         $expressionIndexes = $this->appliedExpressionIndexes($spec->recordDefinitionId, $schema['fields']);
+        $uniqueProjections = $this->appliedUniqueProjections($spec->recordDefinitionId, $schema['fields']);
         $query = DB::table('dp_records as r')
             ->where('r.record_definition_id', $spec->recordDefinitionId)
             ->whereNull('r.deleted_at');
@@ -46,13 +51,13 @@ final class QueryPlanner
         $warnings = [];
 
         if ($spec->filter !== null) {
-            $this->compileNode($query, $spec->filter, $fields, $expressionIndexes, $actorId, $spec, $strategies, $warnings);
+            $this->compileNode($query, $spec->filter, $fields, $expressionIndexes, $uniqueProjections, $actorId, $spec, $strategies, $warnings);
         }
 
         foreach ($spec->sort as $sort) {
             $field = $this->field($fields, $sort['field']);
             $this->assertReadable($actorId, $spec->recordDefinitionId, $field);
-            if (! isset($expressionIndexes[$field->id]) && ! $spec->allowScan) {
+            if (! $this->hasAppliedExpressionIndex($field, $expressionIndexes) && ! $spec->allowScan) {
                 $this->rejectOrWarn("Sorting by unindexed field '{$field->path}' is disabled.", $warnings);
             }
             $query->orderByRaw($this->sortExpression($field).' '.$sort['direction']);
@@ -61,7 +66,7 @@ final class QueryPlanner
             $field = $this->field($fields, $identifier);
             $this->assertReadable($actorId, $spec->recordDefinitionId, $field);
             $this->assertGroupable($field);
-            if (! isset($expressionIndexes[$field->id]) && ! $spec->allowScan) {
+            if (! $this->hasAppliedExpressionIndex($field, $expressionIndexes) && ! $spec->allowScan) {
                 $this->rejectOrWarn("Grouping by unindexed field '{$field->path}' is disabled.", $warnings);
             }
         }
@@ -137,7 +142,7 @@ final class QueryPlanner
         $field = $this->field($plan->fields, $fieldIdentifier);
         $this->assertReadable($actorId, $spec->recordDefinitionId, $field);
         $this->assertNumericAggregateField($field);
-        $cast = $field->type === 'int' ? 'bigint' : 'double precision';
+        $cast = $field->type === FieldType::INT ? 'bigint' : 'double precision';
         if ($field->multiValued) {
             $source = (clone $query)->select(['r.id', 'r.data']);
             $value = DB::query()->fromSub($source, 'aggregate_source')
@@ -182,7 +187,7 @@ final class QueryPlanner
             $aggregateField = $this->field($fields, $fieldIdentifier);
             $this->assertReadable($actorId, $spec->recordDefinitionId, $aggregateField);
             $this->assertNumericAggregateField($aggregateField);
-            $cast = $aggregateField->type === 'int' ? 'bigint' : 'double precision';
+            $cast = $aggregateField->type === FieldType::INT ? 'bigint' : 'double precision';
             if ($aggregateField->multiValued) {
                 $query->crossJoin(DB::raw('LATERAL jsonb_path_query(r.data, '.$this->expressions->jsonPath($aggregateField).'::jsonpath) AS dp_aggregate_occurrence(value)'))
                     ->whereRaw("dp_aggregate_occurrence.value <> 'null'::jsonb");
@@ -200,12 +205,13 @@ final class QueryPlanner
             $selects[] = $expression.' AS group_'.$index;
             $groups[] = $expression;
         }
+        /** @var Collection<int,\stdClass> $rows */
         $rows = $query->selectRaw(implode(', ', [...$selects, $aggregateExpression.' AS aggregate_value']))
             ->groupByRaw(implode(', ', $groups))
             ->orderByRaw(implode(', ', $groups))
             ->get();
 
-        return $rows->map(function (object $row) use ($groupFields, $function): array {
+        return $rows->map(function (\stdClass $row) use ($groupFields, $function): array {
             $key = [];
             foreach ($groupFields as $index => $field) {
                 $raw = $row->{'group_'.$index};
@@ -229,6 +235,7 @@ final class QueryPlanner
         FilterNode $node,
         array $fields,
         array $expressionIndexes,
+        array $uniqueProjections,
         ?int $actorId,
         QuerySpec $spec,
         array &$strategies,
@@ -237,10 +244,10 @@ final class QueryPlanner
     ): void {
         if ($node instanceof BooleanNode) {
             $method = $boolean === 'or' ? 'orWhere' : 'where';
-            $query->{$method}(function (Builder $nested) use ($node, $fields, $expressionIndexes, $actorId, $spec, &$strategies, &$warnings): void {
+            $query->{$method}(function (Builder $nested) use ($node, $fields, $expressionIndexes, $uniqueProjections, $actorId, $spec, &$strategies, &$warnings): void {
                 if ($node->operator === 'not') {
-                    $nested->whereNot(function (Builder $not) use ($node, $fields, $expressionIndexes, $actorId, $spec, &$strategies, &$warnings): void {
-                        $this->compileNode($not, $node->children[0], $fields, $expressionIndexes, $actorId, $spec, $strategies, $warnings);
+                    $nested->whereNot(function (Builder $not) use ($node, $fields, $expressionIndexes, $uniqueProjections, $actorId, $spec, &$strategies, &$warnings): void {
+                        $this->compileNode($not, $node->children[0], $fields, $expressionIndexes, $uniqueProjections, $actorId, $spec, $strategies, $warnings);
                     });
 
                     return;
@@ -251,6 +258,7 @@ final class QueryPlanner
                         $child,
                         $fields,
                         $expressionIndexes,
+                        $uniqueProjections,
                         $actorId,
                         $spec,
                         $strategies,
@@ -281,8 +289,9 @@ final class QueryPlanner
         }
 
         if ($node->field === '$search') {
+            $this->assertSearchable($actorId, $spec->recordDefinitionId, $fields);
             $this->applySearchPredicate($query, $node, $boolean);
-            $strategies[] = DB::getDriverName() === 'pgsql' ? 'search_gin' : 'search_projection';
+            $strategies[] = 'search_gin';
 
             return;
         }
@@ -313,10 +322,12 @@ final class QueryPlanner
         );
         $compiled = $handler->compileQuery(new QueryPredicate($field, $node->operator, $node->value));
         $strategy = $compiled->strategy;
-        if ($strategy === 'jsonb' && ($field->metadata['unique'] ?? false) === true && in_array($node->operator, ['eq', 'in'], true)) {
+        if ($strategy === 'jsonb'
+            && ($field->metadata['unique'] ?? false) === true
+            && isset($uniqueProjections[$field->id])
+            && in_array($node->operator, ['eq', 'in'], true)) {
             $strategy = 'unique_projection';
-        } elseif ($strategy === 'jsonb' && ($field->metadata['indexed'] ?? false) === true
-            && isset($expressionIndexes[$field->id])) {
+        } elseif ($strategy === 'jsonb' && $this->hasAppliedExpressionIndex($field, $expressionIndexes)) {
             $strategy = 'expression_index';
         } elseif ($strategy === 'jsonb' && $node->operator === 'eq' && ! $field->multiValued && ! str_contains($field->path, '.')) {
             $strategy = 'jsonb_containment';
@@ -495,12 +506,8 @@ final class QueryPlanner
         $term = trim($node->value);
         $query->{$method}(function (Builder $search) use ($term): void {
             $search->from('dp_search_documents as search_document')
-                ->whereColumn('search_document.record_id', 'r.id');
-            if (DB::getDriverName() === 'pgsql') {
-                $search->whereRaw("search_document.document @@ websearch_to_tsquery('simple', ?)", [$term]);
-            } else {
-                $search->whereRaw('lower(search_document.content) like ?', ['%'.mb_strtolower($term).'%']);
-            }
+                ->whereColumn('search_document.record_id', 'r.id')
+                ->whereRaw("search_document.document @@ websearch_to_tsquery('simple', ?)", [$term]);
         });
     }
 
@@ -569,12 +576,8 @@ final class QueryPlanner
             })
             ->where('field.id', $fieldId)
             ->first(['field.record_definition_id', 'schema_field.*']);
-        if ($row === null || (string) $row->type !== 'ref') {
-            throw DataPlatformBadRequest::because(
-                'unknown_reverse_reference_field',
-                "Unknown reverse reference field '{$fieldId}'.",
-                ['field_id' => $fieldId],
-            );
+        if ($row === null || (string) $row->type !== FieldType::REF->value) {
+            throw DataPlatformResourceNotFound::for('reverse-reference-field', $fieldId);
         }
         $definitionId = (int) $row->record_definition_id;
         $field = collect($this->schemas->fields((string) $row->schema_version_id))->first(
@@ -589,7 +592,7 @@ final class QueryPlanner
         }
         if (! $this->access->canReadDefinition($actorId, $definitionId)
             || ! $this->access->canReadField($actorId, $definitionId, $field)) {
-            throw DataAccessDenied::for('field.'.$fieldId, 'reverse-query');
+            throw DataPlatformResourceNotFound::for('reverse-reference-field', $fieldId);
         }
 
         return $definitionId;
@@ -646,9 +649,39 @@ final class QueryPlanner
         }
     }
 
+    /**
+     * The search projection is one denormalized document per record built from
+     * every field marked `search`, so it cannot be partitioned per field at
+     * query time. Matching against it therefore reveals whether an unreadable
+     * field contains a term, which is why the predicate is refused outright
+     * unless the actor may read every field that feeds the projection.
+     *
+     * @param  array<string,FieldDefinition>  $fields
+     */
+    private function assertSearchable(?int $actorId, int $definitionId, array $fields): void
+    {
+        $checked = [];
+        foreach ($fields as $field) {
+            if (($field->metadata['search'] ?? false) !== true || isset($checked[$field->id])) {
+                continue;
+            }
+            $checked[$field->id] = true;
+            if (! $this->access->canReadField($actorId, $definitionId, $field)) {
+                throw DataAccessDenied::for('$search', 'query');
+            }
+        }
+    }
+
     private function assertGroupable(FieldDefinition $field): void
     {
-        if (! in_array($field->type, ['bool', 'datetime', 'float', 'int', 'string', 'text'], true)) {
+        if (! in_array($field->type, [
+            FieldType::BOOL,
+            FieldType::DATETIME,
+            FieldType::FLOAT,
+            FieldType::INT,
+            FieldType::STRING,
+            FieldType::TEXT,
+        ], true)) {
             throw DataPlatformBadRequest::because(
                 'invalid_group_field',
                 "Group field '{$field->path}' must be a scalar value field; refs, media and JSON cannot be grouped because that could bypass target ACL.",
@@ -659,7 +692,7 @@ final class QueryPlanner
 
     private function assertNumericAggregateField(FieldDefinition $field): void
     {
-        if (in_array($field->type, ['int', 'float'], true)) {
+        if ($field->type instanceof FieldType && $field->type->isNumeric()) {
             return;
         }
 
@@ -711,7 +744,7 @@ final class QueryPlanner
 
     private function escapeLike(string $value): string
     {
-        return str_replace(['%', '_'], ['\\%', '\\_'], $value);
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
     }
 
     private function rejectOrWarn(string $message, array &$warnings): void
@@ -743,7 +776,31 @@ final class QueryPlanner
             ->join('dp_record_definitions as definition', 'definition.current_schema_version_id', '=', 'projection.schema_version_id')
             ->where('definition.id', $definitionId)
             ->where('projection.kind', 'expression_index')
-            ->where('projection.state', 'applied')
+            ->where('projection.state', ProjectionState::Applied->value)
+            ->pluck('projection.field_id')
+            ->mapWithKeys(static fn (mixed $fieldId): array => [(string) $fieldId => true])
+            ->all();
+    }
+
+    /** @param array<string,true> $expressionIndexes */
+    private function hasAppliedExpressionIndex(FieldDefinition $field, array $expressionIndexes): bool
+    {
+        return ($field->metadata['indexed'] ?? false) === true
+            && isset($expressionIndexes[$field->id]);
+    }
+
+    /** @param list<FieldDefinition> $fields @return array<string,true> */
+    private function appliedUniqueProjections(int $definitionId, array $fields): array
+    {
+        if (array_filter($fields, static fn (FieldDefinition $field): bool => ($field->metadata['unique'] ?? false) === true) === []) {
+            return [];
+        }
+
+        return DB::table('dp_projection_definitions as projection')
+            ->join('dp_record_definitions as definition', 'definition.current_schema_version_id', '=', 'projection.schema_version_id')
+            ->where('definition.id', $definitionId)
+            ->where('projection.kind', 'unique')
+            ->where('projection.state', ProjectionState::Applied->value)
             ->pluck('projection.field_id')
             ->mapWithKeys(static fn (mixed $fieldId): array => [(string) $fieldId => true])
             ->all();

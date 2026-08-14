@@ -10,6 +10,8 @@ use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformResourceNotFound;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformStateConflict;
 use Polymorph\Platform\Domain\DataPlatform\Migration\MigrationPlanValidator;
 use Polymorph\Platform\Domain\DataPlatform\Projection\ProjectionDefinitionService;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaState;
 
 /** Enforces and persists schema-version state transitions. */
 final class SchemaLifecycleService

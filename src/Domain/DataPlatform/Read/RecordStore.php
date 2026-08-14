@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Polymorph\Platform\Domain\DataPlatform\Write;
+namespace Polymorph\Platform\Domain\DataPlatform\Read;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +40,6 @@ final class RecordStore
             schemaVersionId: (string) $row->schema_version_id,
             document: $this->json->decodeMap($row->data, 'dp_records.data'),
             revision: (int) $row->revision,
-            authorId: $row->author_id === null ? null : (int) $row->author_id,
         );
     }
 }

@@ -14,13 +14,14 @@ use Polymorph\Platform\Domain\DataPlatform\Control\DefinitionService;
 use Polymorph\Platform\Domain\DataPlatform\Control\FieldSpecification;
 use Polymorph\Platform\Domain\DataPlatform\Control\SchemaDraftService;
 use Polymorph\Platform\Domain\DataPlatform\Control\SchemaLifecycleService;
-use Polymorph\Platform\Domain\DataPlatform\Control\SchemaState;
+use Polymorph\Platform\Domain\DataPlatform\Migration\MigrationClassification;
 use Polymorph\Platform\Domain\DataPlatform\Migration\MigrationOperation;
 use Polymorph\Platform\Domain\DataPlatform\Migration\SchemaMigrationRunner;
 use Polymorph\Platform\Domain\DataPlatform\Migration\SchemaMigrationService;
 use Polymorph\Platform\Domain\DataPlatform\Projection\DisplayTemplateCompiler;
 use Polymorph\Platform\Domain\DataPlatform\Projection\ProjectionRebuilder;
 use Polymorph\Platform\Domain\DataPlatform\Projection\ProjectionRebuildScheduler;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaState;
 
 /** Versioned schema editor and operational evidence API. */
 final readonly class DataControlController
@@ -140,7 +141,7 @@ final readonly class DataControlController
     public function transition(Request $request, string $schemaVersionId): JsonResponse
     {
         $payload = $request->validate([
-            'state' => ['required', 'string', 'in:draft,validating,backfilling,published,archived'],
+            'state' => ['required', 'string', 'in:'.implode(',', SchemaState::values())],
         ]);
         $this->schemaLifecycle->transition($schemaVersionId, SchemaState::from($payload['state']));
 
@@ -152,14 +153,14 @@ final readonly class DataControlController
         $payload = $request->validate([
             'from_schema_version_id' => ['required', 'string', 'size:26'],
             'to_schema_version_id' => ['required', 'string', 'size:26'],
-            'classification' => ['required', 'string', 'in:'.implode(',', SchemaMigrationService::CLASSIFICATIONS)],
+            'classification' => ['required', 'string', 'in:'.implode(',', MigrationClassification::values())],
             'operations' => ['required', 'array'],
             'operations.*' => ['array'],
         ]);
         $id = $this->migrations->createPlan(
             $payload['from_schema_version_id'],
             $payload['to_schema_version_id'],
-            $payload['classification'],
+            MigrationClassification::from($payload['classification']),
             array_map(
                 static fn (array $operation): MigrationOperation => MigrationOperation::fromArray($operation),
                 $payload['operations'],

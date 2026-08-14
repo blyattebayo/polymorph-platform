@@ -11,7 +11,7 @@ use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
 use Polymorph\Platform\Domain\DataPlatform\Validation\DataValidationException;
 use Throwable;
 
-final class DateTimeFieldTypeHandler extends AbstractFieldTypeHandler
+final class DateTimeFieldTypeHandler extends ComparableFieldTypeHandler
 {
     public function type(): string
     {
@@ -20,8 +20,8 @@ final class DateTimeFieldTypeHandler extends AbstractFieldTypeHandler
 
     protected function normalizeOne(mixed $value, FieldDefinition $field, string $occurrence): string
     {
-        if (! $value instanceof DateTimeInterface
-            && preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/D', (string) $value) !== 1) {
+        if (! $value instanceof DateTimeInterface && (! is_string($value)
+            || preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/D', $value) !== 1)) {
             throw DataValidationException::one('type', 'Expected an ISO-8601 datetime.', $field->path, $occurrence);
         }
 
@@ -29,8 +29,7 @@ final class DateTimeFieldTypeHandler extends AbstractFieldTypeHandler
             if ($value instanceof DateTimeInterface) {
                 $date = DateTimeImmutable::createFromInterface($value);
             } else {
-                $text = (string) $value;
-                $date = new DateTimeImmutable($text);
+                $date = new DateTimeImmutable($value);
             }
         } catch (Throwable) {
             throw DataValidationException::one('type', 'Expected an ISO-8601 datetime.', $field->path, $occurrence);
@@ -44,11 +43,5 @@ final class DateTimeFieldTypeHandler extends AbstractFieldTypeHandler
         if (! is_string($value)) {
             throw DataValidationException::one('type', 'Expected an ISO-8601 datetime.', $field->path, $occurrence);
         }
-    }
-
-    /** @return list<string> */
-    public function supportedQueryOperators(): array
-    {
-        return ['eq', 'in', 'lt', 'lte', 'gt', 'gte', 'between', 'is_null', 'is_not_null'];
     }
 }

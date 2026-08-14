@@ -12,6 +12,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            throw new RuntimeException('The Polymorph Data Platform requires PostgreSQL.');
+        }
+
         Schema::create('dp_record_definitions', function (Blueprint $table): void {
             $table->id();
             $table->string('code')->unique();
@@ -244,27 +248,27 @@ return new class extends Migration
             $table->timestampTz('locked_at')->nullable();
             $table->string('locked_by')->nullable();
             $table->timestampTz('delivered_at')->nullable();
+            $table->timestampTz('dead_lettered_at')->nullable();
             $table->unsignedInteger('attempts')->default(0);
             $table->text('last_error')->nullable();
             $table->timestamps();
 
-            $table->index(['delivered_at', 'available_at', 'id'], 'dp_outbox_delivery_idx');
+            $table->index(['delivered_at', 'dead_lettered_at', 'available_at', 'id'], 'dp_outbox_delivery_idx');
             $table->index(['aggregate_type', 'aggregate_id', 'created_at'], 'dp_outbox_aggregate_idx');
         });
 
-        if (DB::getDriverName() === 'pgsql') {
-            DB::statement('CREATE INDEX dp_records_data_gin_idx ON dp_records USING gin (data jsonb_path_ops)');
-            DB::statement("ALTER TABLE dp_search_documents ADD COLUMN document tsvector GENERATED ALWAYS AS (to_tsvector('simple', coalesce(content, ''))) STORED");
-            DB::statement('CREATE INDEX dp_search_documents_document_gin_idx ON dp_search_documents USING gin (document)');
-            DB::statement("ALTER TABLE dp_schema_versions ADD CONSTRAINT dp_schema_versions_state_ck CHECK (state IN ('draft','validating','backfilling','published','archived'))");
-            DB::statement("ALTER TABLE dp_projection_definitions ADD CONSTRAINT dp_projection_definitions_state_ck CHECK (state IN ('pending','applying','applied','failed'))");
-            DB::statement("ALTER TABLE dp_media_processing_states ADD CONSTRAINT dp_media_processing_state_ck CHECK (state IN ('uploading','processing','ready','failed'))");
-            DB::statement('ALTER TABLE dp_schema_versions ADD CONSTRAINT dp_schema_versions_definition_identity_uq UNIQUE (id, record_definition_id)');
-            DB::statement('ALTER TABLE dp_schema_versions ADD CONSTRAINT dp_schema_versions_previous_fk FOREIGN KEY (previous_version_id) REFERENCES dp_schema_versions (id) ON DELETE SET NULL');
-            DB::statement('ALTER TABLE dp_record_definitions ADD CONSTRAINT dp_record_definitions_current_schema_fk FOREIGN KEY (current_schema_version_id) REFERENCES dp_schema_versions (id)');
-            DB::statement('ALTER TABLE dp_records ADD CONSTRAINT dp_records_schema_definition_fk FOREIGN KEY (schema_version_id, record_definition_id) REFERENCES dp_schema_versions (id, record_definition_id)');
-            DB::statement("ALTER TABLE dp_ref_edges ADD CONSTRAINT dp_ref_edges_deletion_policy_ck CHECK (deletion_policy IN ('restrict','nullify','preserve_tombstone','cascade'))");
-            DB::unprepared(<<<'SQL'
+        DB::statement('CREATE INDEX dp_records_data_gin_idx ON dp_records USING gin (data jsonb_path_ops)');
+        DB::statement("ALTER TABLE dp_search_documents ADD COLUMN document tsvector GENERATED ALWAYS AS (to_tsvector('simple', coalesce(content, ''))) STORED");
+        DB::statement('CREATE INDEX dp_search_documents_document_gin_idx ON dp_search_documents USING gin (document)');
+        DB::statement("ALTER TABLE dp_schema_versions ADD CONSTRAINT dp_schema_versions_state_ck CHECK (state IN ('draft','validating','backfilling','published','archived'))");
+        DB::statement("ALTER TABLE dp_projection_definitions ADD CONSTRAINT dp_projection_definitions_state_ck CHECK (state IN ('pending','applying','applied','failed'))");
+        DB::statement("ALTER TABLE dp_media_processing_states ADD CONSTRAINT dp_media_processing_state_ck CHECK (state IN ('uploading','processing','ready','failed'))");
+        DB::statement('ALTER TABLE dp_schema_versions ADD CONSTRAINT dp_schema_versions_definition_identity_uq UNIQUE (id, record_definition_id)');
+        DB::statement('ALTER TABLE dp_schema_versions ADD CONSTRAINT dp_schema_versions_previous_fk FOREIGN KEY (previous_version_id) REFERENCES dp_schema_versions (id) ON DELETE SET NULL');
+        DB::statement('ALTER TABLE dp_record_definitions ADD CONSTRAINT dp_record_definitions_current_schema_fk FOREIGN KEY (current_schema_version_id) REFERENCES dp_schema_versions (id)');
+        DB::statement('ALTER TABLE dp_records ADD CONSTRAINT dp_records_schema_definition_fk FOREIGN KEY (schema_version_id, record_definition_id) REFERENCES dp_schema_versions (id, record_definition_id)');
+        DB::statement("ALTER TABLE dp_ref_edges ADD CONSTRAINT dp_ref_edges_deletion_policy_ck CHECK (deletion_policy IN ('restrict','nullify','preserve_tombstone','cascade'))");
+        DB::unprepared(<<<'SQL'
                 CREATE OR REPLACE FUNCTION dp_guard_schema_field_mutation()
                 RETURNS trigger AS $$
                 DECLARE
@@ -284,8 +288,7 @@ return new class extends Migration
                 CREATE TRIGGER dp_schema_fields_immutable_guard
                 BEFORE INSERT OR UPDATE OR DELETE ON dp_schema_fields
                 FOR EACH ROW EXECUTE FUNCTION dp_guard_schema_field_mutation();
-                SQL);
-        }
+            SQL);
     }
 
     public function down(): void

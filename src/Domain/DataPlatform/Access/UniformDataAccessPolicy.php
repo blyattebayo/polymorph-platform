@@ -53,33 +53,21 @@ trait UniformDataAccessPolicy
 
     public function readableTargetRecordIds(?int $actorId, array $recordIds): array
     {
-        return $this->grantsAllDataAccess() ? $this->uniqueInts($recordIds) : [];
+        return $this->grantsAllDataAccess() ? AccessIdentitySet::positiveInts($recordIds) : [];
     }
 
     public function readableMediaIds(?int $actorId, array $mediaIds): array
     {
-        return $this->grantsAllDataAccess() ? $this->uniqueStrings($mediaIds) : [];
+        return $this->grantsAllDataAccess() ? AccessIdentitySet::nonEmptyStrings($mediaIds) : [];
     }
 
     public function attachableRecordIds(?int $actorId, int $sourceDefinitionId, FieldDefinition $field, array $recordIds): array
     {
-        return $this->grantsAllDataAccess() ? $this->uniqueInts($recordIds) : [];
+        return $this->grantsAllDataAccess() ? AccessIdentitySet::positiveInts($recordIds) : [];
     }
 
     public function attachableMediaIds(?int $actorId, int $sourceDefinitionId, FieldDefinition $field, array $mediaIds): array
     {
-        return $this->grantsAllDataAccess() ? $this->uniqueStrings($mediaIds) : [];
-    }
-
-    /** @return list<int> */
-    private function uniqueInts(array $values): array
-    {
-        return array_values(array_unique(array_map('intval', $values)));
-    }
-
-    /** @return list<string> */
-    private function uniqueStrings(array $values): array
-    {
-        return array_values(array_unique(array_map('strval', $values)));
+        return $this->grantsAllDataAccess() ? AccessIdentitySet::nonEmptyStrings($mediaIds) : [];
     }
 }

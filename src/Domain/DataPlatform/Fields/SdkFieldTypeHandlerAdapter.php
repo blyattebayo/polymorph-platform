@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\DataPlatform\Fields;
 
+use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformBadRequest;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformInvariantViolation;
 use Polymorph\Platform\Domain\DataPlatform\Projection\FieldProjectionChanges;
 use Polymorph\Platform\Domain\DataPlatform\Query\CompiledPredicate;
@@ -13,6 +14,11 @@ use Polymorph\Sdk\Data\FieldTypes\FieldTypeExtension;
 
 final class SdkFieldTypeHandlerAdapter implements FieldTypeHandler
 {
+    private const QUERY_OPERATORS = [
+        'eq', 'in', 'lt', 'lte', 'gt', 'gte', 'between',
+        'contains', 'starts_with', 'matches', 'is_null', 'is_not_null',
+    ];
+
     public function __construct(
         private readonly FieldTypeExtension $extension,
         private readonly CanonicalJson $canonicalJson,
@@ -66,7 +72,7 @@ final class SdkFieldTypeHandlerAdapter implements FieldTypeHandler
             function (array $edge) use ($field, $occurrence): void {
                 $this->assertCommonProjectionRow($edge, $field, $occurrence);
                 if (! is_int($edge['target_record_id'] ?? null) || $edge['target_record_id'] <= 0
-                    || ! in_array($edge['deletion_policy'] ?? null, ['restrict', 'nullify', 'preserve_tombstone', 'cascade'], true)) {
+                    || ! in_array($edge['deletion_policy'] ?? null, ReferenceDeletionPolicy::values(), true)) {
                     throw $this->extensionViolation('invalid_ref_projection', 'A plugin emitted an invalid ref projection row.');
                 }
             },
@@ -114,11 +120,29 @@ final class SdkFieldTypeHandlerAdapter implements FieldTypeHandler
 
     public function supportedQueryOperators(): array
     {
-        return $this->extension->supportedQueryOperators();
+        $operators = $this->extension->supportedQueryOperators();
+        if (! array_is_list($operators)
+            || array_filter($operators, static fn (mixed $operator): bool => ! is_string($operator)
+                || ! in_array($operator, self::QUERY_OPERATORS, true)) !== []
+            || count(array_unique($operators)) !== count($operators)) {
+            throw $this->extensionViolation(
+                'invalid_query_operators',
+                'A plugin declared an invalid query operator capability list.',
+            );
+        }
+
+        return $operators;
     }
 
     public function compileQuery(QueryPredicate $predicate): CompiledPredicate
     {
+        if (! in_array($predicate->operator, $this->supportedQueryOperators(), true)) {
+            throw DataPlatformBadRequest::because(
+                'unsupported_field_operator',
+                "Operator '{$predicate->operator}' is not supported by '{$this->type()}'.",
+                ['field_type' => $this->type(), 'operator' => $predicate->operator],
+            );
+        }
         $compiled = $this->extension->compileQuery([
             'field' => $this->field($predicate->field),
             'operator' => $predicate->operator,
@@ -141,6 +165,12 @@ final class SdkFieldTypeHandlerAdapter implements FieldTypeHandler
         );
     }
 
+    /** @internal Stable identity used to make late tag synchronization idempotent. */
+    public function sourceId(): int
+    {
+        return spl_object_id($this->extension);
+    }
+
     /** @return array<string,mixed> */
     private function field(FieldDefinition $field): array
     {
@@ -148,12 +178,15 @@ final class SdkFieldTypeHandlerAdapter implements FieldTypeHandler
             'id' => $field->id,
             'path' => $field->path,
             'name' => $field->name,
-            'type' => $field->type,
+            'type' => $field->typeName(),
             'cardinality' => $field->cardinality->value,
             'system' => $field->system,
             'projection_version' => $field->projectionVersion,
             'constraints' => $field->constraints,
             'metadata' => $field->metadata,
+            'parent_id' => $field->parentId,
+            'multi_valued' => $field->multiValued,
+            'position' => $field->position,
         ];
     }
 
@@ -181,7 +214,7 @@ final class SdkFieldTypeHandlerAdapter implements FieldTypeHandler
         $rowOccurrence = $row['occurrence'] ?? null;
         if (($row['field_id'] ?? null) !== $field->id
             || ! is_string($rowOccurrence)
-            || ($rowOccurrence !== $occurrence && ! str_starts_with($rowOccurrence, $occurrence.'['))
+            || ! OccurrencePath::isSameOrNestedItem($rowOccurrence, $occurrence)
             || ! is_int($row['position'] ?? null)
             || $row['position'] < 0
             || ($row['projection_version'] ?? null) !== $field->projectionVersion) {

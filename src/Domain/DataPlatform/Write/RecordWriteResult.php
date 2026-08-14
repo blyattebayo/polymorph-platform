@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\DataPlatform\Write;
 
-final readonly class RecordWriteResult
+final readonly class RecordWriteResult implements IdempotencyResult
 {
     /** @param array<string,mixed> $document */
     public function __construct(

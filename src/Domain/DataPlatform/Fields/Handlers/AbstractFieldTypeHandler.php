@@ -9,6 +9,7 @@ use Polymorph\Platform\Domain\DataPlatform\Fields\Cardinality;
 use Polymorph\Platform\Domain\DataPlatform\Fields\DependencySet;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldTypeHandler;
+use Polymorph\Platform\Domain\DataPlatform\Fields\OccurrencePath;
 use Polymorph\Platform\Domain\DataPlatform\Fields\ResolvedDependencies;
 use Polymorph\Platform\Domain\DataPlatform\Projection\FieldProjectionChanges;
 use Polymorph\Platform\Domain\DataPlatform\Query\CompiledPredicate;
@@ -40,20 +41,20 @@ abstract class AbstractFieldTypeHandler implements FieldTypeHandler
                 );
             }
         }
-        $minItems = $field->constraints['min_items'] ?? null;
-        $maxItems = $field->constraints['max_items'] ?? null;
-        foreach (['min_items' => $minItems, 'max_items' => $maxItems] as $name => $value) {
-            if ($value !== null && (! is_int($value) || $value < 0)) {
-                throw DataValidationException::one('invalid_schema_constraint', "Constraint '{$name}' must be a non-negative integer.", $field->path);
-            }
-        }
-        if (is_int($minItems) && is_int($maxItems) && $minItems > $maxItems) {
-            throw DataValidationException::one('invalid_schema_constraint', 'min_items cannot exceed max_items.', $field->path);
-        }
+        $this->assertNonNegativeIntegerRange($field, 'min_items', 'max_items');
         foreach (['unique', 'search', 'display', 'indexed'] as $metadata) {
             if (array_key_exists($metadata, $field->metadata) && ! is_bool($field->metadata[$metadata])) {
                 throw DataValidationException::one('invalid_schema_metadata', "Metadata '{$metadata}' must be boolean.", $field->path);
             }
+        }
+        if ($field->cardinality === Cardinality::MANY
+            && ($field->metadata['unique'] ?? false) === true
+            && ($field->constraints['allow_duplicates'] ?? null) !== false) {
+            throw DataValidationException::one(
+                'unique_requires_no_duplicates',
+                'A unique many-valued field must set allow_duplicates to false.',
+                $field->path,
+            );
         }
     }
 
@@ -69,7 +70,11 @@ abstract class AbstractFieldTypeHandler implements FieldTypeHandler
             }
 
             return array_map(
-                fn (mixed $item, int $index): mixed => $this->normalizeOne($item, $field, $occurrence.'['.$index.']'),
+                fn (mixed $item, int $index): mixed => $this->normalizeOne(
+                    $item,
+                    $field,
+                    $this->itemOccurrence($field, $occurrence, $index),
+                ),
                 $value,
                 array_keys($value),
             );
@@ -102,7 +107,9 @@ abstract class AbstractFieldTypeHandler implements FieldTypeHandler
         if (is_int($max) && $count > $max) {
             throw DataValidationException::one('max_items', "At most {$max} item(s) are allowed.", $field->path, $occurrence);
         }
-        if (($field->constraints['allow_duplicates'] ?? true) === false && count(array_unique(array_map(
+        $duplicatesForbidden = ($field->constraints['allow_duplicates'] ?? true) === false
+            || ($field->metadata['unique'] ?? false) === true;
+        if ($duplicatesForbidden && count(array_unique(array_map(
             fn (mixed $item): string => $this->canonicalJson->hash($item),
             $items,
         ))) !== $count) {
@@ -110,7 +117,7 @@ abstract class AbstractFieldTypeHandler implements FieldTypeHandler
         }
 
         foreach ($items as $index => $item) {
-            $this->validateOne($item, $field, $field->cardinality === Cardinality::MANY ? $occurrence.'['.$index.']' : $occurrence);
+            $this->validateOne($item, $field, $this->itemOccurrence($field, $occurrence, $index));
         }
     }
 
@@ -137,7 +144,7 @@ abstract class AbstractFieldTypeHandler implements FieldTypeHandler
             return FieldProjectionChanges::none();
         }
 
-        $values = $field->cardinality === Cardinality::MANY ? $value : [$value];
+        $values = $this->values($value, $field);
         $unique = [];
         if (($field->metadata['unique'] ?? false) === true) {
             foreach ($values as $item) {
@@ -199,6 +206,44 @@ abstract class AbstractFieldTypeHandler implements FieldTypeHandler
         }
     }
 
+    protected function assertNonNegativeIntegerRange(
+        FieldDefinition $field,
+        string $minimum,
+        ?string $maximum = null,
+    ): void {
+        $names = $maximum === null ? [$minimum] : [$minimum, $maximum];
+        foreach ($names as $name) {
+            $value = $field->constraints[$name] ?? null;
+            if ($value !== null && (! is_int($value) || $value < 0)) {
+                throw DataValidationException::one(
+                    'invalid_schema_constraint',
+                    "Constraint '{$name}' must be a non-negative integer.",
+                    $field->path,
+                );
+            }
+        }
+
+        if ($maximum === null) {
+            return;
+        }
+        $min = $field->constraints[$minimum] ?? null;
+        $max = $field->constraints[$maximum] ?? null;
+        if (is_int($min) && is_int($max) && $min > $max) {
+            throw DataValidationException::one(
+                'invalid_schema_constraint',
+                "{$minimum} cannot exceed {$maximum}.",
+                $field->path,
+            );
+        }
+    }
+
+    protected function itemOccurrence(FieldDefinition $field, string $occurrence, int|string $position): string
+    {
+        return $field->cardinality === Cardinality::MANY
+            ? OccurrencePath::appendPosition($occurrence, $position)
+            : $occurrence;
+    }
+
     /** @return list<mixed> */
     protected function values(mixed $value, FieldDefinition $field): array
     {
@@ -206,6 +251,18 @@ abstract class AbstractFieldTypeHandler implements FieldTypeHandler
             return [];
         }
 
-        return $field->cardinality === Cardinality::MANY ? array_values((array) $value) : [$value];
+        if ($field->cardinality === Cardinality::MANY) {
+            if (! is_array($value) || ! array_is_list($value)) {
+                throw DataValidationException::one(
+                    'cardinality',
+                    'Expected a list.',
+                    $field->path,
+                );
+            }
+
+            return array_values($value);
+        }
+
+        return [$value];
     }
 }

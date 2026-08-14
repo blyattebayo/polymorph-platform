@@ -18,15 +18,16 @@ final class OutboxDispatcher
         private readonly DatabaseJson $json,
     ) {}
 
-    public function dispatchBatch(?string $workerId = null, ?int $limit = null): int
+    public function dispatchBatch(?int $limit = null): int
     {
-        $workerId ??= (string) Str::uuid();
+        $workerId = (string) Str::uuid();
         $limit ??= max(1, (int) config('data_platform.outbox.batch_size'));
         $lockTimeout = max(1, (int) config('data_platform.outbox.lock_timeout_seconds'));
 
         $rows = DB::transaction(function () use ($workerId, $limit, $lockTimeout): array {
             $rows = DB::table('dp_outbox')
                 ->whereNull('delivered_at')
+                ->whereNull('dead_lettered_at')
                 ->where('available_at', '<=', now())
                 ->where(function ($query) use ($lockTimeout): void {
                     $query->whereNull('locked_at')->orWhere('locked_at', '<', now()->subSeconds($lockTimeout));
@@ -71,15 +72,18 @@ final class OutboxDispatcher
                 ]);
                 $delivered++;
             } catch (Throwable $exception) {
+                $attempt = (int) $row->attempts + 1;
+                $deadLettered = $attempt >= max(1, (int) config('data_platform.outbox.max_attempts'));
                 $backoff = min(
                     max(1, (int) config('data_platform.outbox.max_backoff_seconds')),
                     max(1, (int) config('data_platform.outbox.backoff_base_seconds'))
                         ** min(max(1, (int) config('data_platform.outbox.max_backoff_exponent')), (int) $row->attempts + 1),
                 );
                 DB::table('dp_outbox')->where('id', $row->id)->where('locked_by', $workerId)->update([
-                    'available_at' => now()->addSeconds($backoff),
+                    'available_at' => $deadLettered ? $row->available_at : now()->addSeconds($backoff),
                     'locked_at' => null,
                     'locked_by' => null,
+                    'dead_lettered_at' => $deadLettered ? now() : null,
                     'last_error' => mb_substr(
                         $exception->getMessage(),
                         0,

@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\DataPlatform\Projection;
 
-use Polymorph\Platform\Domain\DataPlatform\Control\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Fields\FieldType;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Validation\DataValidationException;
 use Polymorph\Platform\TemplateEngine\Core\AST\ExpressionNode;
 use Polymorph\Platform\TemplateEngine\Core\AST\FieldNode;
@@ -74,7 +75,7 @@ final class DisplayTemplateCompiler
                     meta: ['depth' => $referenceDepth, 'maximum' => $maximumDepth],
                 );
             }
-            if ($field->type !== 'ref') {
+            if ($field->type !== FieldType::REF) {
                 throw DataValidationException::one(
                     'display_template_ref_requires_reference_field',
                     "Display ref '{$field->id}' points to a non-reference field.",

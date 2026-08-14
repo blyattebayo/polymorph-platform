@@ -6,6 +6,7 @@ namespace Polymorph\Platform\Domain\Extensions\Events;
 
 use Illuminate\Support\Facades\Event;
 use Polymorph\Platform\Domain\DataPlatform\Outbox\DataPlatformEvent;
+use Polymorph\Platform\Domain\DataPlatform\Outbox\RecordEventType;
 use Polymorph\Platform\Domain\DataPlatform\SdkBridge\ExtensionStorageKey;
 use Polymorph\Sdk\Events\RecordDeleted as SdkRecordDeleted;
 
@@ -16,7 +17,7 @@ final class RecordLifecycleSdkBridge
 
     public function handle(DataPlatformEvent $event): void
     {
-        if ($event->type !== 'data.record.deleted') {
+        if ($event->type !== RecordEventType::Deleted->value) {
             return;
         }
         $definitionId = (int) ($event->payload['record_definition_id'] ?? 0);

@@ -6,19 +6,14 @@ namespace Polymorph\Platform\Domain\DataPlatform\Migration;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Polymorph\Platform\Domain\DataPlatform\Control\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformBadRequest;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformResourceNotFound;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 
 final class SchemaMigrationService
 {
-    public const CLASSIFICATIONS = [
-        'metadata-only', 'additive', 'projection-rebuild', 'lazy-document-migration',
-        'breaking-migration', 'forbidden-without-explicit-migration',
-    ];
-
     /** @var array<string,MigrationPlan> */
     private array $planCache = [];
 
@@ -32,15 +27,12 @@ final class SchemaMigrationService
     ) {}
 
     /** @param list<MigrationOperation> $operations */
-    public function createPlan(string $fromVersionId, string $toVersionId, string $classification, array $operations): string
-    {
-        if (! in_array($classification, self::CLASSIFICATIONS, true)) {
-            throw DataPlatformBadRequest::because(
-                'unsupported_migration_classification',
-                "Unsupported migration classification '{$classification}'.",
-                ['classification' => $classification],
-            );
-        }
+    public function createPlan(
+        string $fromVersionId,
+        string $toVersionId,
+        MigrationClassification $classification,
+        array $operations,
+    ): string {
         $from = DB::table('dp_schema_versions')->where('id', $fromVersionId)->first();
         $to = DB::table('dp_schema_versions')->where('id', $toVersionId)->first();
         if ($from === null || $to === null || (int) $from->record_definition_id !== (int) $to->record_definition_id) {
@@ -64,7 +56,7 @@ final class SchemaMigrationService
             'record_definition_id' => (int) $from->record_definition_id,
             'from_schema_version_id' => $fromVersionId,
             'to_schema_version_id' => $toVersionId,
-            'classification' => $classification,
+            'classification' => $classification->value,
             'state' => MigrationPlanState::Draft->value,
             'operations' => $this->json->encode(array_map(
                 static fn (MigrationOperation $operation): array => $operation->toArray(),

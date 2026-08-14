@@ -17,6 +17,11 @@ final class ProjectionChangeSetBuilder
         private readonly DisplayTemplateRenderer $displayTemplates,
     ) {}
 
+    public function beginOperation(): void
+    {
+        $this->displayTemplates->beginOperation();
+    }
+
     /**
      * @param  array<string,mixed>  $document
      * @param  list<FieldDefinition>  $fields
@@ -25,6 +30,7 @@ final class ProjectionChangeSetBuilder
     {
         $result = new ProjectionChangeSet;
         foreach ($fields as $field) {
+            $result->observeField($field);
             $handler = $this->types->get($field->type);
             foreach ($this->paths->values($document, $field->path) as $value) {
                 $result->merge($handler->buildProjectionChanges($value['value'], $field, $value['occurrence']));

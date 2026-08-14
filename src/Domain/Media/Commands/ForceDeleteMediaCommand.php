@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\Media\Commands;
 
 use Illuminate\Support\Facades\DB;
+use Polymorph\Platform\Domain\Auth\Application\Authentication\AuthenticationContext;
 use Polymorph\Platform\Domain\DataPlatform\Media\MediaReferenceGuard;
 use Polymorph\Platform\Domain\Media\Actions\DeleteMediaFileAction;
 use Polymorph\Platform\Domain\Media\Core\Models\Media;
@@ -17,6 +18,7 @@ final readonly class ForceDeleteMediaCommand
         private DeleteMediaFileAction $deleteFile,
         private AppLogger $logger,
         private MediaReferenceGuard $referenceGuard,
+        private AuthenticationContext $auth,
     ) {}
 
     public function execute(Media $media): void
@@ -30,7 +32,7 @@ final readonly class ForceDeleteMediaCommand
 
             // This row lock serializes the guard with V2 attach validation,
             // which takes a shared lock on every referenced media target.
-            $this->referenceGuard->assertCanForceDelete((string) $media->id);
+            $this->referenceGuard->assertCanForceDelete((string) $media->id, $this->auth->userId());
             $this->referenceGuard->pruneInactiveReferences((string) $media->id);
 
             $files = [];

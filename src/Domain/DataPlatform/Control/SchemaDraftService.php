@@ -9,6 +9,9 @@ use Illuminate\Support\Str;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformResourceNotFound;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformStateConflict;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldTypeRegistry;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaState;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaStorage;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 
 /** Creates and edits mutable schema snapshots. */
@@ -84,7 +87,7 @@ final class SchemaDraftService
                     'parent_field_id' => $field->parentId,
                     'path' => $field->path,
                     'name' => $field->name,
-                    'type' => $field->type,
+                    'type' => $field->typeName(),
                     'cardinality' => $field->cardinality->value,
                     'is_system' => $field->system,
                     'position' => $specification->position,
@@ -112,8 +115,9 @@ final class SchemaDraftService
     private function copyFields(string $sourceVersionId, string $draftId): void
     {
         $copies = [];
-        foreach (DB::table('dp_schema_fields')->where('schema_version_id', $sourceVersionId)
-            ->orderBy('position')->orderBy('path')->get() as $row) {
+        foreach (SchemaStorage::orderedFields(
+            DB::table('dp_schema_fields')->where('schema_version_id', $sourceVersionId),
+        )->get() as $row) {
             $copy = (array) $row;
             unset($copy['id']);
             $copy['schema_version_id'] = $draftId;
@@ -128,7 +132,7 @@ final class SchemaDraftService
 
     private function copyFormConfig(int $definitionId, mixed $storedMetadata, string $sourceVersionId, string $draftId): void
     {
-        $metadata = $this->json->decodeMap($storedMetadata, 'dp_record_definitions.metadata');
+        $metadata = $this->json->decodeMap($storedMetadata, SchemaStorage::DEFINITION_METADATA_CONTEXT);
         if (! isset($metadata['form_configs'][$sourceVersionId])) {
             return;
         }

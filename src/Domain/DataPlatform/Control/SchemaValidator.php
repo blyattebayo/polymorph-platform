@@ -105,7 +105,7 @@ final class SchemaValidator
         return [
             'id' => $field->id,
             'path' => $field->path,
-            'type' => $field->type,
+            'type' => $field->typeName(),
             'cardinality' => $field->cardinality->value,
             'system' => $field->system,
             'projection_version' => $field->projectionVersion,

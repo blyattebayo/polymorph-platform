@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Polymorph\Platform\Domain\DataPlatform\Control;
+namespace Polymorph\Platform\Domain\DataPlatform\Schema;
 
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformInvariantViolation;
 use Polymorph\Platform\Domain\DataPlatform\Fields\Cardinality;
@@ -37,7 +37,7 @@ final class SchemaFieldMapper
             projectionVersion: (int) $row['projection_version'],
             constraints: $this->json->decodeMap($row['constraints'] ?? null, 'dp_schema_fields.constraints'),
             metadata: $this->json->decodeMap($row['metadata'] ?? null, 'dp_schema_fields.metadata'),
-            parentId: isset($row['parent_field_id']) && $row['parent_field_id'] !== null
+            parentId: isset($row['parent_field_id'])
                 ? (string) $row['parent_field_id']
                 : null,
             multiValued: $multiValued,

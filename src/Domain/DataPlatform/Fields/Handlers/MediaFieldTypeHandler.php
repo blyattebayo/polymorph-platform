@@ -4,18 +4,15 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\DataPlatform\Fields\Handlers;
 
-use Polymorph\Platform\Domain\DataPlatform\Fields\Cardinality;
 use Polymorph\Platform\Domain\DataPlatform\Fields\DependencySet;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
 use Polymorph\Platform\Domain\DataPlatform\Fields\ResolvedDependencies;
 use Polymorph\Platform\Domain\DataPlatform\Projection\FieldProjectionChanges;
-use Polymorph\Platform\Domain\DataPlatform\Query\CompiledPredicate;
-use Polymorph\Platform\Domain\DataPlatform\Query\QueryPredicate;
 use Polymorph\Platform\Domain\DataPlatform\Validation\DataValidationException;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaKind;
 use Polymorph\Platform\Domain\Media\Core\ValueObjects\MediaProcessingState;
 
-final class MediaFieldTypeHandler extends AbstractFieldTypeHandler
+final class MediaFieldTypeHandler extends EdgeFieldTypeHandler
 {
     public function validateSchema(FieldDefinition $field): void
     {
@@ -33,18 +30,9 @@ final class MediaFieldTypeHandler extends AbstractFieldTypeHandler
         }
         $this->validateEnumConstraint($field, 'allowed_kinds', array_column(MediaKind::cases(), 'value'));
         $this->validateEnumConstraint($field, 'allowed_processing_states', array_column(MediaProcessingState::cases(), 'value'));
-        foreach (['max_size_bytes', 'min_width', 'max_width', 'min_height', 'max_height', 'min_duration_ms', 'max_duration_ms'] as $name) {
-            $value = $field->constraints[$name] ?? null;
-            if ($value !== null && (! is_int($value) || $value < 0)) {
-                throw DataValidationException::one('invalid_schema_constraint', "Constraint '{$name}' must be a non-negative integer.", $field->path);
-            }
-        }
+        $this->assertNonNegativeIntegerRange($field, 'max_size_bytes');
         foreach ([['min_width', 'max_width'], ['min_height', 'max_height'], ['min_duration_ms', 'max_duration_ms']] as [$minimum, $maximum]) {
-            $min = $field->constraints[$minimum] ?? null;
-            $max = $field->constraints[$maximum] ?? null;
-            if (is_int($min) && is_int($max) && $min > $max) {
-                throw DataValidationException::one('invalid_schema_constraint', "{$minimum} cannot exceed {$maximum}.", $field->path);
-            }
+            $this->assertNonNegativeIntegerRange($field, $minimum, $maximum);
         }
     }
 
@@ -59,11 +47,18 @@ final class MediaFieldTypeHandler extends AbstractFieldTypeHandler
         if (! is_array($attachment) || ! is_string($attachment['id'] ?? null) || trim($attachment['id']) === '') {
             throw DataValidationException::one('media_id', 'Expected a media ID or attachment object.', $field->path, $occurrence);
         }
+        foreach (['alt', 'caption'] as $textField) {
+            if (array_key_exists($textField, $attachment)
+                && $attachment[$textField] !== null
+                && ! is_string($attachment[$textField])) {
+                throw DataValidationException::one('type', "Media {$textField} must be a string.", $field->path, $occurrence);
+            }
+        }
 
         return array_filter([
             'id' => trim($attachment['id']),
-            'alt' => isset($attachment['alt']) ? trim((string) $attachment['alt']) : null,
-            'caption' => isset($attachment['caption']) ? trim((string) $attachment['caption']) : null,
+            'alt' => isset($attachment['alt']) ? trim($attachment['alt']) : null,
+            'caption' => isset($attachment['caption']) ? trim($attachment['caption']) : null,
         ], static fn (mixed $item): bool => $item !== null);
     }
 
@@ -72,7 +67,15 @@ final class MediaFieldTypeHandler extends AbstractFieldTypeHandler
         if (! is_array($value) || ! is_string($value['id'] ?? null) || $value['id'] === '') {
             throw DataValidationException::one('media_id', 'Expected a media attachment object.', $field->path, $occurrence);
         }
-        if (($field->constraints['require_alt'] ?? false) === true && trim((string) ($value['alt'] ?? '')) === '') {
+        foreach (['alt', 'caption'] as $textField) {
+            if (array_key_exists($textField, $value)
+                && $value[$textField] !== null
+                && ! is_string($value[$textField])) {
+                throw DataValidationException::one('type', "Media {$textField} must be a string.", $field->path, $occurrence);
+            }
+        }
+        $alt = $value['alt'] ?? '';
+        if (($field->constraints['require_alt'] ?? false) === true && (! is_string($alt) || trim($alt) === '')) {
             throw DataValidationException::one('media_alt', 'Alternative text is required.', $field->path, $occurrence);
         }
     }
@@ -97,7 +100,7 @@ final class MediaFieldTypeHandler extends AbstractFieldTypeHandler
         foreach ($this->values($value, $field) as $index => $attachment) {
             $id = (string) $attachment['id'];
             $media = $dependencies->media[$id] ?? null;
-            $itemOccurrence = $field->cardinality === Cardinality::MANY ? $occurrence.'['.$index.']' : $occurrence;
+            $itemOccurrence = $this->itemOccurrence($field, $occurrence, $index);
             if ($media === null) {
                 throw DataValidationException::one('media_missing', 'Media asset does not exist.', $field->path, $itemOccurrence, ['media_id' => $id]);
             }
@@ -152,33 +155,32 @@ final class MediaFieldTypeHandler extends AbstractFieldTypeHandler
         FieldDefinition $field,
         string $occurrence,
     ): FieldProjectionChanges {
-        $edges = [];
-        foreach ($this->values($value, $field) as $position => $attachment) {
-            $edges[] = [
-                'field_id' => $field->id,
-                'occurrence' => $occurrence,
-                'position' => $position,
+        $edges = $this->edgeRows(
+            $value,
+            $field,
+            $occurrence,
+            static fn (mixed $attachment): array => [
                 'media_id' => (string) $attachment['id'],
                 'attachment' => $attachment,
-                'projection_version' => $field->projectionVersion,
-            ];
-        }
+            ],
+        );
 
         return new FieldProjectionChanges(mediaEdges: $edges);
     }
 
-    public function compileQuery(QueryPredicate $predicate): CompiledPredicate
+    protected function edgeStrategy(): string
     {
-        $this->assertSupportedQueryOperator(
-            $predicate,
-            'unsupported_media_operator',
-            "Unsupported media operator '{$predicate->operator}'.",
-        );
+        return 'media_edge';
+    }
 
-        return new CompiledPredicate(
-            strategy: 'media_edge',
-            cast: null,
-        );
+    protected function unsupportedOperatorReason(): string
+    {
+        return 'unsupported_media_operator';
+    }
+
+    protected function operatorSubject(): string
+    {
+        return 'media';
     }
 
     /** @param array<string, mixed> $media */

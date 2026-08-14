@@ -7,6 +7,7 @@ namespace Polymorph\Platform\Support\Errors\Resolvers;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
@@ -170,10 +171,12 @@ final class FrameworkErrorResolver implements ResolvesError
             return new ErrorResolution($previous->payload());
         }
 
-        if ($this->sqlState($exception) === '23505') {
+        if ($exception instanceof UniqueConstraintViolationException
+            || in_array($this->sqlState($exception), ['23505', '23000'], true)) {
             return new ErrorResolution(
                 $this->factory->for(ErrorCode::CONFLICT)
                     ->detail('The request conflicts with an existing unique value.')
+                    ->meta(['reason' => 'database_unique_constraint'])
                     ->build(),
             );
         }

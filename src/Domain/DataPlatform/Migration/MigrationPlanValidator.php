@@ -6,9 +6,9 @@ namespace Polymorph\Platform\Domain\DataPlatform\Migration;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Polymorph\Platform\Domain\DataPlatform\Control\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformStateConflict;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\CanonicalJson;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 
@@ -37,7 +37,7 @@ final class MigrationPlanValidator
         }
 
         $plan = MigrationPlan::fromRow($row, $this->json);
-        if ($plan->classification === 'forbidden-without-explicit-migration') {
+        if ($plan->classification === MigrationClassification::ForbiddenWithoutExplicitMigration) {
             throw DataPlatformStateConflict::because(
                 'forbidden_schema_change',
                 'A forbidden schema change cannot be published without replacing its migration plan.',
@@ -46,7 +46,7 @@ final class MigrationPlanValidator
         }
 
         $this->assertOperationsCoverDiff($fromVersionId, $toVersionId, $plan->operations);
-        if ($plan->classification === 'metadata-only'
+        if ($plan->classification === MigrationClassification::MetadataOnly
             && $this->storageSignature($fromVersionId) !== $this->storageSignature($toVersionId)) {
             throw DataPlatformStateConflict::because(
                 'metadata_plan_changes_storage',
@@ -54,12 +54,18 @@ final class MigrationPlanValidator
                 ['from_schema_version_id' => $fromVersionId, 'to_schema_version_id' => $toVersionId],
             );
         }
-        if ($plan->classification === 'metadata-only') {
+        if ($plan->classification === MigrationClassification::MetadataOnly) {
             return;
         }
 
-        $remaining = (int) DB::table('dp_records')->where('schema_version_id', $fromVersionId)->count();
-        if ($plan->state !== MigrationPlanState::Completed->value || $plan->failedCount !== 0 || $remaining !== 0) {
+        // Must match SchemaMigrationRunner's completion count: tombstones are
+        // never rewritten, so counting them here would block publication for a
+        // migration the runner has already finished.
+        $remaining = (int) DB::table('dp_records')
+            ->where('schema_version_id', $fromVersionId)
+            ->whereNull('deleted_at')
+            ->count();
+        if ($plan->state !== MigrationPlanState::Completed || $plan->failedCount !== 0 || $remaining !== 0) {
             throw DataPlatformStateConflict::because(
                 'schema_migration_incomplete',
                 "Schema migration must complete without errors before publication; {$remaining} records remain on the previous version.",
@@ -119,7 +125,7 @@ final class MigrationPlanValidator
             $this->requireWhen($old->type !== $new->type,
                 $has('change_type', static fn (MigrationOperation $op): bool => $op->argument('path') === $new->path),
                 'migration_plan_missing_change_type', "Migration plan does not convert field '{$new->path}'.",
-                ['field_id' => $new->id, 'path' => $new->path, 'from' => $old->type, 'to' => $new->type, 'required_operation' => 'change_type']);
+                ['field_id' => $new->id, 'path' => $new->path, 'from' => $old->typeName(), 'to' => $new->typeName(), 'required_operation' => 'change_type']);
             $this->requireWhen($old->cardinality !== $new->cardinality,
                 $has('change_cardinality', static fn (MigrationOperation $op): bool => $op->argument('path') === $new->path && $op->argument('to') === $new->cardinality->value),
                 'migration_plan_missing_change_cardinality', "Migration plan does not change cardinality for '{$new->path}'.",
@@ -131,6 +137,10 @@ final class MigrationPlanValidator
             $this->requireWhen($old->projectionVersion !== $new->projectionVersion,
                 $has('rebuild_projections', static fn (MigrationOperation $op): bool => $op->argument('field_id') === $new->id || $op->argument('path') === $new->path),
                 'migration_plan_missing_rebuild_projections', "Migration plan does not rebuild projections for '{$new->path}'.",
+                ['field_id' => $new->id, 'path' => $new->path, 'required_operation' => 'rebuild_projections']);
+            $this->requireWhen($old->metadata !== $new->metadata,
+                $has('rebuild_projections', static fn (MigrationOperation $op): bool => $op->argument('field_id') === $new->id || $op->argument('path') === $new->path),
+                'migration_plan_missing_rebuild_projections', "Migration plan does not rebuild projections for metadata changed on '{$new->path}'.",
                 ['field_id' => $new->id, 'path' => $new->path, 'required_operation' => 'rebuild_projections']);
         }
 
@@ -147,11 +157,12 @@ final class MigrationPlanValidator
         return $this->canonicalJson->hash(array_map(static fn (FieldDefinition $field): array => [
             'id' => $field->id,
             'path' => $field->path,
-            'type' => $field->type,
+            'type' => $field->typeName(),
             'cardinality' => $field->cardinality->value,
             'system' => $field->system,
             'projection_version' => $field->projectionVersion,
             'constraints' => $field->constraints,
+            'metadata' => $field->metadata,
             'parent_id' => $field->parentId,
             'position' => $field->position,
         ], $this->schemas->fields($schemaVersionId)));
@@ -188,7 +199,8 @@ final class MigrationPlanValidator
                 && $operation->argument('path') === $new->path) {
                 return true;
             }
-            if ($operation->kind === 'rebuild_projections' && $old->projectionVersion !== $new->projectionVersion
+            if ($operation->kind === 'rebuild_projections'
+                && ($old->projectionVersion !== $new->projectionVersion || $old->metadata !== $new->metadata)
                 && ($operation->argument('field_id') === $new->id || $operation->argument('path') === $new->path)) {
                 return true;
             }

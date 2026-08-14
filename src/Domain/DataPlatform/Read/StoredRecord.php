@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Polymorph\Platform\Domain\DataPlatform\Write;
+namespace Polymorph\Platform\Domain\DataPlatform\Read;
 
 final readonly class StoredRecord
 {
@@ -13,6 +13,5 @@ final readonly class StoredRecord
         public string $schemaVersionId,
         public array $document,
         public int $revision,
-        public ?int $authorId,
     ) {}
 }

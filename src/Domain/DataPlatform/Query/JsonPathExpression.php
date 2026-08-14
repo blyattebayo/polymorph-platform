@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\DataPlatform\Query;
 
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Fields\FieldType;
 
 /** Builds the canonical PostgreSQL expressions used by plans and expression indexes. */
 final class JsonPathExpression
@@ -20,13 +21,15 @@ final class JsonPathExpression
         return "jsonb_extract_path_text({$column}, ".implode(', ', $segments).')';
     }
 
-    public function cast(string $type): ?string
+    public function cast(FieldType|string $type): ?string
     {
+        $type = $type instanceof FieldType ? $type : FieldType::tryFrom($type);
+
         return match ($type) {
-            'int' => 'bigint',
-            'float' => 'double precision',
-            'bool' => 'boolean',
-            'datetime' => 'timestamptz',
+            FieldType::INT => 'bigint',
+            FieldType::FLOAT => 'double precision',
+            FieldType::BOOL => 'boolean',
+            FieldType::DATETIME => 'timestamptz',
             default => null,
         };
     }

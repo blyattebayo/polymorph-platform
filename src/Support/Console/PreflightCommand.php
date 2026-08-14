@@ -112,15 +112,23 @@ final class PreflightCommand extends Command
     private function checkDatabase(): void
     {
         try {
-            DB::connection()->getPdo();
+            $connection = DB::connection();
+            $connection->getPdo();
         } catch (\Throwable $exception) {
             $this->errors[] = 'БД недоступна: '.$exception->getMessage();
 
             return;
         }
 
+        $driver = $connection->getDriverName();
+        if ($driver !== 'pgsql') {
+            $this->errors[] = 'Polymorph поддерживает только PostgreSQL; настроен драйвер '.$driver.'.';
+
+            return;
+        }
+
         // Таблицы, нужные выбранным драйверам (миграции должны их создать).
-        $required = [];
+        $required = ['dp_records', 'dp_media_edges'];
         if (config('cache.default') === 'database') {
             $required[] = (string) config('cache.stores.database.table', 'cache');
         }

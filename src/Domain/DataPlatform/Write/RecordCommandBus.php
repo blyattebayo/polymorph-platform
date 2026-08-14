@@ -9,7 +9,6 @@ use Illuminate\Support\Str;
 use Polymorph\Platform\Domain\DataPlatform\Access\DataAccessDenied;
 use Polymorph\Platform\Domain\DataPlatform\Access\DataAccessPolicy;
 use Polymorph\Platform\Domain\DataPlatform\Access\TrustedMaintenanceDataAccessPolicy;
-use Polymorph\Platform\Domain\DataPlatform\Control\SchemaState;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformBadRequest;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformResourceNotFound;
 use Polymorph\Platform\Domain\DataPlatform\Fields\DependencySet;
@@ -17,6 +16,7 @@ use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
 use Polymorph\Platform\Domain\DataPlatform\Outbox\RecordAuditEntry;
 use Polymorph\Platform\Domain\DataPlatform\Outbox\RecordEventMessage;
 use Polymorph\Platform\Domain\DataPlatform\Outbox\RecordEventType;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaState;
 use Polymorph\Platform\Domain\DataPlatform\Validation\DataValidationException;
 
 /** Sole transport-independent writer for records and synchronous projections. */
@@ -27,7 +27,8 @@ final class RecordCommandBus
         private readonly DataAccessPolicy $access,
     ) {}
 
-    public function withAccessPolicy(DataAccessPolicy $access): self
+    /** @internal MaintenanceRecordCommandBus is the sole caller. */
+    public function withMaintenanceAccess(TrustedMaintenanceDataAccessPolicy $access): self
     {
         return new self(
             $this->runtime,
@@ -45,6 +46,13 @@ final class RecordCommandBus
             if ($runtime === null) {
                 throw DataPlatformResourceNotFound::for('record-definition', $command->recordDefinitionId);
             }
+            // Authorization precedes idempotency lookup so a replay cannot use
+            // a payload captured before the actor's definition grant was
+            // revoked.
+            $this->authorizeDefinition($command);
+            if ($command->schemaMigration && ! $this->access instanceof TrustedMaintenanceDataAccessPolicy) {
+                throw DataAccessDenied::for('schema-migration', 'execute');
+            }
             $requestHash = $this->requestHash($command);
             $replayed = $this->runtime->idempotency->claim(
                 $command->actorId,
@@ -56,23 +64,10 @@ final class RecordCommandBus
                 return RecordWriteResult::fromArray($replayed);
             }
 
-            if ($command->schemaMigration && ! $this->access instanceof TrustedMaintenanceDataAccessPolicy) {
-                throw DataAccessDenied::for('schema-migration', 'execute');
-            }
-            $schema = $command->schemaMigration
-                ? $this->runtime->schemas->definitionVersion(
-                    $command->recordDefinitionId,
-                    $command->schemaVersionId,
-                    [SchemaState::Backfilling, SchemaState::Published],
-                )
-                : $this->runtime->schemas->writableDefinition($command->recordDefinitionId, $command->schemaVersionId);
-            $versionId = (string) $schema['version']['id'];
-            $fields = $schema['fields'];
-            $this->authorizeDefinition($command);
-
             $before = [];
             $currentRevision = 0;
             $record = null;
+            $logicalVersionId = null;
             if ($command->recordId !== null) {
                 $record = DB::table('dp_records')->where('id', $command->recordId)->lockForUpdate()->first();
                 if ($record === null || $record->deleted_at !== null) {
@@ -97,17 +92,51 @@ final class RecordCommandBus
                     throw new OptimisticLockConflict($command->recordId, $command->expectedRevision, $currentRevision);
                 }
                 $storedDocument = $this->decodeDocument($record->data);
-                $before = $command->schemaMigration
-                    ? $storedDocument
-                    : $this->runtime->logicalDocuments->current(
+                if ($command->schemaMigration) {
+                    $before = $storedDocument;
+                } else {
+                    $logical = $this->runtime->logicalDocuments->current(
                         $command->recordDefinitionId,
                         (string) $record->schema_version_id,
                         $storedDocument,
-                    )['document'];
+                    );
+                    $before = $logical['document'];
+                    $logicalVersionId = $logical['logical_schema_version_id'];
+                    if ($command->schemaVersionId !== null && $command->schemaVersionId !== $logicalVersionId) {
+                        throw DataPlatformBadRequest::because(
+                            'record_schema_version_mismatch',
+                            'An update must use the record logical schema version.',
+                            [
+                                'record_id' => $command->recordId,
+                                'schema_version_id' => $command->schemaVersionId,
+                                'logical_schema_version_id' => $logicalVersionId,
+                            ],
+                        );
+                    }
+                }
             }
 
+            $schema = match (true) {
+                $command->schemaMigration => $this->runtime->schemas->definitionVersion(
+                    $command->recordDefinitionId,
+                    $command->schemaVersionId,
+                    [SchemaState::Backfilling, SchemaState::Published, SchemaState::Archived],
+                ),
+                $logicalVersionId !== null => $this->runtime->schemas->definitionVersion(
+                    $command->recordDefinitionId,
+                    $logicalVersionId,
+                    [SchemaState::Published, SchemaState::Backfilling],
+                ),
+                default => $this->runtime->schemas->writableDefinition(
+                    $command->recordDefinitionId,
+                    $command->schemaVersionId,
+                ),
+            };
+            $versionId = (string) $schema['version']['id'];
+            $fields = $schema['fields'];
+
             $candidate = $command->recordId !== null && ! $command->replace
-                ? array_replace_recursive($before, $command->document)
+                ? $this->runtime->paths->mergePatch($before, $command->document)
                 : $command->document;
             $candidate = $this->runtime->paths->ensureStableItemIds($candidate);
             $beforeValues = $this->encodedFieldValues($before, $fields);
@@ -124,6 +153,7 @@ final class RecordCommandBus
             $normalized = $this->normalizeAndValidate($candidate, $fields);
             $this->resolveAndValidateDependencies($normalized, $fields);
             $normalizedValues = $this->encodedFieldValues($normalized, $fields);
+            $this->runtime->projectionChanges->beginOperation();
             $changes = $this->buildChangeSet(
                 $before,
                 $normalized,
@@ -134,14 +164,13 @@ final class RecordCommandBus
             );
             if ($record !== null && (string) $record->schema_version_id !== $versionId) {
                 $changes = new RecordChangeSet(
-                    $changes->document,
-                    $changes->changedFieldIds,
-                    $changes->projections,
-                    [[
+                    changedFieldIds: $changes->changedFieldIds,
+                    projections: $changes->projections,
+                    events: [[
                         'type' => RecordEventType::Migrated->value,
                         'changed_field_ids' => $changes->changedFieldIds,
                     ]],
-                    false,
+                    noOp: false,
                 );
             }
             $operationId = (string) Str::uuid();
@@ -155,7 +184,13 @@ final class RecordCommandBus
                     true,
                     $operationId,
                 );
-                $this->completeIdempotency($command, $requestHash, $result);
+                $this->runtime->idempotency->completeResult(
+                    $command->actorId,
+                    $command->kind(),
+                    $command->idempotencyKey,
+                    $requestHash,
+                    $result,
+                );
 
                 return $result;
             }
@@ -197,7 +232,13 @@ final class RecordCommandBus
             $this->writeAuditAndOutbox($operationId, $command, $recordId, $revision, $changes);
 
             $result = new RecordWriteResult($recordId, $versionId, $revision, $normalized, false, $operationId);
-            $this->completeIdempotency($command, $requestHash, $result);
+            $this->runtime->idempotency->completeResult(
+                $command->actorId,
+                $command->kind(),
+                $command->idempotencyKey,
+                $requestHash,
+                $result,
+            );
 
             return $result;
         }, 3);
@@ -443,7 +484,6 @@ final class RecordCommandBus
             && $this->runtime->canonicalJson->encode($before) === $this->runtime->canonicalJson->encode($document);
 
         return new RecordChangeSet(
-            document: $document,
             changedFieldIds: $changedFieldIds,
             projections: $projections,
             events: $noOp ? [] : [[
@@ -515,20 +555,6 @@ final class RecordCommandBus
             changedFieldIds: $changes->changedFieldIds,
             metadata: ['idempotency_key_present' => $command->idempotencyKey !== null],
         ), $events);
-    }
-
-    private function completeIdempotency(
-        RecordWriteCommand $command,
-        string $requestHash,
-        RecordWriteResult $result,
-    ): void {
-        $this->runtime->idempotency->complete(
-            $command->actorId,
-            $command->kind(),
-            $command->idempotencyKey,
-            $requestHash,
-            $result->toArray(),
-        );
     }
 
     private function requestHash(RecordWriteCommand $command): string

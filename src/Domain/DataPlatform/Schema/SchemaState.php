@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Polymorph\Platform\Domain\DataPlatform\Control;
+namespace Polymorph\Platform\Domain\DataPlatform\Schema;
 
 enum SchemaState: string
 {
@@ -11,6 +11,12 @@ enum SchemaState: string
     case Backfilling = 'backfilling';
     case Published = 'published';
     case Archived = 'archived';
+
+    /** @return list<string> */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
+    }
 
     public function canTransitionTo(self $next): bool
     {

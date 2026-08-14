@@ -7,6 +7,8 @@ namespace Polymorph\Platform\Domain\DataPlatform\Control;
 use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformResourceNotFound;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformStateConflict;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaStorage;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 
 /** Stores form configuration against the exact editable schema version. */
@@ -24,7 +26,7 @@ final class DefinitionFormConfigService
         if ($definition === null) {
             throw DataPlatformResourceNotFound::for('record-definition', $definitionId);
         }
-        $metadata = $this->json->decodeMap($definition->metadata, 'dp_record_definitions.metadata');
+        $metadata = $this->json->decodeMap($definition->metadata, SchemaStorage::DEFINITION_METADATA_CONTEXT);
         $versionId = $this->editableVersionId($definitionId, $definition);
         $config = $metadata['form_configs'][$versionId] ?? [];
 
@@ -39,7 +41,7 @@ final class DefinitionFormConfigService
             if ($definition === null) {
                 throw DataPlatformResourceNotFound::for('record-definition', $definitionId);
             }
-            $metadata = $this->json->decodeMap($definition->metadata, 'dp_record_definitions.metadata');
+            $metadata = $this->json->decodeMap($definition->metadata, SchemaStorage::DEFINITION_METADATA_CONTEXT);
             $versionId = $this->editableVersionId($definitionId, $definition);
             $metadata['form_configs'][$versionId] = $config;
             DB::table('dp_record_definitions')->where('id', $definitionId)->update([

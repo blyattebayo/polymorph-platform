@@ -2,13 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Polymorph\Platform\Domain\DataPlatform\Migration;
+namespace Polymorph\Platform\Domain\DataPlatform\Write;
 
 use Polymorph\Platform\Domain\DataPlatform\Access\TrustedMaintenanceDataAccessPolicy;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformInvariantViolation;
-use Polymorph\Platform\Domain\DataPlatform\Write\RecordCommandBus;
-use Polymorph\Platform\Domain\DataPlatform\Write\RecordWriteCommand;
-use Polymorph\Platform\Domain\DataPlatform\Write\RecordWriteResult;
 
 final class MaintenanceRecordCommandBus
 {
@@ -16,7 +13,7 @@ final class MaintenanceRecordCommandBus
 
     public function __construct(RecordCommandBus $bus)
     {
-        $this->bus = $bus->withAccessPolicy(new TrustedMaintenanceDataAccessPolicy);
+        $this->bus = $bus->withMaintenanceAccess(TrustedMaintenanceDataAccessPolicy::forMaintenanceCommands());
     }
 
     public function dispatch(RecordWriteCommand $command): RecordWriteResult

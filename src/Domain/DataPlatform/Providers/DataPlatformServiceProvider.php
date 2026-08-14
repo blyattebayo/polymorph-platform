@@ -22,6 +22,8 @@ use Polymorph\Platform\Domain\DataPlatform\Fields\Handlers\StringFieldTypeHandle
 use Polymorph\Platform\Domain\DataPlatform\Fields\Handlers\TextFieldTypeHandler;
 use Polymorph\Platform\Domain\DataPlatform\Fields\SdkFieldTypeHandlerAdapter;
 use Polymorph\Platform\Domain\DataPlatform\Outbox\DataPlatformEvent;
+use Polymorph\Platform\Domain\DataPlatform\Projection\ProjectionChangeSetBuilder;
+use Polymorph\Platform\Domain\DataPlatform\Projection\ProjectionStore;
 use Polymorph\Platform\Domain\DataPlatform\Projection\RunDisplayProjectionMaintenance;
 use Polymorph\Platform\Domain\DataPlatform\Projection\ScheduleDependentDisplayRebuild;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\CanonicalJson;
@@ -43,14 +45,17 @@ final class DataPlatformServiceProvider extends ServiceProvider
                 new JsonFieldTypeHandler($canonicalJson),
                 new RefFieldTypeHandler($canonicalJson),
                 new MediaFieldTypeHandler($canonicalJson),
-            ]);
-            foreach ($app->tagged(RegistersFieldTypes::TAG) as $extension) {
-                $registry->register(new SdkFieldTypeHandlerAdapter($extension, $canonicalJson));
-            }
+            ], static function () use ($app, $canonicalJson): iterable {
+                foreach ($app->tagged(RegistersFieldTypes::TAG) as $extension) {
+                    yield new SdkFieldTypeHandlerAdapter($extension, $canonicalJson);
+                }
+            });
 
             return $registry;
         });
         $this->app->scoped(DataAccessPolicy::class, PlatformDataAccessPolicy::class);
+        $this->app->scoped(ProjectionChangeSetBuilder::class);
+        $this->app->scoped(ProjectionStore::class);
     }
 
     public function boot(): void

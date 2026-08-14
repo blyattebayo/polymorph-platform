@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\DataPlatform\Projection;
 
+use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+
 final class ProjectionChangeSet
 {
     /** @var list<array<string, mixed>> */
@@ -19,6 +21,21 @@ final class ProjectionChangeSet
     public array $searchValues = [];
 
     public ?string $displayValue = null;
+
+    public int $searchProjectionVersion = 1;
+
+    public int $displayProjectionVersion = 1;
+
+    public function observeField(FieldDefinition $field): void
+    {
+        if (($field->metadata['search'] ?? false) === true) {
+            $this->searchProjectionVersion = max($this->searchProjectionVersion, $field->projectionVersion);
+        }
+
+        // A definition-level display template may read any schema field, so
+        // its aggregate version must advance when any contributing shape does.
+        $this->displayProjectionVersion = max($this->displayProjectionVersion, $field->projectionVersion);
+    }
 
     public function merge(FieldProjectionChanges $changes): void
     {

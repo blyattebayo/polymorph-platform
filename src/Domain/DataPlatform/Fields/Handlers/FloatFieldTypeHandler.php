@@ -7,23 +7,8 @@ namespace Polymorph\Platform\Domain\DataPlatform\Fields\Handlers;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
 use Polymorph\Platform\Domain\DataPlatform\Validation\DataValidationException;
 
-final class FloatFieldTypeHandler extends AbstractFieldTypeHandler
+final class FloatFieldTypeHandler extends NumericFieldTypeHandler
 {
-    public function validateSchema(FieldDefinition $field): void
-    {
-        parent::validateSchema($field);
-        $min = $field->constraints['min'] ?? null;
-        $max = $field->constraints['max'] ?? null;
-        foreach (['min' => $min, 'max' => $max] as $name => $value) {
-            if ($value !== null && (! is_int($value) && ! is_float($value) || ! is_finite((float) $value))) {
-                throw DataValidationException::one('invalid_schema_constraint', "Constraint '{$name}' must be a finite number.", $field->path);
-            }
-        }
-        if (is_numeric($min) && is_numeric($max) && (float) $min > (float) $max) {
-            throw DataValidationException::one('invalid_schema_constraint', 'min cannot exceed max.', $field->path);
-        }
-    }
-
     public function type(): string
     {
         return 'float';
@@ -47,24 +32,26 @@ final class FloatFieldTypeHandler extends AbstractFieldTypeHandler
         if (! is_float($value) || ! is_finite($value)) {
             throw DataValidationException::one('type', 'Expected a finite number.', $field->path, $occurrence);
         }
-        $min = $field->constraints['min'] ?? null;
-        $max = $field->constraints['max'] ?? null;
-        if (is_numeric($min) && $value < (float) $min) {
-            throw DataValidationException::one('min', "Value must be at least {$min}.", $field->path, $occurrence);
-        }
-        if (is_numeric($max) && $value > (float) $max) {
-            throw DataValidationException::one('max', "Value must be at most {$max}.", $field->path, $occurrence);
-        }
-    }
-
-    /** @return list<string> */
-    public function supportedQueryOperators(): array
-    {
-        return ['eq', 'in', 'lt', 'lte', 'gt', 'gte', 'between', 'is_null', 'is_not_null'];
+        $this->validateRange($value, $field, $occurrence);
     }
 
     protected function sqlCast(): ?string
     {
         return 'numeric';
+    }
+
+    protected function validBoundary(mixed $value): bool
+    {
+        return (is_int($value) || is_float($value)) && is_finite((float) $value);
+    }
+
+    protected function boundaryDescription(): string
+    {
+        return 'a finite number';
+    }
+
+    protected function castBoundary(mixed $value): float
+    {
+        return (float) $value;
     }
 }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Polymorph\Platform\Domain\DataPlatform\Control;
+namespace Polymorph\Platform\Domain\DataPlatform\Schema;
 
 use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformResourceNotFound;
@@ -91,11 +91,9 @@ final class SchemaCatalog
     /** @return list<FieldDefinition> */
     public function fields(string $schemaVersionId): array
     {
-        $rows = DB::table('dp_schema_fields')
-            ->where('schema_version_id', $schemaVersionId)
-            ->orderBy('position')
-            ->orderBy('path')
-            ->get();
+        $rows = SchemaStorage::orderedFields(
+            DB::table('dp_schema_fields')->where('schema_version_id', $schemaVersionId),
+        )->get();
 
         return $this->fields->fromRows($rows);
     }

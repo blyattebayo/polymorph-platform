@@ -34,13 +34,13 @@ final class CommandIdempotencyStore
             ->first();
         if ($existing !== null) {
             if (! hash_equals((string) $existing->request_hash, $requestHash)) {
-                throw new IdempotencyConflict('The idempotency key was already used with a different command payload.');
+                throw IdempotencyConflict::reused();
             }
-            if ($existing->state === 'completed' && $existing->response !== null) {
+            if ($existing->state === IdempotencyState::Completed->value && $existing->response !== null) {
                 return $this->json->decodeMap($existing->response, 'dp_idempotency_keys.response');
             }
 
-            throw new IdempotencyConflict('The idempotent command is already processing.');
+            throw IdempotencyConflict::inProgress();
         }
 
         try {
@@ -50,24 +50,23 @@ final class CommandIdempotencyStore
                 'command' => $command,
                 'key_hash' => $keyHash,
                 'request_hash' => $requestHash,
-                'state' => 'processing',
+                'state' => IdempotencyState::Processing->value,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
         } catch (UniqueConstraintViolationException $exception) {
-            throw new IdempotencyConflict('The idempotent command raced with another request.', previous: $exception);
+            throw IdempotencyConflict::raced($exception);
         }
 
         return null;
     }
 
-    /** @param array<string, mixed> $response */
-    public function complete(
+    public function completeResult(
         ?int $actorId,
         string $command,
         ?string $idempotencyKey,
         string $requestHash,
-        array $response,
+        IdempotencyResult $result,
     ): void {
         if ($idempotencyKey === null) {
             return;
@@ -79,8 +78,8 @@ final class CommandIdempotencyStore
             ->where('key_hash', hash('sha256', $idempotencyKey))
             ->where('request_hash', $requestHash)
             ->update([
-                'state' => 'completed',
-                'response' => $this->json->encode($response),
+                'state' => IdempotencyState::Completed->value,
+                'response' => $this->json->encode($result->toArray()),
                 'updated_at' => now(),
             ]);
     }

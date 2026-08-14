@@ -7,6 +7,7 @@ namespace Polymorph\Platform\Domain\DataPlatform\Control;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformBadRequest;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaState;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 
 /** Creates a definition together with its initial mutable schema snapshot. */

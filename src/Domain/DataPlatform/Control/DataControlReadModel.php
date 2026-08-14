@@ -7,6 +7,7 @@ namespace Polymorph\Platform\Domain\DataPlatform\Control;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformResourceNotFound;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaStorage;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 
 /** Maps control-plane storage into the public HTTP representation. */
@@ -40,11 +41,9 @@ final class DataControlReadModel
         if ($row === null) {
             throw DataPlatformResourceNotFound::for('schema-version', $schemaVersionId);
         }
-        $fields = DB::table('dp_schema_fields')
-            ->where('schema_version_id', $schemaVersionId)
-            ->orderBy('position')
-            ->orderBy('path')
-            ->get()
+        $fields = SchemaStorage::orderedFields(
+            DB::table('dp_schema_fields')->where('schema_version_id', $schemaVersionId),
+        )->get()
             ->all();
 
         return $this->mapVersion($row, $fields);
@@ -88,7 +87,7 @@ final class DataControlReadModel
             'description' => $row->description === null ? null : (string) $row->description,
             'metadata' => $row->metadata === null
                 ? null
-                : $this->json->decodeMap($row->metadata, 'dp_record_definitions.metadata'),
+                : $this->json->decodeMap($row->metadata, SchemaStorage::DEFINITION_METADATA_CONTEXT),
             'current_schema_version_id' => $row->current_schema_version_id === null
                 ? null
                 : (string) $row->current_schema_version_id,
@@ -106,11 +105,9 @@ final class DataControlReadModel
             ->orderByDesc('version')
             ->get();
         $versionIds = $versions->pluck('id')->map('strval')->all();
-        $fields = DB::table('dp_schema_fields')
-            ->whereIn('schema_version_id', $versionIds)
-            ->orderBy('position')
-            ->orderBy('path')
-            ->get()
+        $fields = SchemaStorage::orderedFields(
+            DB::table('dp_schema_fields')->whereIn('schema_version_id', $versionIds),
+        )->get()
             ->groupBy('schema_version_id');
         $result['schema_versions'] = $versions->map(
             fn (object $version): array => $this->mapVersion(

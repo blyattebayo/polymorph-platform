@@ -12,16 +12,7 @@ class StringFieldTypeHandler extends AbstractFieldTypeHandler
     public function validateSchema(FieldDefinition $field): void
     {
         parent::validateSchema($field);
-        $min = $field->constraints['min_length'] ?? null;
-        $max = $field->constraints['max_length'] ?? null;
-        foreach (['min_length' => $min, 'max_length' => $max] as $name => $value) {
-            if ($value !== null && (! is_int($value) || $value < 0)) {
-                throw DataValidationException::one('invalid_schema_constraint', "Constraint '{$name}' must be a non-negative integer.", $field->path);
-            }
-        }
-        if (is_int($min) && is_int($max) && $min > $max) {
-            throw DataValidationException::one('invalid_schema_constraint', 'min_length cannot exceed max_length.', $field->path);
-        }
+        $this->assertNonNegativeIntegerRange($field, 'min_length', 'max_length');
         if (array_key_exists('trim', $field->constraints) && ! is_bool($field->constraints['trim'])) {
             throw DataValidationException::one('invalid_schema_constraint', "Constraint 'trim' must be boolean.", $field->path);
         }

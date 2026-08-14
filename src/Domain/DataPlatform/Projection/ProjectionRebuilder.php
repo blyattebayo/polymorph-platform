@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\DataPlatform\Projection;
 
 use Illuminate\Support\Facades\DB;
-use Polymorph\Platform\Domain\DataPlatform\Control\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformResourceNotFound;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaCatalog;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\CanonicalJson;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 
@@ -63,8 +63,13 @@ final class ProjectionRebuilder
         int $batchSize = 200,
     ): ProjectionRebuildBatchResult {
         $limit = max(1, $batchSize);
+        // Tombstone edges are kept as evidence for preserve_tombstone, but their
+        // records released their unique values on delete; rebuilding one would
+        // re-reserve those values and fail the uniqueness constraint.
         $recordIds = DB::table('dp_ref_edges')
+            ->join('dp_records as source', 'source.id', '=', 'dp_ref_edges.source_record_id')
             ->where('target_record_id', $targetRecordId)
+            ->whereNull('source.deleted_at')
             ->where('source_record_id', '>', $afterSourceRecordId)
             ->orderBy('source_record_id')
             ->distinct()
@@ -79,6 +84,8 @@ final class ProjectionRebuilder
     /** @return array{changed:bool,expected_hash:string,actual_hash:string} */
     public function rebuildRecord(int $recordId, bool $dryRun = false): array
     {
+        $this->changes->beginOperation();
+
         return DB::transaction(function () use ($recordId, $dryRun): array {
             $record = DB::table('dp_records')->where('id', $recordId)->lockForUpdate()->first();
             if ($record === null) {
@@ -134,12 +141,14 @@ final class ProjectionRebuilder
             $results[$recordId]->uniqueValues[] = $item;
         }
 
-        foreach (DB::table('dp_search_documents')->whereIn('record_id', $recordIds)->get(['record_id', 'content']) as $row) {
+        foreach (DB::table('dp_search_documents')->whereIn('record_id', $recordIds)->get(['record_id', 'content', 'projection_version']) as $row) {
             $content = (string) $row->content;
             $results[(int) $row->record_id]->searchValues = $content === '' ? [] : explode("\n", $content);
+            $results[(int) $row->record_id]->searchProjectionVersion = (int) $row->projection_version;
         }
-        foreach (DB::table('dp_display_values')->whereIn('record_id', $recordIds)->get(['record_id', 'value']) as $row) {
+        foreach (DB::table('dp_display_values')->whereIn('record_id', $recordIds)->get(['record_id', 'value', 'projection_version']) as $row) {
             $results[(int) $row->record_id]->displayValue = is_string($row->value) ? $row->value : null;
+            $results[(int) $row->record_id]->displayProjectionVersion = (int) $row->projection_version;
         }
 
         return $results;
@@ -160,7 +169,8 @@ final class ProjectionRebuilder
 
         return $this->canonicalJson->hash([
             $refEdges, $mediaEdges, $uniqueValues,
-            $searchValues, $changes->displayValue,
+            $searchValues, $changes->searchProjectionVersion,
+            $changes->displayValue, $changes->displayProjectionVersion,
         ]);
     }
 
@@ -197,6 +207,7 @@ final class ProjectionRebuilder
     /** @param list<int> $recordIds */
     private function rebuildIds(array $recordIds, int $fallbackLastId, int $limit, bool $dryRun): ProjectionRebuildBatchResult
     {
+        $this->changes->beginOperation();
         $changedRecordIds = $recordIds === [] ? [] : DB::transaction(function () use ($recordIds, $dryRun): array {
             $records = DB::table('dp_records')->whereIn('id', $recordIds)
                 ->orderBy('id')->lockForUpdate()->get()->keyBy('id');

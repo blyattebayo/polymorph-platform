@@ -80,6 +80,38 @@ final class DocumentPathAccessor
         return $document;
     }
 
+    /**
+     * Merges a patch into a stored document with JSON Merge Patch container
+     * semantics: maps merge key by key, and any list in the patch replaces the
+     * stored list wholesale. Merging lists positionally would silently make a
+     * shorter list unrepresentable and would leave two entries sharing one
+     * stable item id, so occurrences would collide.
+     *
+     * A null in the patch is written as a null value rather than removing the
+     * member, because clearing a field by submitting null is the established
+     * contract of this write path.
+     *
+     * @param  array<string,mixed>  $stored
+     * @param  array<string,mixed>  $patch
+     * @return array<string,mixed>
+     */
+    public function mergePatch(array $stored, array $patch): array
+    {
+        foreach ($patch as $key => $value) {
+            $current = $stored[$key] ?? null;
+            $stored[$key] = $this->isMap($value) && $this->isMap($current)
+                ? $this->mergePatch($current, $value)
+                : $value;
+        }
+
+        return $stored;
+    }
+
+    private function isMap(mixed $value): bool
+    {
+        return is_array($value) && ! array_is_list($value);
+    }
+
     /** @return array<string,mixed> */
     public function ensureStableItemIds(array $document): array
     {
@@ -118,7 +150,12 @@ final class DocumentPathAccessor
         }
         if (is_array($node) && array_is_list($node)) {
             foreach ($node as $index => $item) {
-                $this->collectValues($item, $segments, $this->itemOccurrence($item, $index, $occurrence), $values);
+                $this->collectValues(
+                    $item,
+                    $segments,
+                    OccurrencePath::appendDocumentItem($occurrence, $item, $index),
+                    $values,
+                );
             }
 
             return;
@@ -154,7 +191,7 @@ final class DocumentPathAccessor
                 $node[$index] = $this->mapValues(
                     $item,
                     $segments,
-                    $this->itemOccurrence($item, $index, $occurrence),
+                    OccurrencePath::appendDocumentItem($occurrence, $item, $index),
                     $mapper,
                 );
             }
@@ -178,13 +215,6 @@ final class DocumentPathAccessor
         );
 
         return $node;
-    }
-
-    private function itemOccurrence(mixed $item, int|string $index, string $occurrence): string
-    {
-        $itemId = is_array($item) && is_string($item['_item_id'] ?? null) ? $item['_item_id'] : (string) $index;
-
-        return $occurrence.'['.$itemId.']';
     }
 
     /** @return list<string> */

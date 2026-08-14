@@ -6,11 +6,12 @@ namespace Polymorph\Platform\Domain\DataPlatform\Projection;
 
 use Illuminate\Support\Facades\DB;
 use Polymorph\Platform\Domain\DataPlatform\Access\DataAccessPolicy;
-use Polymorph\Platform\Domain\DataPlatform\Control\SchemaFieldMapper;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformInvariantViolation;
 use Polymorph\Platform\Domain\DataPlatform\Errors\DataPlatformStateConflict;
 use Polymorph\Platform\Domain\DataPlatform\Fields\DocumentPathAccessor;
 use Polymorph\Platform\Domain\DataPlatform\Fields\FieldDefinition;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaFieldMapper;
+use Polymorph\Platform\Domain\DataPlatform\Schema\SchemaStorage;
 use Polymorph\Platform\Domain\DataPlatform\Serialization\DatabaseJson;
 use Polymorph\Platform\TemplateEngine\Core\AST\ExpressionNode;
 use Polymorph\Platform\TemplateEngine\Core\AST\FieldNode;
@@ -51,6 +52,18 @@ final class DisplayTemplateRenderer
         private readonly SchemaFieldMapper $fields,
         private readonly DatabaseJson $json,
     ) {}
+
+    /** Clears request-scoped memoization at a public read/write operation boundary. */
+    public function beginOperation(): void
+    {
+        $this->fieldCache = [];
+        $this->definitionMetadata = [];
+        $this->schemaFields = [];
+        $this->targetRecords = [];
+        $this->targetReadability = [];
+        $this->referenceTemplates = [];
+        $this->templateAsts = [];
+    }
 
     /** @param array<string,mixed> $document */
     public function render(int $definitionId, string $schemaVersionId, array $document): ?string
@@ -169,8 +182,9 @@ final class DisplayTemplateRenderer
         $source = trim((string) ($metadata['display_template'] ?? ''));
         if ($source === '') {
             $fields = $this->schemaFields[$schemaVersionId] ??= $this->fields->fromRows(
-                DB::table('dp_schema_fields')->where('schema_version_id', $schemaVersionId)
-                    ->orderBy('position')->orderBy('path')->get(),
+                SchemaStorage::orderedFields(
+                    DB::table('dp_schema_fields')->where('schema_version_id', $schemaVersionId),
+                )->get(),
             );
             foreach ($fields as $field) {
                 if (($field->metadata['display'] ?? false) === true
@@ -366,7 +380,7 @@ final class DisplayTemplateRenderer
         return $this->definitionMetadata[$definitionId] ??= (function () use ($definitionId): array {
             $metadata = DB::table('dp_record_definitions')->where('id', $definitionId)->value('metadata');
 
-            return $this->json->decodeMap($metadata, 'dp_record_definitions.metadata');
+            return $this->json->decodeMap($metadata, SchemaStorage::DEFINITION_METADATA_CONTEXT);
         })();
     }
 }

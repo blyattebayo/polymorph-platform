@@ -20,7 +20,7 @@ final class ExtensionDataGateway
     /** @param class-string<Entity> $entityClass @return Repository<Entity> */
     public function repository(string $extensionId, string $entity, string $entityClass = Entity::class): Repository
     {
-        return $this->repositories->make(ExtensionStorageKey::schemaCode($extensionId, $entity), $entityClass);
+        return $this->repositories->make(ExtensionStorageKey::for($extensionId, $entity), $entityClass);
     }
 
     public function ensureDefinition(string $extensionId, string $entity, SchemaSpec $spec): DefinitionRef
