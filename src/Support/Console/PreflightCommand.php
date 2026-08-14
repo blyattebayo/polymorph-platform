@@ -128,7 +128,7 @@ final class PreflightCommand extends Command
         }
 
         // Таблицы, нужные выбранным драйверам (миграции должны их создать).
-        $required = ['dp_records', 'dp_media_edges'];
+        $required = ['dp_records', 'dp_media_edges', 'dp_outbox'];
         if (config('cache.default') === 'database') {
             $required[] = (string) config('cache.stores.database.table', 'cache');
         }
@@ -139,14 +139,29 @@ final class PreflightCommand extends Command
             $required[] = 'jobs';
         }
 
+        $tablesAvailable = true;
         foreach (array_unique($required) as $table) {
             try {
                 if (! Schema::hasTable($table)) {
+                    $tablesAvailable = false;
                     $this->errors[] = "Нет таблицы '{$table}' — прогони миграции (php artisan migrate --force).";
                 }
             } catch (\Throwable $exception) {
+                $tablesAvailable = false;
                 $this->warnings[] = "Не удалось проверить таблицу '{$table}': ".$exception->getMessage();
             }
+        }
+
+        if (! $tablesAvailable) {
+            return;
+        }
+
+        try {
+            if (! Schema::hasColumn('dp_outbox', 'dead_lettered_at')) {
+                $this->errors[] = "Data Platform baseline is stale: missing column 'dp_outbox.dead_lettered_at'. Back up any required data and rebuild the fresh-only baseline with php artisan migrate:fresh --force.";
+            }
+        } catch (\Throwable $exception) {
+            $this->warnings[] = "Не удалось проверить колонку 'dp_outbox.dead_lettered_at': ".$exception->getMessage();
         }
     }
 }
