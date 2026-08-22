@@ -17,10 +17,10 @@ use Polymorph\Platform\Domain\AccessControl\Console\GenerateFeCapabilityCatalogC
 use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneAuthSessionsCommand;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Console\PruneOAuthCredentialsCommand;
 use Polymorph\Platform\Domain\Auth\Infrastructure\Http\SessionCookie;
+use Polymorph\Platform\Domain\DisplayViews\Console\RebuildRecordDefinitionDisplayViewsCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsBuildCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsInstallCommand;
 use Polymorph\Platform\Domain\Extensions\Console\PluginsListCommand;
-use Polymorph\Platform\Domain\DisplayViews\Console\RebuildRecordDefinitionDisplayViewsCommand;
 use Polymorph\Platform\Domain\RecordIndexes\Console\RecordIndexesDoctorCommand;
 use Polymorph\Platform\Domain\Routing\Console\LintRoutesCommand;
 use Polymorph\Platform\Http\ApiErrorHandler;
@@ -68,9 +68,8 @@ final class PlatformServiceProvider extends ServiceProvider
         Domain\RecordDefinitions\Providers\RecordDefinitionServiceProvider::class,
         Domain\Records\Providers\RecordsServiceProvider::class,
         Domain\Media\Providers\MediaServiceProvider::class,
-        Domain\TableConfig\Providers\TableConfigServiceProvider::class,
         Domain\Menu\Providers\MenuServiceProvider::class,
-        Domain\EntryView\Providers\EntryViewServiceProvider::class,
+        Domain\TableConfig\Providers\TableConfigServiceProvider::class,
         TemplateEngine\Providers\TemplateEngineServiceProvider::class,
         Domain\DisplayViews\Providers\DisplayViewsServiceProvider::class,
         Domain\RecordIndexes\Providers\RecordIndexesServiceProvider::class,

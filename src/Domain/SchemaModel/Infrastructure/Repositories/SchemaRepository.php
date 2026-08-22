@@ -22,6 +22,11 @@ final class SchemaRepository
         return SchemaModel::query()->with('ownership')->find($id);
     }
 
+    public function exists(int $id): bool
+    {
+        return SchemaModel::query()->whereKey($id)->exists();
+    }
+
     /** @param array<string, mixed> $data */
     public function create(array $data): SchemaModel
     {

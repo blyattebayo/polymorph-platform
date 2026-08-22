@@ -9,10 +9,6 @@ use Polymorph\Platform\Domain\AccessControl\Access\CapabilitySet;
 use Polymorph\Platform\Domain\AccessControl\Core\Contracts\CapabilityDefinitionProvider;
 use Polymorph\Platform\SharedKernel\Access\CapabilityCatalog;
 
-/**
- * Access-манифест домена: ресурс, определения capability, дефолтные роли и
- * route-требования — в одном файле.
- */
 final class TableConfigCapabilities implements CapabilityDefinitionProvider
 {
     public const RESOURCE = 'table_config';
@@ -27,7 +23,10 @@ final class TableConfigCapabilities implements CapabilityDefinitionProvider
     public function defaultRoleAssignments(): array
     {
         return [
-            BuiltInRoleCatalog::ROLE_TABLE_CONFIG_MANAGER => CapabilityCatalog::keys(self::RESOURCE, 'manage'),
+            BuiltInRoleCatalog::ROLE_TABLE_CONFIG_MANAGER => CapabilityCatalog::keys(
+                self::RESOURCE,
+                CapabilityCatalog::ACTION_MANAGE,
+            ),
         ];
     }
 

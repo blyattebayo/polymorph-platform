@@ -21,6 +21,11 @@ interface RecordDefinitionRepository
     public function find(int $id): ?RecordDefinition;
 
     /**
+     * Проверить существование RecordDefinition без загрузки модели.
+     */
+    public function exists(int $id): bool;
+
+    /**
      * Получить RecordDefinitions c пагинацией.
      *
      * @return LengthAwarePaginator<int, RecordDefinition>

@@ -22,6 +22,11 @@ class EloquentRecordDefinitionRepository implements RecordDefinitionRepository
             ->find($id);
     }
 
+    public function exists(int $id): bool
+    {
+        return RecordDefinition::query()->whereKey($id)->exists();
+    }
+
     public function paginate(PageRequest $pagination): LengthAwarePaginator
     {
         return RecordDefinition::query()

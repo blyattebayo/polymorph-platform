@@ -8,7 +8,6 @@ use Polymorph\Platform\Domain\Auth\Http\Controllers\LoginController;
 use Polymorph\Platform\Domain\Auth\Http\Controllers\LogoutController;
 use Polymorph\Platform\Domain\Auth\Http\Controllers\MeAuthSessionController;
 use Polymorph\Platform\Domain\Media\Http\Controllers\MediaPreviewController;
-use Polymorph\Platform\Domain\Menu\Http\Controllers\MenuController;
 use Polymorph\Platform\Http\Middleware\ResolveSessionCredential;
 use Polymorph\Platform\Support\Validation\Http\ValidationRulesController;
 
@@ -41,12 +40,6 @@ Route::middleware('api')->prefix('api/v1')->group(function (): void {
                 ->whereUuid('sessionId')
                 ->name('sessions.destroy');
         });
-
-    // Меню навигации по ключу: дефолты и ACL-фильтрацию делает FE.
-    Route::get('/menu/{key}', [MenuController::class, 'show'])
-        ->where('key', '[a-z][a-z0-9_]*')
-        ->middleware('auth:session')
-        ->name('api.v1.menu.show');
 
     // Публичная выдача медиа: доступ решает контроллер, поэтому auth-middleware
     // здесь нет — анонимный запрос не должен получать 401 на публичный файл.
