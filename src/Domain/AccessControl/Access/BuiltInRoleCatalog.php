@@ -24,8 +24,6 @@ final class BuiltInRoleCatalog
 
     public const ROLE_USERS_MANAGER = 'users.manager';
 
-    public const ROLE_TABLE_CONFIG_MANAGER = 'table_config.manager';
-
     /**
      * @return array<int, array{code:string,name:string,description:string}>
      */
@@ -76,11 +74,6 @@ final class BuiltInRoleCatalog
                 'code' => self::ROLE_USERS_MANAGER,
                 'name' => 'Users Manager',
                 'description' => 'Reads users and manages user lifecycle operations.',
-            ],
-            [
-                'code' => self::ROLE_TABLE_CONFIG_MANAGER,
-                'name' => 'Table Config Manager',
-                'description' => 'Manages table configuration presets.',
             ],
         ];
     }

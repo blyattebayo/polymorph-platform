@@ -68,8 +68,6 @@ final class PlatformServiceProvider extends ServiceProvider
         Domain\RecordDefinitions\Providers\RecordDefinitionServiceProvider::class,
         Domain\Records\Providers\RecordsServiceProvider::class,
         Domain\Media\Providers\MediaServiceProvider::class,
-        Domain\Menu\Providers\MenuServiceProvider::class,
-        Domain\TableConfig\Providers\TableConfigServiceProvider::class,
         TemplateEngine\Providers\TemplateEngineServiceProvider::class,
         Domain\DisplayViews\Providers\DisplayViewsServiceProvider::class,
         Domain\RecordIndexes\Providers\RecordIndexesServiceProvider::class,

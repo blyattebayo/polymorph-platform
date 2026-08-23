@@ -6,6 +6,7 @@ namespace Polymorph\Platform\Domain\RecordDefinitions\Pipeline;
 
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\ApplyCreatedRecordDefinitionDatabaseObjectsStep;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\ApplyUpdatedRecordDefinitionDatabaseObjectsStep;
+use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\DeleteRecordDefinitionEntryViewConfigsStep;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\DeleteRecordDefinitionOwnershipStep;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\EnsureCreatedRecordDefinitionOwnershipStep;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition\PersistCreatedRecordDefinitionStep;
@@ -26,6 +27,7 @@ final class RecordDefinitionPipelineDefinitions
         private readonly ApplyUpdatedRecordDefinitionDatabaseObjectsStep $applyUpdatedDatabaseObjectsStep,
         private readonly PersistDeletedRecordDefinitionStep $persistDeletedRecordDefinitionStep,
         private readonly DeleteRecordDefinitionOwnershipStep $deleteRecordDefinitionOwnershipStep,
+        private readonly DeleteRecordDefinitionEntryViewConfigsStep $deleteRecordDefinitionEntryViewConfigsStep,
         private readonly RemoveDeletedRecordDefinitionDatabaseObjectsStep $removeDeletedDatabaseObjectsStep,
         private readonly ValidateDeleteRecordDefinitionStep $validateDeleteRecordDefinitionStep,
     ) {}
@@ -62,6 +64,7 @@ final class RecordDefinitionPipelineDefinitions
             writeSteps: [$this->persistDeletedRecordDefinitionStep],
             derivedWriteSteps: [
                 $this->deleteRecordDefinitionOwnershipStep,
+                $this->deleteRecordDefinitionEntryViewConfigsStep,
                 $this->removeDeletedDatabaseObjectsStep,
             ],
         );

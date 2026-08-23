@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Polymorph\Platform\Domain\DisplayViews\Services\RecordDefinitionDisplayViewSynchronizer;
+use Polymorph\Platform\Domain\UiConfig\Services\ConfigCleaner;
 use Polymorph\Platform\Domain\RecordConstraints\Services\RecordUniqueConstraintSynchronizer;
 use Polymorph\Platform\Domain\SchemaModel\Core\Exceptions\DuplicateSchemaCodeException;
 use Polymorph\Platform\Domain\SchemaModel\Core\Exceptions\SchemaInUseException;
@@ -42,6 +43,7 @@ final class SchemaMutationService
         private readonly SchemaSnapshotService $schemaSnapshots,
         private readonly RecordUniqueConstraintSynchronizer $uniqueConstraints,
         private readonly RecordDefinitionDisplayViewSynchronizer $displayViews,
+        private readonly ConfigCleaner $uiConfigs,
         private readonly AppLogger $logger,
     ) {}
 
@@ -121,6 +123,9 @@ final class SchemaMutationService
             }
 
             $this->ownership->delete(ResourceType::SCHEMA, $schemaId);
+            // Макеты карточек ссылаются на схему только ключом, поэтому их
+            // снимает удаление схемы, а не каскад внешнего ключа.
+            $this->uiConfigs->removeForSchema($schemaId);
             $this->schemas->delete($schema);
             $this->synchronizeDatabaseObjects($schemaId);
             event(new SchemaChanged($schemaId));
