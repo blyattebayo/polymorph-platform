@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Steps\RecordDefinition;
 
-use Polymorph\Platform\Domain\UiConfig\Services\ConfigCleaner;
 use Polymorph\Platform\Domain\RecordDefinitions\Pipeline\Contexts\DeleteRecordDefinitionContext;
+use Polymorph\Platform\Domain\UiConfig\Services\UiConfigCleaner;
 use Polymorph\Platform\PipelineCore\Runtime\AbstractStep;
 use Polymorph\Platform\PipelineCore\Runtime\PipelineContext;
 use Polymorph\Platform\PipelineCore\Runtime\StepResult;
@@ -17,7 +17,7 @@ use Polymorph\Platform\PipelineCore\Runtime\StepResult;
 final class DeleteRecordDefinitionEntryViewConfigsStep extends AbstractStep
 {
     public function __construct(
-        private readonly ConfigCleaner $uiConfigs,
+        private readonly UiConfigCleaner $uiConfigs,
     ) {
         parent::__construct(DeleteRecordDefinitionContext::class);
     }

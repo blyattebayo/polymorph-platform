@@ -3,22 +3,22 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
-use Polymorph\Platform\Domain\UiConfig\Core\ConfigNamespace;
-use Polymorph\Platform\Domain\UiConfig\Http\Controllers\ConfigController;
+use Polymorph\Platform\Domain\UiConfig\Core\UiConfigDomain;
+use Polymorph\Platform\Domain\UiConfig\Http\Controllers\UiConfigController;
 
-// Чтение адресуется путём: вид конфига — закрытый словарь, ключ внутри вида
-// непрозрачен (составные адреса склеивает клиент — пару «определение записи +
-// схема» у entry view, владельца у персональных настроек).
+// Чтение адресуется путём: домен плюс непрозрачный ключ, в котором закодирован
+// вид конфигурации (`entry_view:12`, `table:records.posts`, `menu:primary`).
+// Личное чтение подменяет общее: нет личной строки — вернётся общая.
 //
-// Запись и удаление адреса в пути не имеют: вид, ключ и заявленная ревизия
-// приходят телом, см. UiConfigWriteRequest.
+// Запись и удаление адреса в пути не имеют: ключ, домен и заявленная ревизия
+// приходят телом, а проверяет их слой валидации внутри UiConfigService.
 Route::prefix('ui-configs')->name('ui-configs.')->group(function (): void {
-    Route::put('/', [ConfigController::class, 'update'])->name('update');
-    Route::delete('/', [ConfigController::class, 'destroy'])->name('destroy');
+    Route::put('/', [UiConfigController::class, 'update'])->name('update');
+    Route::delete('/', [UiConfigController::class, 'destroy'])->name('destroy');
 
-    Route::get('/{namespace}/{key}', [ConfigController::class, 'show'])
+    Route::get('/{domain}/{key}', [UiConfigController::class, 'show'])
         ->where([
-            'namespace' => implode('|', array_column(ConfigNamespace::cases(), 'value')),
+            'domain' => implode('|', array_column(UiConfigDomain::cases(), 'value')),
             'key' => '[A-Za-z0-9._:-]{1,191}',
         ])
         ->name('show');

@@ -6,9 +6,7 @@ namespace Polymorph\Platform\Http\Requests;
 
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
-use Polymorph\Platform\Support\Errors\ErrorCode;
-use Polymorph\Platform\Support\Errors\ErrorFactory;
-use Polymorph\Platform\Support\Errors\HttpErrorException;
+use Polymorph\Platform\Support\Errors\ValidationFailedException;
 
 abstract class ApiFormRequest extends FormRequest
 {
@@ -19,19 +17,10 @@ abstract class ApiFormRequest extends FormRequest
 
     protected function failedValidation(Validator $validator): void
     {
-        if (! isset($this->container)) {
-            throw new \RuntimeException('Form request container is not available.');
-        }
-
-        /** @var ErrorFactory $factory */
-        $factory = $this->container->make(ErrorFactory::class);
-
-        $payload = $factory->for(ErrorCode::VALIDATION_ERROR)
-            ->detail($this->validationErrorDetail())
-            ->meta(['errors' => $validator->errors()->messages()])
-            ->build();
-
-        throw new HttpErrorException($payload);
+        throw new ValidationFailedException(
+            $validator->errors()->messages(),
+            $this->validationErrorDetail(),
+        );
     }
 
     protected function validationErrorDetail(): string

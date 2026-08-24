@@ -5,37 +5,22 @@ declare(strict_types=1);
 namespace Polymorph\Platform\Domain\UiConfig\Core;
 
 /**
- * Формат ключа макета карточки: пара идентификаторов в непрозрачной строке
- * `{recordDefinition}:{schema}`.
+ * Грамматика ключа макета карточки: `entry_view:{recordDefinition}`.
  *
- * Ключ склеивает клиент — бэкенд его не разбирает и существование пары не
- * проверяет. Формат нужен здесь для обратной задачи: снять строки, оставшиеся
- * от удалённого определения записи или схемы, внешних ключей у них нет.
+ * Макет принадлежит типу контента, а не схеме: раскладку задают не только поля,
+ * а схему у типа контента можно сменить — макет это переживает, потому что
+ * мёртвые ссылки на поля деградируют в рантайме.
+ *
+ * Ключ склеивает клиент — бэкенд его не разбирает и существования цели не
+ * проверяет. Формат нужен здесь для обратной задачи: снять строку, оставшуюся от
+ * удалённого типа контента, внешнего ключа у неё нет.
  */
 final class EntryViewConfigKey
 {
-    private const SEPARATOR = ':';
+    private const PREFIX = 'entry_view';
 
-    public static function for(int $recordDefinitionId, int $schemaId): string
+    public static function for(int $recordDefinitionId): string
     {
-        return $recordDefinitionId.self::SEPARATOR.$schemaId;
-    }
-
-    /**
-     * LIKE-шаблон всех макетов одного определения записи: идентификатор стоит
-     * первым сегментом ключа.
-     */
-    public static function ofRecordDefinition(int $recordDefinitionId): string
-    {
-        return $recordDefinitionId.self::SEPARATOR.'%';
-    }
-
-    /**
-     * LIKE-шаблон всех макетов одной схемы: разделитель в ключе ровно один,
-     * поэтому суффикс однозначно опознаёт второй сегмент.
-     */
-    public static function ofSchema(int $schemaId): string
-    {
-        return '%'.self::SEPARATOR.$schemaId;
+        return self::PREFIX.':'.$recordDefinitionId;
     }
 }
