@@ -6,6 +6,7 @@ namespace Polymorph\Platform\Domain\Extensions\Providers;
 
 use Composer\Autoload\ClassLoader;
 use Illuminate\Database\Events\MigrationsEnded;
+use Illuminate\Database\Events\NoPendingMigrations;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Polymorph\Platform\Domain\Extensions\Access\ExtensionsCapabilityProvider;
@@ -45,6 +46,7 @@ final class ExtensionsServiceProvider extends ServiceProvider
         $this->app->tag([ExtensionsCapabilityProvider::class], 'access.capability_providers');
         Event::listen(RecordDeleted::class, RecordLifecycleSdkBridge::class);
         Event::listen(MigrationsEnded::class, fn (): mixed => $this->provisionAccessControl());
+        Event::listen(NoPendingMigrations::class, fn (): mixed => $this->provisionAccessControl());
     }
 
     /** @param list<DiscoveredExtension> $extensions */
