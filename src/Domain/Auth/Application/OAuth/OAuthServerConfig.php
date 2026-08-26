@@ -79,11 +79,11 @@ final readonly class OAuthServerConfig
             || parse_url($url, PHP_URL_PASS) !== null
             || parse_url($url, PHP_URL_QUERY) !== null
             || ! in_array((string) parse_url($url, PHP_URL_PATH), ['', '/'], true)) {
-            throw AuthConfigurationException::invalid('APP_URL must be an absolute HTTP(S) origin without path, query, credentials, or fragment.');
+            throw AuthConfigurationException::invalid('OAuth public URL must be an absolute HTTP(S) origin without path, query, credentials, or fragment.');
         }
 
         if ($production && $scheme !== 'https' && ! $isLoopback) {
-            throw AuthConfigurationException::invalid('APP_URL must use HTTPS in production.');
+            throw AuthConfigurationException::invalid('OAuth public URL must use HTTPS in production.');
         }
     }
 }

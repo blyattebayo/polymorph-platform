@@ -68,14 +68,26 @@ final class AuthServiceProvider extends ServiceProvider
             (array) config('authentication.cookies', []),
         ));
         $this->app->singleton(OAuthServerConfig::class, fn (): OAuthServerConfig => OAuthServerConfig::fromApplicationUrl(
-            (string) config('app.url'),
+            $this->oauthPublicUrl(),
             $this->app->environment('production'),
         ));
 
         if ($this->app->environment('production')) {
             SessionCookieConfig::fromArray((array) config('authentication.cookies', []));
-            OAuthServerConfig::fromApplicationUrl((string) config('app.url'), production: true);
+            OAuthServerConfig::fromApplicationUrl(
+                $this->oauthPublicUrl(),
+                production: true,
+            );
         }
+    }
+
+    private function oauthPublicUrl(): string
+    {
+        $publicUrl = config('authentication.oauth.public_url');
+
+        return is_string($publicUrl) && trim($publicUrl) !== ''
+            ? $publicUrl
+            : (string) config('app.url');
     }
 
     private function registerSharedAdapters(): void
